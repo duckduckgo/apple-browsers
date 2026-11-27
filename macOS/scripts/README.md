@@ -136,9 +136,14 @@ run on its own.
 Only brokers listed in `main_config.json`'s `active_data_brokers` are installed.
 Stale files are never pruned.
 
+The apps trust embedded brokers without verifying them, so the script aborts
+without writing anything unless `main_config.json.sig` verifies against one of
+the production keys in `DataBrokerProtectionCore`'s `bundle-signing-keys.json`
+and every active broker matches its `json_sha256` entry.
+
 ### Requirements
 
-`jq`, plus built-in command line utilities and curl.
+`jq`, `openssl`, plus built-in command line utilities and curl.
 
 ### Usage
 

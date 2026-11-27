@@ -46,6 +46,7 @@ protocol UnifiedToggleInputViewControllerDelegate: AnyObject {
     func unifiedToggleInputVCDidTapReturnKey(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidShowModelPicker(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidShowReasoningPicker(_ vc: UnifiedToggleInputViewController)
+    func unifiedToggleInputVCDidShowAttachMenu(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didTapFooterPrimaryAction id: UTIFooterItem.ID)
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didDismissFooter id: UTIFooterItem.ID)
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeFooterVisibility ids: [UTIFooterItem.ID])
@@ -67,7 +68,8 @@ final class UnifiedToggleInputViewController: UIViewController {
     private lazy var inputBarView = UnifiedToggleInputView(handler: handler,
                                                           isToggleEnabled: isToggleEnabled,
                                                           placesAttachmentsAboveInput: placesAttachmentsAboveInput,
-                                                          usesCompactAttachmentLayout: usesCompactAttachmentLayout)
+                                                          usesCompactAttachmentLayout: usesCompactAttachmentLayout,
+                                                          usesFloatingUI: usesFloatingUI)
 
     /// Edges of the visible input card, for aligning content sitting around the bar.
     func inputCardFrame(in view: UIView) -> CGRect {
@@ -88,6 +90,7 @@ final class UnifiedToggleInputViewController: UIViewController {
 
     /// The collapsed AI-tab fire button. Exposed for onboarding highlight and enable/disable targeting.
     var aiTabFireButton: UIButton { inputBarView.aiTabFireButton }
+    var aiTabChatsButton: UIButton { inputBarView.aiTabChatsButton }
 
     /// Dims the input bar for the fire-education onboarding step without affecting the fire button.
     func setOnboardingDimmed(_ dimmed: Bool) {
@@ -102,14 +105,17 @@ final class UnifiedToggleInputViewController: UIViewController {
     private let placesAttachmentsAboveInput: Bool
 
     private let usesCompactAttachmentLayout: Bool
+    private let usesFloatingUI: Bool
 
     init(isToggleEnabled: Bool,
          isFireTab: Bool = false,
          placesAttachmentsAboveInput: Bool = false,
-         usesCompactAttachmentLayout: Bool = false) {
+         usesCompactAttachmentLayout: Bool = false,
+         usesFloatingUI: Bool = false) {
         self.isToggleEnabled = isToggleEnabled
         self.placesAttachmentsAboveInput = placesAttachmentsAboveInput
         self.usesCompactAttachmentLayout = usesCompactAttachmentLayout
+        self.usesFloatingUI = usesFloatingUI
         self.handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false,
                                                  isToggleEnabled: isToggleEnabled,
                                                  isFireTab: isFireTab)
@@ -142,6 +148,15 @@ final class UnifiedToggleInputViewController: UIViewController {
 
     func refreshPlaceholderForCurrentMode() {
         inputBarView.refreshPlaceholderForCurrentMode()
+    }
+
+    var placeholderState: AIChatPlaceholderState {
+        AIChatPlaceholderState(hasSubmittedPrompt: handler.hasSubmittedPrompt,
+                               isImageGenerationSelected: handler.isImageGenerationSelected)
+    }
+
+    func crossfadePlaceholder(to state: AIChatPlaceholderState) {
+        inputBarView.crossfadePlaceholder(to: state)
     }
 
     var isInputExpanded: Bool {
@@ -319,6 +334,11 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.selectedReasoningMode = newValue }
     }
 
+    var usesSimplifiedPromptBox: Bool {
+        get { inputBarView.usesSimplifiedPromptBox }
+        set { inputBarView.usesSimplifiedPromptBox = newValue }
+    }
+
     var isToolsButtonHidden: Bool {
         get { inputBarView.isToolsButtonHidden }
         set { inputBarView.isToolsButtonHidden = newValue }
@@ -459,6 +479,15 @@ final class UnifiedToggleInputViewController: UIViewController {
         inputBarView.setInputMode(mode, animated: animated)
     }
 
+    func performInputModeChanges(_ changes: () -> Void) {
+        inputBarView.performInputModeChanges(changes)
+        notifyHeightDidChange()
+    }
+
+    func setSelectedInputMode(_ mode: TextEntryMode, animated: Bool) {
+        inputBarView.setSelectedInputMode(mode, animated: animated)
+    }
+
     func selectAllText() {
         inputBarView.selectAllText()
     }
@@ -504,6 +533,10 @@ final class UnifiedToggleInputViewController: UIViewController {
 
     func refreshFireMode(fireMode: Bool) {
         inputBarView.refreshFireMode(fireMode: fireMode)
+    }
+
+    func setUsesNewTabPageCardBackground(_ usesNewTabPageCardBackground: Bool) {
+        inputBarView.usesNewTabPageCardBackground = usesNewTabPageCardBackground
     }
 
     // MARK: - Page-Context Chip
@@ -566,6 +599,7 @@ final class UnifiedToggleInputViewController: UIViewController {
     }
 
     private func notifyHeightDidChange() {
+        guard !inputBarView.isApplyingInputMode else { return }
         delegate?.unifiedToggleInputVCDidChangeHeight(self)
     }
 }
@@ -577,8 +611,10 @@ extension UnifiedToggleInputViewController: UTIFooterPresenting {
     func applyFooterMessages(_ messages: [UTIFooterItem]) {
         guard inputBarView.setFooterMessages(messages) else { return }
         Logger.duckAIUsageWarnings.debug("[UsageWarnings] pushing new bar height to host")
-        delegate?.unifiedToggleInputVCDidChangeHeight(self)
-        view.superview?.layoutIfNeeded()
+        notifyHeightDidChange()
+        if !inputBarView.isApplyingInputMode {
+            view.superview?.layoutIfNeeded()
+        }
     }
 
     func clearPendingFooterMessage() {
@@ -640,6 +676,10 @@ extension UnifiedToggleInputViewController: UnifiedToggleInputViewDelegate {
 
     func unifiedToggleInputViewDidShowReasoningPicker(_ view: UnifiedToggleInputView) {
         delegate?.unifiedToggleInputVCDidShowReasoningPicker(self)
+    }
+
+    func unifiedToggleInputViewDidShowAttachMenu(_ view: UnifiedToggleInputView) {
+        delegate?.unifiedToggleInputVCDidShowAttachMenu(self)
     }
 }
 

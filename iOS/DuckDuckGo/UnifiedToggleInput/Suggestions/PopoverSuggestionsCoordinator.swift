@@ -52,6 +52,7 @@ final class PopoverSuggestionsCoordinator {
         let bookmarksDatabase: CoreDataDatabase
         let featureFlagger: FeatureFlagger
         let aiChatSettings: AIChatSettingsProvider
+        let appSettings: AppSettings
         let privacyConfigurationManager: PrivacyConfigurationManaging
         let aiChatSyncCleaner: AIChatSyncCleaning?
         let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
@@ -152,14 +153,16 @@ final class PopoverSuggestionsCoordinator {
         ) { request, completion in
             requestRunner.run(request, completion: completion)
         }
-        let urlLoader = DuckAIURLSuggestionsLoader(dataSource: dataSource)
+        let urlLoader = DuckAIURLSuggestionsLoader(dataSource: dataSource, featureFlagger: dependencies.featureFlagger)
         let querySubject = CurrentValueSubject<String, Never>("")
         duckAIQuerySubject = querySubject
         let source = DuckAISuggestionsSource(
             chatViewModel: chatViewModel,
             urlLoader: urlLoader,
             chatManager: chatManager,
-            query: { querySubject.value })
+            query: { querySubject.value },
+            searchSuggestionsEnabled: { [appSettings = dependencies.appSettings] in appSettings.autocomplete },
+            chatSuggestionsEnabled: { [aiChatSettings = dependencies.aiChatSettings] in aiChatSettings.isChatSuggestionsEnabled })
 
         tray.duckAINavigationDelegate = navigationDelegate
         // Duck.ai content arrives asynchronously; re-apply only while a Duck.ai surface is current. In

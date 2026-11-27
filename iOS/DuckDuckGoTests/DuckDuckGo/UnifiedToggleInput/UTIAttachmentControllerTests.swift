@@ -278,6 +278,114 @@ final class UTIAttachmentControllerTests: XCTestCase {
         XCTAssertFalse(view.imageButtonEnabled)
     }
 
+    // MARK: - Simplified attach menu
+
+    func testSimplifiedMenu_listsAttachmentsThenAddTabsThenTheToolsWithoutRecentTabs() throws {
+        config.model = makeModel(supportsImageUpload: true, supportedFileTypes: ["application/pdf"])
+        config.limits = makeLimits()
+        enableTabAttachments()
+        config.usesSimplifiedAttachMenu = true
+        config.attachMenuTools = makeTools()
+        let sut = makeController()
+
+        sut.updateAttachButtonPresentation()
+
+        let children = try XCTUnwrap(view.attachmentMenu?.children)
+        let topLevelTitles = children.compactMap { ($0 as? UIAction)?.title }
+        XCTAssertEqual(Array(topLevelTitles.suffix(1)), [UserText.aiChatAttachmentOptionAddTabs])
+        XCTAssertFalse(children.contains { ($0 as? UIMenu)?.title == UserText.aiChatAttachmentRecentTabsSectionTitle })
+        XCTAssertEqual(Array(topLevelTitles.prefix(3)), [UserText.aiChatAttachmentOptionTakePhoto,
+                                                        UserText.aiChatAttachmentOptionAddImages,
+                                                        UserText.aiChatAttachmentOptionAddFiles])
+        let toolsSection = try XCTUnwrap(children.last as? UIMenu)
+        XCTAssertTrue(toolsSection.options.contains(.displayInline))
+        let toolActions = toolsSection.children.compactMap { $0 as? UIAction }
+        XCTAssertEqual(toolActions.map(\.title),
+                       [UserText.aiChatToolbarImageGenerationToolTitle, UserText.aiChatToolbarWebSearchToolTitle])
+        if #available(iOS 16, *) {
+            XCTAssertTrue(toolActions.allSatisfy { $0.subtitle == nil }, "Tool rows look like the attachment rows: title and icon only")
+        }
+    }
+
+    func testSimplifiedMenuOff_keepsRecentTabsAndHasNoTools() throws {
+        config.model = makeModel(supportsImageUpload: true)
+        config.limits = makeLimits()
+        enableTabAttachments()
+        config.attachMenuTools = makeTools()
+        let sut = makeController()
+
+        sut.updateAttachButtonPresentation()
+
+        let children = try XCTUnwrap(view.attachmentMenu?.children)
+        XCTAssertTrue(children.contains { ($0 as? UIMenu)?.title == UserText.aiChatAttachmentRecentTabsSectionTitle })
+        let topLevelTitles = children.compactMap { ($0 as? UIAction)?.title }
+        XCTAssertTrue(topLevelTitles.contains(UserText.aiChatAttachmentOptionAttachPhoto))
+        XCTAssertFalse(topLevelTitles.contains(UserText.aiChatToolbarWebSearchToolTitle))
+        XCTAssertFalse(children.contains { ($0 as? UIMenu)?.children.contains { ($0 as? UIAction)?.title == UserText.aiChatToolbarWebSearchToolTitle } == true })
+    }
+
+    func testSimplifiedMenu_aToolKeepsTheButtonUsableForAModelWithoutAttachments() throws {
+        config.model = makeModel(supportsImageUpload: false, supportedFileTypes: [])
+        config.limits = makeLimits()
+        config.usesSimplifiedAttachMenu = true
+        config.attachMenuTools = makeTools(webSearchEnabled: true, createImageEnabled: false)
+        let sut = makeController()
+
+        sut.updateAttachButtonPresentation()
+
+        XCTAssertFalse(view.imageButtonHidden)
+        XCTAssertTrue(view.imageButtonEnabled)
+        let children = try XCTUnwrap(view.attachmentMenu?.children)
+        let attachmentRows = children.compactMap { $0 as? UIAction }
+        XCTAssertTrue(attachmentRows.allSatisfy { $0.attributes.contains(.disabled) })
+    }
+
+    func testSimplifiedMenu_noEnabledToolAndNoAttachmentsHidesTheButton() {
+        config.model = makeModel(supportsImageUpload: false, supportedFileTypes: [])
+        config.limits = makeLimits()
+        config.usesSimplifiedAttachMenu = true
+        config.attachMenuTools = makeTools(webSearchEnabled: false, createImageEnabled: false)
+        let sut = makeController()
+
+        sut.updateAttachButtonPresentation()
+
+        XCTAssertTrue(view.imageButtonHidden)
+        XCTAssertNil(view.attachmentMenu)
+    }
+
+    func testSimplifiedMenu_disablesTheButtonWhileGeneratingEvenWithATool() {
+        config.model = makeModel(supportsImageUpload: false, supportedFileTypes: [])
+        config.limits = makeLimits()
+        config.usesSimplifiedAttachMenu = true
+        config.attachMenuTools = makeTools()
+        view.isGenerating = true
+        let sut = makeController()
+
+        sut.updateAttachButtonPresentation()
+
+        XCTAssertFalse(view.imageButtonHidden)
+        XCTAssertFalse(view.imageButtonEnabled)
+        XCTAssertNil(view.attachmentMenu)
+    }
+
+    func testSimplifiedMenu_selectingAToolRowForwardsItsIdentifier() throws {
+        guard #available(iOS 16, *) else { throw XCTSkip("Performing a menu action needs iOS 16") }
+        config.model = makeModel(supportsImageUpload: true)
+        config.limits = makeLimits()
+        config.usesSimplifiedAttachMenu = true
+        var selected: [UTIToolsMenu.Item.Identifier] = []
+        config.attachMenuTools = makeTools(onSelect: { selected.append($0) })
+        let sut = makeController()
+        sut.updateAttachButtonPresentation()
+
+        let toolsSection = try XCTUnwrap(view.attachmentMenu?.children.last as? UIMenu)
+        let webSearch = try XCTUnwrap(toolsSection.children.compactMap { $0 as? UIAction }
+            .first { $0.title == UserText.aiChatToolbarWebSearchToolTitle })
+        webSearch.performWithSender(nil, target: nil)
+
+        XCTAssertEqual(selected, [.webSearch])
+    }
+
     // MARK: - Unsupported-attachment pruning
 
     func testRemoveUnsupportedAttachmentsForSelectedModel_removesImageWhenModelLosesImageSupport() {
@@ -660,6 +768,26 @@ final class UTIAttachmentControllerTests: XCTestCase {
         XCTAssertFalse(askPage.attributes.contains(.disabled))
     }
 
+    // MARK: - Attach menu pixels
+
+    func test_attachMenuItem_firesItemSelectedPixelWithReporterSurface() throws {
+        guard #available(iOS 16, *) else { throw XCTSkip("UIAction.performWithSender requires iOS 16") }
+        config.model = makeModel(supportsImageUpload: true)
+        config.limits = makeLimits()
+        let controller = makeController()
+        let menu = try XCTUnwrap(controller.makeAttachmentMenu())
+        let attachPhoto = try XCTUnwrap(menu.children.compactMap { $0 as? UIAction }
+            .first { $0.title == UserText.aiChatAttachmentOptionAttachPhoto })
+
+        // The menu holds the controller weakly; keep it alive through the action.
+        withExtendedLifetime(controller) { attachPhoto.performWithSender(nil, target: nil) }
+
+        let call = try XCTUnwrap(pixelKitMock.actualFireCalls.last)
+        XCTAssertEqual(call.pixel.name, "m_aichat_unified_input_attach_menu_item_selected")
+        XCTAssertEqual(call.pixel.parameters, ["surface": "address_bar", "item": "photo_library", "simplified_prompt_box": "off"])
+        XCTAssertEqual(call.frequency, .dailyAndCount)
+    }
+
     // MARK: - Helpers
 
     private func makePickerPixelSession() -> MultiTabPickerPixelSession {
@@ -726,7 +854,9 @@ final class UTIAttachmentControllerTests: XCTestCase {
                 tabAttachmentFeatureState: { config.tabFeatureState },
                 pageContextRemoveHandler: { config.pageContextRemoveHandler },
                 isEditing: { config.isEditing },
-                isVoiceSessionActive: { config.isVoiceSessionActive }
+                isVoiceSessionActive: { config.isVoiceSessionActive },
+                usesSimplifiedAttachMenu: { config.usesSimplifiedAttachMenu },
+                attachMenuTools: { config.attachMenuTools }
             ),
             callbacks: callbackSpy.callbacks
         )
@@ -734,6 +864,15 @@ final class UTIAttachmentControllerTests: XCTestCase {
 
     private func makeModel(supportsImageUpload: Bool, supportedFileTypes: [String] = []) -> AIChatModel {
         AIChatModel(id: "m", name: "m", provider: .unknown, supportsImageUpload: supportsImageUpload, supportedFileTypes: supportedFileTypes, entityHasAccess: true)
+    }
+
+    private func makeTools(webSearchEnabled: Bool = true,
+                           createImageEnabled: Bool = true,
+                           onSelect: @escaping (UTIToolsMenu.Item.Identifier) -> Void = { _ in }) -> UTIAttachMenuTools {
+        UTIAttachMenuTools(menu: UTIToolsMenu(items: [
+            .imageGeneration(isSelected: false, isEnabled: createImageEnabled, subtitle: ""),
+            .webSearch(isSelected: true, isEnabled: webSearchEnabled)
+        ]), onSelect: onSelect)
     }
 
     private func makeLimits() -> AIChatAttachmentTierLimits {
@@ -797,6 +936,8 @@ private final class FakeEnvironmentConfig {
     var pageContextAttachHandler: (() -> Void)?
     var pageContextRemoveHandler: (() -> Void)?
     var presenter: UIViewController?
+    var usesSimplifiedAttachMenu = false
+    var attachMenuTools: UTIAttachMenuTools?
 
     var maximumTabAttachmentCount: Int? {
         guard case .available(let count) = tabFeatureState else { return nil }

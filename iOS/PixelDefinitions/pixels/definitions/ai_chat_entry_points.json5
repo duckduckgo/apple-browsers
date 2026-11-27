@@ -9,7 +9,7 @@
             "appVersion",
             {
                 "key": "source",
-                "description": "The entry path into Duck.ai. direct_url: a duck.ai address loaded directly, e.g. typed. deep_link_other: a duck.ai link from another app. app_open: the app opens onto a Duck.ai tab. tab_swipe: swiping onto a Duck.ai tab. voice: older versions only; voice entries now set voice=true.",
+                "description": "The entry path into Duck.ai. direct_url: a duck.ai address loaded directly, e.g. typed. deep_link_other: a duck.ai link from another app. app_open: the app opens onto a Duck.ai tab. tab_swipe: swiping onto a Duck.ai tab. swipe_up_new_chat: pulling up past the bottom of a Duck.ai chat to open a new chat in a new tab. voice: older versions only; voice entries now set voice=true.",
                 "type": "string",
                 "enum": [
                     "address_bar_prompt",
@@ -22,6 +22,7 @@
                     "browsing_menu_webpage",
                     "browsing_menu_duckai",
                     "duck_ai_new_chat",
+                    "swipe_up_new_chat",
                     "tab_switcher",
                     "tabs_bar_button",
                     "new_tab_long_press_menu",
@@ -78,8 +79,21 @@
                 "key": "voice",
                 "description": "Whether the user started by speaking: a voice chat, or voice search sent to Duck.ai. Absent before it existed.",
                 "type": "boolean"
+            },
+            {
+                "key": "was_used_before",
+                "description": "Sent only with source=swipe_up_new_chat: 1 if this install had swiped for a new chat before, else 0.",
+                "type": "integer",
+                "enum": [0, 1]
             }
         ]
+    },
+    "aichat_swipe_new_chat_used_3_days_u": {
+        "description": "Fires once per install when the user swipes up past a Duck.ai chat for a new chat on a third distinct local day. Compare against unique installs sending m_aichat_entry_point with source=swipe_up_new_chat for the habit rate.",
+        "owners": ["aataraxiaa"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
     },
     "m_aichat_duck_ai_direct_navigation": {
         "description": "Fires when the user loads a duck.ai address without using a Duck.ai entry point (via says how), for all users rather than only those who turned Duck.ai off. duckai_enabled=false isolates residual demand among users who disabled it, which is the population the superseded m_aichat_unified_input_duck_ai_direct_navigation reports on; that pixel keeps firing unchanged so its series stays comparable. Does not fire for the in-input Duck.ai shortcut button, other Duck.ai entry points or Duck.ai deep links. Before via existed, only a typed address fired it.",

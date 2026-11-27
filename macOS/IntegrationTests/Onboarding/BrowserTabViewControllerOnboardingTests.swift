@@ -97,7 +97,9 @@ class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
     var userDidSeeToggleOnboarding: Bool = false
     var lastUsedSidebarWidth: Double?
     var hasAcceptedTermsAndConditions: Bool = false
+    var pageSummariesModel: AIChatPageSummariesModel = .duckAI
 
+    let pageSummariesModelPublisher: AnyPublisher<AIChatPageSummariesModel, Never> = Empty().eraseToAnyPublisher()
     let isAIFeaturesEnabledPublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
     let showShortcutOnNewTabPagePublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
     let showShortcutInApplicationMenuPublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
@@ -120,6 +122,7 @@ class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
         userDidSeeToggleOnboarding = false
         lastUsedSidebarWidth = nil
         hasAcceptedTermsAndConditions = false
+        pageSummariesModel = .duckAI
     }
 }
 
@@ -152,7 +155,6 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
     var cancellables: Set<AnyCancellable> = []
     lazy var expectation: XCTestExpectation! = XCTestExpectation(description: "CapturingDialogFactory.makeView called")
     var dialogTypeForTabExpectation: XCTestExpectation!
-    var upsellMetrics: SpyUpsellMetricsReporter!
 
     @MainActor override func setUp() {
         autoreleasepool {
@@ -161,7 +163,6 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
                 FeatureFlag.contextualOnboarding.rawValue: true
             ]
             pixelReporter = CapturingOnboardingPixelReporter()
-            upsellMetrics = SpyUpsellMetricsReporter()
             dialogProvider = MockDialogsProvider()
             factory = CapturingDialogFactory(expectation: expectation)
             schemeHandler = TestSchemeHandler { _ in
@@ -179,7 +180,6 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
                 onboardingPixelReporter: pixelReporter,
                 onboardingDialogTypeProvider: dialogProvider,
                 onboardingDialogFactory: factory,
-                subscriptionUpsellMetrics: upsellMetrics,
                 featureFlagger: featureFlagger,
                 defaultBrowserPreferences: DefaultBrowserPreferences(defaultBrowserProvider: MockDefaultBrowserProvider()),
                 downloadsPreferences: DownloadsPreferences(persistor: MockDownloadsPreferencesPersistor()),
@@ -229,7 +229,6 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
             schemeHandler = nil
             expectation = nil
             pixelReporter = nil
-            upsellMetrics = nil
         }
     }
 
@@ -429,6 +428,20 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
         XCTAssertTrue(delegate.didCallHighlightFireButton)
     }
 
+    func testWhenThatsDuckAIIsShownThenAskDelegateToHighlightFireButton() throws {
+        // GIVEN
+        dialogProvider.dialog = .thatsDuckAI
+        let delegate = BrowserTabViewControllerDelegateSpy()
+        viewController.delegate = delegate
+
+        // WHEN
+        tab.navigateFromOnboarding(to: URL.duckDuckGo)
+
+        // THEN
+        wait(for: [expectation], timeout: 3.0)
+        XCTAssertTrue(delegate.didCallHighlightFireButton)
+    }
+
     func testWhenNavigationCompletedAndStateIsShowBlockedTrackersThenAskDelegateToHighlightPrivacyShield() throws {
         // GIVEN
         dialogProvider.dialog = .trackers(message: .init(string: ""), shouldFollowUp: true)
@@ -542,8 +555,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenNonBlockingIsDisabledThenDismissingUpsellClearsLastDialog() {
-        featureFlagger.resolveCohortStub = FeatureFlag.OnboardingNonBlockingCohort.control
+    func testWhenDismissingUpsellThenLastDialogIsCleared() {
         presentDialog(.subscriptionUpsell)
         let presentationsBefore = factory.makeViewCallCount
 
@@ -556,30 +568,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenUpsellXCompletesFirstThenNonBlockingDismissalStillRuns() {
-        featureFlagger.resolveCohortStub = FeatureFlag.OnboardingNonBlockingCohort.treatment
-        dialogProvider.state = .ongoing
-        dialogProvider.isContextualOnboardingCompleted = false
-        presentDialog(.subscriptionUpsell)
-
-        factory.performOnGotItPressed()
-        dialogProvider.state = .onboardingCompleted
-        dialogProvider.isContextualOnboardingCompleted = true
-        let turnedOff = self.expectation(description: "X turns off contextual onboarding even after completion")
-        turnedOff.expectedFulfillmentCount = 2
-        dialogProvider.turnOffFeatureCalledExpectation = turnedOff
-
-        factory.performOnManualDismiss()
-        factory.performOnManualDismiss()
-
-        wait(for: [turnedOff], timeout: 1)
-        XCTAssertEqual(pixelReporter.gotItPressedDialog, .subscriptionUpsell)
-        XCTAssertEqual(pixelReporter.manuallyDismissedDialog, .subscriptionUpsell)
-        XCTAssertEqual(pixelReporter.dismissedDialog, .subscriptionUpsell)
-    }
-
-    @MainActor
-    func testWhenUpsellCTACompletesBeforeNavigationThenDismissalIsNotReported() throws {
+    func testWhenUpsellCTACompletesBeforeNavigationThenItIsNotPresentedAgain() throws {
         presentDialog(.subscriptionUpsell)
         let presentationsBefore = factory.makeViewCallCount
 
@@ -587,36 +576,6 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
         factory.performOnDismiss()
 
         XCTAssertEqual(factory.makeViewCallCount, presentationsBefore)
-        XCTAssertTrue(upsellMetrics.reported.isEmpty)
-    }
-
-    @MainActor
-    func testWhenNavigationRemovesAVisibleUpsellThenDismissalIsReported() throws {
-        presentDialog(.subscriptionUpsell)
-        let destination = try XCTUnwrap(URL(string: "https://example.com"))
-
-        dialogProvider.dialog = nil
-        let expectation = self.expectation(description: "dialogTypeForTab")
-        dialogProvider.dialogTypeForTabExpectation = expectation
-        tab.navigateFromOnboarding(to: destination)
-        wait(for: [expectation], timeout: 5.0)
-
-        XCTAssertEqual(upsellMetrics.reported, [.upsellDismissed])
-        XCTAssertNil(dialogProvider.lastDialog)
-    }
-
-    @MainActor
-    func testWhenAnEarlierDialogIsRemovedByNavigationThenNoDismissalIsReported() throws {
-        presentDialog(.tryFireButton)
-        let destination = try XCTUnwrap(URL(string: "https://example.com"))
-
-        dialogProvider.dialog = nil
-        let expectation = self.expectation(description: "dialogTypeForTab")
-        dialogProvider.dialogTypeForTabExpectation = expectation
-        tab.navigateFromOnboarding(to: destination)
-        wait(for: [expectation], timeout: 5.0)
-
-        XCTAssertTrue(upsellMetrics.reported.isEmpty)
     }
 
     @MainActor
@@ -741,7 +700,7 @@ class MockDialogsProvider: ContextualOnboardingDialogTypeProviding, ContextualOn
 
     var dialog: ContextualDialogType?
 
-    func dialogTypeForTab(_ tab: Tab, privacyInfo: PrivacyInfo?) -> ContextualDialogType? {
+    func dialogTypeForTab(_ tab: Tab) -> ContextualDialogType? {
         dialogTypeForTabExpectation?.fulfill()
         lastDialog = dialog
         return dialog
@@ -761,6 +720,8 @@ class MockDialogsProvider: ContextualOnboardingDialogTypeProviding, ContextualOn
             break
         }
     }
+
+    var isWaitingForDuckAIChatDeletion = false
 
     func fireButtonUsed() {}
 
@@ -904,6 +865,12 @@ private class CapturingOnboardingPixelReporter: OnboardingPixelReporting {
     func measureGotItPressed(dialogType: ContextualDialogType) {
         gotItPressedDialog = dialogType
     }
+
+    func measureSubscriptionUpsellAccepted() {
+    }
+
+    func measureSubscriptionUpsellDeclined() {
+    }
 }
  private class DockCustomizerMock: DockCustomization {
 
@@ -923,11 +890,3 @@ private class CapturingOnboardingPixelReporter: OnboardingPixelReporting {
 
      func resetData() { }
  }
-
-final class SpyUpsellMetricsReporter: OnboardingSubscriptionUpsellMetricsReporting {
-    var reported: [OnboardingSubscriptionUpsellMetric] = []
-
-    func report(_ metric: OnboardingSubscriptionUpsellMetric) {
-        reported.append(metric)
-    }
-}

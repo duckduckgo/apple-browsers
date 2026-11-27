@@ -62,7 +62,8 @@ public final class DBPUIUserScript: UserScriptsProvider {
          delegate: DBPUICommunicationDelegate,
          handshakeDelegate: DBPUIHandshakeDelegate,
          webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
-         vpnBypassService: VPNBypassServiceProvider?) throws {
+         vpnBypassService: VPNBypassServiceProvider?,
+         dbpSettings: DataBrokerProtectionSettings) throws {
         self.webUISettings = webUISettings
         contentScopeUserScriptIsolated = try ContentScopeUserScript(privacyConfig,
                                                                     properties: prefs,
@@ -73,7 +74,9 @@ public final class DBPUIUserScript: UserScriptsProvider {
         dbpUICommunicationLayer = DBPUICommunicationLayer(webURLSettings: webUISettings,
                                                           handshakeDelegate: handshakeDelegate,
                                                           vpnBypassService: vpnBypassService,
-                                                          privacyConfig: privacyConfig)
+                                                          privacyConfig: privacyConfig,
+                                                          keyRevocationChecker: BrokerBundleKeyRevocationChecker(privacyConfigurationManager: privacyConfig,
+                                                                                                                 settings: dbpSettings))
         dbpUICommunicationLayer.delegate = delegate
         dbpUICommunicationLayer.broker = contentScopeUserScriptIsolated.broker
         contentScopeUserScriptIsolated.registerSubfeature(delegate: dbpUICommunicationLayer)
@@ -105,14 +108,16 @@ extension WKWebViewConfiguration {
                                         delegate: DBPUICommunicationDelegate,
                                         handshakeDelegate: DBPUIHandshakeDelegate,
                                         webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
-                                        vpnBypassService: VPNBypassServiceProvider?) throws {
+                                        vpnBypassService: VPNBypassServiceProvider?,
+                                        dbpSettings: DataBrokerProtectionSettings) throws {
         preferences.isFraudulentWebsiteWarningEnabled = false
         let dBPUIUserScript = try DBPUIUserScript(privacyConfig: privacyConfig,
                                                   prefs: prefs,
                                                   delegate: delegate,
                                                   handshakeDelegate: handshakeDelegate,
                                                   webUISettings: webUISettings,
-                                                  vpnBypassService: vpnBypassService)
+                                                  vpnBypassService: vpnBypassService,
+                                                  dbpSettings: dbpSettings)
         self.userContentController = DBPUIUserContentController(dbpUIUserScript: dBPUIUserScript)
      }
 }

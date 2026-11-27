@@ -19,16 +19,13 @@
 import AppKit
 import AppUpdaterShared
 import Combine
-import FeatureFlags_macOS
 import PixelKit
-import PrivacyConfig
 
 /// Presents the "Browser updated" popover through the promo queue.
 final class BrowserUpdatedPromoDelegate: InternalPromoDelegate, UpdateNotificationPromoDismissing {
 
     private let bridge: UpdateNotificationPromoBridge
     private let windowControllersManager: WindowControllersManagerProtocol
-    private let featureFlagger: FeatureFlagger
     private let pixelFiring: PixelFiring?
 
     private var resultContinuation: CheckedContinuation<PromoResult, Never>?
@@ -36,22 +33,18 @@ final class BrowserUpdatedPromoDelegate: InternalPromoDelegate, UpdateNotificati
 
     init(bridge: UpdateNotificationPromoBridge,
          windowControllersManager: WindowControllersManagerProtocol,
-         featureFlagger: FeatureFlagger,
          pixelFiring: PixelFiring? = PixelKit.shared) {
         self.bridge = bridge
         self.windowControllersManager = windowControllersManager
-        self.featureFlagger = featureFlagger
         self.pixelFiring = pixelFiring
     }
 
     var isEligible: Bool {
-        featureFlagger.isFeatureOn(.promoQueueBrowserUpdatedPromo) && bridge.pendingApplicationUpdateStatus != .noChange
+        bridge.pendingApplicationUpdateStatus != .noChange
     }
 
     var isEligiblePublisher: AnyPublisher<Bool, Never> {
-        featureFlagger.updatesPublisher
-            .map { _ in () }
-            .merge(with: bridge.pendingApplicationUpdateStatusPublisher.map { _ in () })
+        bridge.pendingApplicationUpdateStatusPublisher
             .map { [weak self] _ in self?.isEligible ?? false }
             .prepend(isEligible)
             .removeDuplicates()

@@ -18,8 +18,42 @@
 //
 
 import Combine
+import Core
+import Foundation
+import Persistence
 
-/// In-memory expansion state shared by a tab's resting and focused favorites views.
+/// Persists whether the user last chose to see all favorites.
+protocol FavoritesExpansionStoring: AnyObject {
+    var isExpanded: Bool { get set }
+}
+
+final class FavoritesExpansionStore: FavoritesExpansionStoring {
+    private let keyValueStore: KeyValueStoring
+    private let storageKey = "com_duckduckgo_ios_newTabPage_favorites_isExpanded"
+
+    init(keyValueStore: KeyValueStoring = UserDefaults.app) {
+        self.keyValueStore = keyValueStore
+    }
+
+    var isExpanded: Bool {
+        get { keyValueStore.object(forKey: storageKey) as? Bool ?? false }
+        set { keyValueStore.set(newValue, forKey: storageKey) }
+    }
+}
+
+/// Expansion state shared by a tab's resting and focused favorites views.
 final class FavoritesExpansionState: ObservableObject {
-    @Published var isExpanded = false
+    @Published var isExpanded: Bool {
+        didSet {
+            guard isExpanded != oldValue else { return }
+            store?.isExpanded = isExpanded
+        }
+    }
+
+    private let store: FavoritesExpansionStoring?
+
+    init(store: FavoritesExpansionStoring? = nil) {
+        self.store = store
+        isExpanded = store?.isExpanded ?? false
+    }
 }

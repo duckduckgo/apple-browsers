@@ -103,11 +103,6 @@ enum UserDefaultsKeys: String, StorageKeyDescribing {
 
     case dataImportForceMacOS27PermissionsFix = "macos27-force-import-permissions-fix"
 
-    // MARK: - More Prominent Updates Debug
-
-    case moreProminentUpdatesDebugMenuPrompt = "more-prominent-updates-debug-menu-prompt"
-    case moreProminentUpdatesDebugShowsAddressBarButton = "more-prominent-updates-debug-shows-address-bar-button"
-
     // MARK: - Promo Queue Legacy Flags
 
     case syncDidPresentFaviconsFetcherOnboarding = "sync.did-present-favicons-fetcher-onboarding"
@@ -118,6 +113,12 @@ enum UserDefaultsKeys: String, StorageKeyDescribing {
     case bookmarksBarSyncPromoFirstPresentedDate = "com.duckduckgo.bookmarkFirstPresentedCount"
     case bookmarkAddedSyncPromoDismissed = "com.duckduckgo.bookmarkAddedSyncPromoDismissed"
     case bookmarkAddedSyncPromoPresentedCount = "com.duckduckgo.bookmarkAddedSyncPromoPresentedCount"
+
+    // MARK: - Contextual Onboarding
+
+    case contextualOnboardingPathKind = "contextual-onboarding_path-kind"
+    case contextualOnboardingDuckAIPrompt = "contextual-onboarding_duck-ai-prompt"
+    case contextualOnboardingBlockedTrackers = "contextual-onboarding_blocked-trackers"
 }
 
 // MARK: - StorageKey Extensions

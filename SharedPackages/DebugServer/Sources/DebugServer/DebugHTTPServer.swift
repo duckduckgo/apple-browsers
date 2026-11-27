@@ -31,17 +31,34 @@ import os
 /// }
 /// try server.start()
 /// ```
-public final class DebugHTTPServer: HTTPServerProtocol {
+/// The listener queue owns connections and listener state. The lock protects the
+/// routes, published state, and callback that callers can access from any thread.
+public final class DebugHTTPServer: HTTPServerProtocol, @unchecked Sendable {
 
     // MARK: - Properties
 
-    public private(set) var state: ServerState = .stopped {
-        didSet { stateDidChange?(state) }
+    private let lock = NSLock()
+    private var publishedState: ServerState = .stopped
+    private var stateHandler: (@Sendable (ServerState) -> Void)?
+
+    public private(set) var state: ServerState {
+        get { lock.withLock { publishedState } }
+        set {
+            let handler = lock.withLock {
+                publishedState = newValue
+                return stateHandler
+            }
+            handler?(newValue)
+        }
     }
 
-    public var stateDidChange: (@Sendable (ServerState) -> Void)?
+    public var stateDidChange: (@Sendable (ServerState) -> Void)? {
+        get { lock.withLock { stateHandler } }
+        set { lock.withLock { stateHandler = newValue } }
+    }
 
     private let port: UInt16
+    private let loopbackOnly: Bool
     private let queue: DispatchQueue
     private var listener: NWListener?
     private var activeConnections: [NWConnection] = []
@@ -56,9 +73,14 @@ public final class DebugHTTPServer: HTTPServerProtocol {
 
     /// Creates a new debug server.
     ///
-    /// - Parameter port: The TCP port to listen on. Defaults to `8473`.
-    public init(port: UInt16 = 8473) {
+    /// - Parameters:
+    ///   - port: The TCP port to listen on. Defaults to `8473`.
+    ///   - loopbackOnly: When `true`, the listener binds to `127.0.0.1` only, so the server is
+    ///     unreachable from the LAN. Defaults to `false`, preserving the original all-interfaces
+    ///     behavior for existing callers.
+    public init(port: UInt16 = 8473, loopbackOnly: Bool = false) {
         self.port = port
+        self.loopbackOnly = loopbackOnly
         self.queue = DispatchQueue(label: "com.debugserver.listener", qos: .userInitiated)
     }
 
@@ -73,7 +95,15 @@ public final class DebugHTTPServer: HTTPServerProtocol {
 
             let parameters = NWParameters.tcp
             let nwPort = NWEndpoint.Port(rawValue: port)!
-            let listener = try NWListener(using: parameters, on: nwPort)
+
+            let listener: NWListener
+            if loopbackOnly {
+                // Bind to the loopback address so the server is unreachable from other interfaces.
+                parameters.requiredLocalEndpoint = NWEndpoint.hostPort(host: .ipv4(.loopback), port: nwPort)
+                listener = try NWListener(using: parameters)
+            } else {
+                listener = try NWListener(using: parameters, on: nwPort)
+            }
 
             listener.stateUpdateHandler = { [weak self] listenerState in
                 self?.handleListenerStateChange(listenerState)
@@ -113,12 +143,12 @@ public final class DebugHTTPServer: HTTPServerProtocol {
 
     public func addRoute(_ path: String, method: HTTPMethod, handler: @escaping RouteHandler) {
         let key = RouteKey(method: method, path: path)
-        routes[key] = handler
+        lock.withLock { routes[key] = handler }
     }
 
     public func addPrefixRoute(_ pathPrefix: String, method: HTTPMethod, handler: @escaping RouteHandler) {
         let key = RouteKey(method: method, path: pathPrefix)
-        prefixRoutes[key] = handler
+        lock.withLock { prefixRoutes[key] = handler }
     }
 
     public func addStaticRoute(_ path: String, htmlString: String) {
@@ -132,8 +162,9 @@ public final class DebugHTTPServer: HTTPServerProtocol {
     private func handleListenerStateChange(_ listenerState: NWListener.State) {
         switch listenerState {
         case .ready:
-            state = .running(port: port)
-            logger.info("DebugServer listening on port \(self.port)")
+            guard let listeningPort = listener?.port?.rawValue else { return }
+            state = .running(port: listeningPort)
+            logger.info("DebugServer listening on port \(listeningPort)")
         case .failed(let error):
             state = .failed(error.localizedDescription)
             logger.error("DebugServer failed: \(error.localizedDescription)")
@@ -227,13 +258,11 @@ public final class DebugHTTPServer: HTTPServerProtocol {
     private func processRequest(_ data: Data) -> HTTPResponse {
         do {
             let request = try parser.parse(data)
+
             let key = RouteKey(method: request.method, path: request.path)
 
-            if let handler = routes[key] {
-                return try handler(request)
-            }
-
-            if let handler = findPrefixHandler(for: request) {
+            let handler = lock.withLock { routes[key] ?? findPrefixHandler(for: request) }
+            if let handler {
                 return try handler(request)
             }
 

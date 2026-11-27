@@ -93,9 +93,9 @@ class BookmarkStateRepairTests: XCTestCase {
                 return
             }
 
-            let bookmarkA = BookmarkEntity.makeBookmark(title: "A", url: "A", parent: root, context: context)
-            let bookmarkB = BookmarkEntity.makeBookmark(title: "B", url: "B", parent: root, context: context)
-            let bookmarkC = BookmarkEntity.makeBookmark(title: "C", url: "C", parent: root, context: context)
+            _ = BookmarkEntity.makeBookmark(title: "A", url: "A", parent: root, context: context)
+            _ = BookmarkEntity.makeBookmark(title: "B", url: "B", parent: root, context: context)
+            _ = BookmarkEntity.makeBookmark(title: "C", url: "C", parent: root, context: context)
         }
     }
 
@@ -108,7 +108,7 @@ class BookmarkStateRepairTests: XCTestCase {
 
             let bookmarkA = BookmarkEntity.makeBookmark(title: "A", url: "A", parent: root, context: context)
             let bookmarkB = BookmarkEntity.makeBookmark(title: "B", url: "B", parent: root, context: context)
-            let bookmarkC = BookmarkEntity.makeBookmark(title: "C", url: "C", parent: root, context: context)
+            _ = BookmarkEntity.makeBookmark(title: "C", url: "C", parent: root, context: context)
 
             bookmarkA.setValue(nil, forKey: #keyPath(BookmarkEntity.isPendingDeletion))
             bookmarkB.setValue(nil, forKey: #keyPath(BookmarkEntity.isPendingDeletion))

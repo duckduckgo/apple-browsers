@@ -21,6 +21,13 @@ import WebKit
 
 @available(macOS 15.4, *)
 @MainActor
+extension Tab: CPMMonitoredTab {
+    /// The identifier `PrivacyDashboardTabExtension` reports navigations to the health monitor with.
+    var cpmTabIdentifier: String { uuid }
+}
+
+@available(macOS 15.4, *)
+@MainActor
 extension Tab: WKWebExtensionTab {
 
     enum WebExtensionTabError: Error {
@@ -158,7 +165,7 @@ extension Tab: WKWebExtensionTab {
     }
 
     func loadURL(_ url: URL, for context: WKWebExtensionContext) async throws {
-        setContent(.url(url, credential: nil, source: .ui))
+        setContent(.contentFromURL(url, source: .ui))
     }
 
     func reload(fromOrigin: Bool, for context: WKWebExtensionContext) async throws {

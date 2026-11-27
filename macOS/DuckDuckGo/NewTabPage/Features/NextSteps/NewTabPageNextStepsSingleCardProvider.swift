@@ -47,7 +47,6 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
     private let legacySubscriptionCardPersistor: HomePageSubscriptionCardPersisting
     private let appearancePreferences: AppearancePreferences
     private let featureFlagger: FeatureFlagger
-    private let didSkipOnboarding: () -> Bool
 
     private let defaultBrowserProvider: DefaultBrowserProvider
     private let dockCustomizer: DockCustomization
@@ -57,7 +56,6 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
     private let subscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging
     private let syncService: DDGSyncing?
     private let adBlockingAvailability: AdBlockingAvailabilityProviding
-    private let isAppStoreBuild: Bool
 
     private let scheduler: AnySchedulerOf<DispatchQueue>
 
@@ -168,10 +166,7 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
          subscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging,
          syncService: DDGSyncing?,
          adBlockingAvailability: AdBlockingAvailabilityProviding,
-         applicationBuildType: ApplicationBuildType = StandardApplicationBuildType(),
-         scheduler: AnySchedulerOf<DispatchQueue> = DispatchQueue.main.eraseToAnyScheduler(),
-         didSkipOnboarding: @escaping () -> Bool = { NonBlockingOnboardingPersistor().outcome == .skipped }) {
-        self.didSkipOnboarding = didSkipOnboarding
+         scheduler: AnySchedulerOf<DispatchQueue> = DispatchQueue.main.eraseToAnyScheduler()) {
         self.cardActionHandler = cardActionHandler
         self.pixelHandler = pixelHandler
         self.persistor = persistor
@@ -187,17 +182,8 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
         self.subscriptionCardVisibilityManager = subscriptionCardVisibilityManager
         self.syncService = syncService
         self.adBlockingAvailability = adBlockingAvailability
-        self.isAppStoreBuild = applicationBuildType.isAppStoreBuild
         self.scheduler = scheduler
 
-        NotificationCenter.default.publisher(for: NonBlockingOnboardingPersistor.outcomeDidChange)
-            .receive(on: scheduler)
-            .sink { [weak self] _ in
-                // Only the non-blocking onboarding experiment records an outcome worth refreshing for.
-                guard let self, NonBlockingOnboarding(featureFlagger: self.featureFlagger).isNonBlocking else { return }
-                self.refreshCardList()
-            }
-            .store(in: &cancellables)
         observeCardVisibilityChanges()
         observeKeyWindowChanges()
         observeNewTabPageWebViewDidAppear()
@@ -270,14 +256,6 @@ private extension NewTabPageNextStepsSingleCardProvider {
         }
     }
 
-    func prioritizingOnboardingCards(in cards: [NewTabPageDataModel.CardID]) -> [NewTabPageDataModel.CardID] {
-        guard !OnboardingActionsManager.isOnboardingFinished || didSkipOnboarding() else { return cards }
-        let priority: [NewTabPageDataModel.CardID] = [.defaultApp, .addAppToDockMac].filter {
-            shouldShowCard($0) && persistor.timesShown(for: $0) < Constants.maxTimesCardShown
-        }
-        return priority + cards.filter { !priority.contains($0) }
-    }
-
     /// Refreshes the persisted visible stack for a New Tab Page appear.
     /// Applies level swap, rotation, and day-boundary rules to reduce card blindness and overwhelm.
     /// Reconciles stored order and `dailyVisibleStack` with current eligibility, then writes
@@ -286,10 +264,6 @@ private extension NewTabPageNextStepsSingleCardProvider {
         let currentDayIdentifier = appearancePreferences.nextStepsCardsDemonstrationDays
         var resolvedOrder = persistor.orderedCardIDs ?? defaultAdvancedCards.map(\.cardID)
         let didLevelSwap = applyLevelSwapIfNeeded(to: &resolvedOrder)
-        let isNonBlocking = NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking
-        if isNonBlocking {
-            resolvedOrder = prioritizingOnboardingCards(in: resolvedOrder)
-        }
 
         let isNewDay = persistor.visibleStackDayIdentifier != currentDayIdentifier
         var visibleStack: [NewTabPageDataModel.CardID]
@@ -301,15 +275,6 @@ private extension NewTabPageNextStepsSingleCardProvider {
         }
 
         applyRotationIfNeeded(to: &visibleStack, orderedCardIDs: &resolvedOrder)
-
-        // Rotate the existing top card before promoting setup cards that still need exposure.
-        if isNonBlocking {
-            let prioritizedStack = Array(prioritizingOnboardingCards(in: visibleStack).prefix(Constants.maxVisibleCards))
-            if prioritizedStack != visibleStack {
-                visibleStack = prioritizedStack
-                resolvedOrder = visibleStack + resolvedOrder.filter { !visibleStack.contains($0) }
-            }
-        }
 
         persistor.dailyVisibleStack = visibleStack
         if isNewDay {
@@ -428,7 +393,7 @@ private extension NewTabPageNextStepsSingleCardProvider {
         case .bringStuff:
             return !dataImportProvider.didImport
         case .addAppToDockMac:
-            return !isAppStoreBuild && !dockCustomizer.isAddedToDock
+            return (dockCustomizer.supportsAddingToDock || featureFlagger.isFeatureOn(.appStoreAddToDockOnlyCTA)) && !dockCustomizer.isAddedToDock
         case .duckplayer:
             return false
         case .emailProtection:

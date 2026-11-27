@@ -444,7 +444,7 @@ private extension ModalPromptCoordinationManager {
             promptExposureReporter.reportPromptShown(exposureID)
         }
         if coordinated {
-            promptExposureReporter.recordCoordinatedPromptFinished(.modal)
+            promptExposureReporter.recordCoordinatedPromptShown(.modal)
         }
     }
 

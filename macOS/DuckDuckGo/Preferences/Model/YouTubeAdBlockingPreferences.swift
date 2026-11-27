@@ -102,6 +102,30 @@ final class YouTubeAdBlockingPreferences: ObservableObject {
 
     var duckPlayerPreferences: DuckPlayerPreferences
 
+    // MARK: - YouTube Sponsor Skipping (internal MVP)
+
+    private let segmentSkipPreferences: SegmentSkipPreferences
+
+    var isSegmentSkipAvailable: Bool {
+        featureFlagger?.isFeatureOn(.segmentSkip) ?? false
+    }
+
+    var segmentSkipEnabled: Bool {
+        get { segmentSkipPreferences.isEnabled }
+        set {
+            objectWillChange.send()
+            segmentSkipPreferences.isEnabled = newValue
+        }
+    }
+
+    var segmentSkipMode: SegmentSkipMode {
+        get { segmentSkipPreferences.skipMode }
+        set {
+            objectWillChange.send()
+            segmentSkipPreferences.skipMode = newValue
+        }
+    }
+
     var duckPlayerMode: DuckPlayerMode {
         get { duckPlayerPreferences.duckPlayerMode }
         set { duckPlayerPreferences.duckPlayerMode = newValue }
@@ -162,13 +186,15 @@ final class YouTubeAdBlockingPreferences: ObservableObject {
          duckPlayerPreferences: DuckPlayerPreferences? = nil,
          pixelFiring: PixelFiring? = nil,
          adBlockingAvailability: AdBlockingAvailabilityProviding? = nil,
-         featureFlagger: FeatureFlagger? = Application.appDelegate.featureFlagger) {
+         featureFlagger: FeatureFlagger? = Application.appDelegate.featureFlagger,
+         segmentSkipPreferences: SegmentSkipPreferences = Application.appDelegate.segmentSkipPreferences) {
         let resolvedSettings: any KeyedStoring<YouTubeAdBlockingSettings> = if let settings { settings } else { UserDefaults.standard.keyedStoring() }
         self.settings = resolvedSettings
         self.duckPlayerPreferences = duckPlayerPreferences ?? DuckPlayerPreferences()
         self.pixelFiring = pixelFiring
         self.adBlockingAvailability = adBlockingAvailability
         self.featureFlagger = featureFlagger
+        self.segmentSkipPreferences = segmentSkipPreferences
         youTubeAdBlockingEnabled = resolvedSettings.youTubeAdBlockingEnabled
             ?? adBlockingAvailability?.defaultYouTubeAdBlockingEnabled
             ?? false

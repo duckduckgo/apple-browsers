@@ -73,7 +73,7 @@ final class SearchSuggestionsSourceTests: XCTestCase {
     func test_settingsChangesUpdateExistingSourceWithoutNewQueryOrResults() async {
         let notifications = NotificationCenter()
         let settings = MockAIChatSettingsProvider(isAIChatEnabled: true)
-        let loader = SearchSuggestionsLoader(dataSource: EmptySuggestionLoadingDataSource(), useUnifiedURLPrediction: false)
+        let loader = SearchSuggestionsLoader(dataSource: EmptySuggestionLoadingDataSource(), useUnifiedURLPrediction: false, featureFlagger: MockFeatureFlagger())
         let source = SearchSuggestionsSource(loader: loader, query: { "weather" }, aiChatSettings: settings, notificationCenter: notifications)
         var emissions = [[SuggestionSection]]()
         let subscription = source.sectionsPublisher.sink { emissions.append($0) }
@@ -101,7 +101,7 @@ final class SearchSuggestionsSourceTests: XCTestCase {
     func test_sourceCreatedWhileAIChatIsDisabledAddsRowWhenEnabled() async {
         let notifications = NotificationCenter()
         let settings = MockAIChatSettingsProvider(isAIChatEnabled: false)
-        let loader = SearchSuggestionsLoader(dataSource: EmptySuggestionLoadingDataSource(), useUnifiedURLPrediction: false)
+        let loader = SearchSuggestionsLoader(dataSource: EmptySuggestionLoadingDataSource(), useUnifiedURLPrediction: false, featureFlagger: MockFeatureFlagger())
         let source = SearchSuggestionsSource(loader: loader, query: { "weather" }, aiChatSettings: settings, notificationCenter: notifications)
         var sections = [SuggestionSection]()
         let subscription = source.sectionsPublisher.sink { sections = $0 }
@@ -119,7 +119,7 @@ final class SearchSuggestionsSourceTests: XCTestCase {
 
     func test_disablingAIChatRejectsStaleRowBeforeSettingsNotification() throws {
         let settings = MockAIChatSettingsProvider(isAIChatEnabled: true)
-        let loader = SearchSuggestionsLoader(dataSource: EmptySuggestionLoadingDataSource(), useUnifiedURLPrediction: false)
+        let loader = SearchSuggestionsLoader(dataSource: EmptySuggestionLoadingDataSource(), useUnifiedURLPrediction: false, featureFlagger: MockFeatureFlagger())
         let source = SearchSuggestionsSource(loader: loader, query: { "weather" }, aiChatSettings: settings, notificationCenter: NotificationCenter())
         var sections = [SuggestionSection]()
         let subscription = source.sectionsPublisher.sink { sections = $0 }
@@ -138,7 +138,7 @@ final class SearchSuggestionsSourceTests: XCTestCase {
         let notifications = NotificationCenter()
         let settings = MockAIChatSettingsProvider(isAIChatEnabled: true)
         let dataSource = DelayedSearchSuggestionLoadingDataSource()
-        let loader = SearchSuggestionsLoader(dataSource: dataSource, useUnifiedURLPrediction: false)
+        let loader = SearchSuggestionsLoader(dataSource: dataSource, useUnifiedURLPrediction: false, featureFlagger: MockFeatureFlagger())
         let source = SearchSuggestionsSource(loader: loader, query: { "weather" }, aiChatSettings: settings, notificationCenter: notifications)
         var sections = [SuggestionSection]()
         let subscription = source.sectionsPublisher.sink { sections = $0 }

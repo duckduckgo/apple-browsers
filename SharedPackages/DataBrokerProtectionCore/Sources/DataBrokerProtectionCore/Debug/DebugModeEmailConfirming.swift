@@ -35,11 +35,8 @@ public struct DebugScanResult: Identifiable, Sendable {
     }
 }
 
-public protocol DebugModeEmailConfirming {
+public protocol DebugModeEmailConfirmationLookup {
     var emailConfirmationStore: EmailConfirmationSupporting { get }
-
-    func checkForEmailConfirmation()
-    func continueOptOutAfterEmailConfirmation(scanResult: DebugScanResult)
 
     func canCheckEmailConfirmation(for scanResult: DebugScanResult) -> Bool
     func canContinueOptOutAfterEmailConfirmation(for scanResult: DebugScanResult) -> Bool
@@ -47,7 +44,12 @@ public protocol DebugModeEmailConfirming {
     func confirmationURL(for scanResult: DebugScanResult) -> URL?
 }
 
-public extension DebugModeEmailConfirming {
+public protocol DebugModeEmailConfirming: DebugModeEmailConfirmationLookup {
+    func checkForEmailConfirmation()
+    func continueOptOutAfterEmailConfirmation(scanResult: DebugScanResult)
+}
+
+public extension DebugModeEmailConfirmationLookup {
     func canCheckEmailConfirmation(for scanResult: DebugScanResult) -> Bool {
         guard scanResult.dataBroker.requiresEmailConfirmationDuringOptOut() else { return false }
         return isAwaitingEmailConfirmation(for: scanResult)

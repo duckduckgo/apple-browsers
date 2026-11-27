@@ -102,6 +102,22 @@
                </EnvironmentBuildable>
             </ActionContent>
          </ExecutionAction>
+         <ExecutionAction
+            ActionType = "Xcode.IDEStandardExecutionActionsCore.ExecutionActionType.ShellScriptAction">
+            <ActionContent
+               title = "Copy WebExtensions resource bundle into the framework"
+               scriptText = "# Xcode builds WebExtensions as a framework without its resource bundle.&#10;# The WebExtensions package tests run under xctest and look for the bundle in the framework.&#10;FRAMEWORK=&quot;${BUILT_PRODUCTS_DIR}/PackageFrameworks/WebExtensions.framework&quot;&#10;BUNDLE=&quot;${BUILT_PRODUCTS_DIR}/WebExtensions_WebExtensions.bundle&quot;&#10;if [ -d &quot;${FRAMEWORK}&quot; ] &amp;&amp; [ -d &quot;${BUNDLE}&quot; ]; then&#10;    cp -R &quot;${BUNDLE}&quot; &quot;${FRAMEWORK}/Resources/&quot;&#10;fi&#10;">
+               <EnvironmentBuildable>
+                  <BuildableReference
+                     BuildableIdentifier = "primary"
+                     BlueprintIdentifier = "4B1AD89C25FC27E200261379"
+                     BuildableName = "Integration Tests.xctest"
+                     BlueprintName = "Integration Tests"
+                     ReferencedContainer = "container:DuckDuckGo-macOS.xcodeproj">
+                  </BuildableReference>
+               </EnvironmentBuildable>
+            </ActionContent>
+         </ExecutionAction>
       </PreActions>
       <PostActions>
          <ExecutionAction
@@ -446,7 +462,7 @@
          </EnvironmentVariable>
          <EnvironmentVariable
             key = "SKIP_SNAPSHOT_TESTS"
-            value = "1"
+            value = "0"
             isEnabled = "YES">
          </EnvironmentVariable>
       </EnvironmentVariables>

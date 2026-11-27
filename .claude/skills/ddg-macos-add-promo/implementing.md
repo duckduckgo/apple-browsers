@@ -113,7 +113,7 @@ Use `MockFeatureFlagger` and `KeyedStorage(storage: InMemoryKeyValueStore())`, s
 
 ## F. Project and verification
 
-1. **pbxproj**: each new file needs a `PBXFileReference`, a group entry, and a `PBXBuildFile` + Sources entry in **both** "DuckDuckGo Privacy Browser" and "DuckDuckGo Privacy Browser App Store" (mirror `AutoplayDiscoverabilityPromoDelegate.swift`). A missing file causes "cannot find type" errors elsewhere. `grep -c "<File>.swift" macOS/DuckDuckGo-macOS.xcodeproj/project.pbxproj` should be at least 4; the pbxproj diff should contain only your additions.
+1. **Project file**: none. `macOS/DuckDuckGo/` and `macOS/UnitTests/` are buildable folders, so new files on disk build into both app targets (or both unit test targets) on their own. `project.pbxproj` should have no diff; an entry for your file there compiles it twice.
 2. **Build and test**: `xcodebuild -project macOS/DuckDuckGo-macOS.xcodeproj -scheme "macOS Browser" build 2>&1 | tail -20`, then the promo tests.
 3. **See it on screen** via the debug menu (`PromoDebugMenu`): per-promo **Force Show**, **Undismiss**, **Undismiss + Clear History**; **Fire Test Trigger**; **Advance Simulated Date** (which also expires active timeouts); **Reset All Promo State**. Force Show runs a real session — timeout, retraction and `hide()` behave as in production — but writes no history and passes `force: true`, so it bypasses `.retired`. If nothing shows, check the kill switch first.
 4. **Self-review**: walk your diff through [reviewing.md](reviewing.md) as if it were someone else's PR. Every decision in the diff must trace to an answer in the decision sheet — one you noted yourself and proceeded past doesn't count.

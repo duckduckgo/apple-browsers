@@ -18,19 +18,45 @@
 //
 
 import UIKit
+import Core
+import PixelKit
+import SyncUI_iOS
 
 extension SyncSettingsViewController {
     
-    func shareLink(for url: URL, with message: String, from rect: CGRect) {
+    func shareLink(for url: URL, with message: String, from sourceView: UIView) {
+        PlatformLinksActions(presenter: self, pixelFiring: pixelFiring).shareLinkPressed(for: url, with: message, from: sourceView)
+    }
+}
+
+struct PlatformLinksActions: PlatformLinksHandling {
+
+    weak var presenter: UIViewController?
+    let pixelFiring: (any PixelKitFiring)?
+
+    func shareLinkPressed(for url: URL, with message: String, from sourceView: UIView) {
         let itemSource = ShareItemSource(url: url, message: message)
         let activityViewController = UIActivityViewController(activityItems: [itemSource], applicationActivities: nil)
 
         if UIDevice.current.userInterfaceIdiom == .pad {
-            activityViewController.popoverPresentationController?.sourceView = UIApplication.shared.firstKeyWindow
-            activityViewController.popoverPresentationController?.sourceRect = rect
+            activityViewController.popoverPresentationController?.sourceView = sourceView
+            activityViewController.popoverPresentationController?.sourceRect = sourceView.bounds
         }
 
-        present(activityViewController, animated: true, completion: nil)
+        presenter?.present(activityViewController, animated: true, completion: nil)
+    }
+
+    func fireOtherPlatformLinksPixel(for event: SyncSettingsViewModel.PlatformLinksPixelEvent, source: SyncSettingsViewModel.PlatformLinksPixelSource) {
+        let params = ["source": source.rawValue]
+
+        switch event {
+        case .appear:
+            pixelFiring?.fire(Pixel.Event.syncGetOtherDevices, options: .parameters(params))
+        case .copy:
+            pixelFiring?.fire(Pixel.Event.syncGetOtherDevicesCopy, options: .parameters(params))
+        case .share:
+            pixelFiring?.fire(Pixel.Event.syncGetOtherDevicesShare, options: .parameters(params))
+        }
     }
 }
 

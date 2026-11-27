@@ -84,7 +84,7 @@ final class DaxGreetingServiceTests: XCTestCase {
     func testWhenAllRegularGreetingsApplyThenEachHasEqualChance() {
         let inputs = Inputs()
         inputs.setDate(.friday, hour: 8)
-        inputs.context = DaxGreetingContext(isFirstOpenOfDay: true, foregroundOpenCount: 2,
+        inputs.context = DaxGreetingContext(isFirstOpenOfDay: true,
                                            isTrackerOrAdBlockingEnabled: true, isAIChatEnabled: true)
         XCTAssertEqual(inputs.makeService().getGreeting(), DaxGreeting.friday.text)
         XCTAssertEqual(inputs.draws, [0..<18])
@@ -121,7 +121,7 @@ final class DaxGreetingServiceTests: XCTestCase {
         inputs.setDate(hour: 13)
         let service = inputs.makeService()
         XCTAssertEqual(service.getGreeting(), DaxGreeting.duckDuckHello.text)
-        inputs.context = DaxGreetingContext(isFirstOpenOfDay: true, foregroundOpenCount: 2,
+        inputs.context = DaxGreetingContext(isFirstOpenOfDay: true,
                                            isTrackerOrAdBlockingEnabled: true, isAIChatEnabled: true)
         inputs.setDate(hour: 13, minute: 59, second: 59)
         XCTAssertEqual(service.getGreeting(), DaxGreeting.duckDuckHello.text)
@@ -147,27 +147,6 @@ final class DaxGreetingServiceTests: XCTestCase {
         XCTAssertEqual(service.getGreeting(), DaxGreeting.stillAwake.text)
         inputs.date += 1
         XCTAssertEqual(service.getGreeting(), DaxGreeting.nightOwl.text)
-    }
-
-    func testWhenFrequentReturnAppliesThenItReplacesCurrentGreetingUnlessShownRecently() {
-        let inputs = Inputs()
-        inputs.context.isAIChatEnabled = false
-        inputs.setDate(hour: 13)
-        let service = inputs.makeService()
-        XCTAssertEqual(service.getGreeting(), DaxGreeting.duckDuckHello.text)
-        inputs.context.foregroundOpenCount = 3
-        XCTAssertEqual(service.getGreeting(), DaxGreeting.youreBack.text)
-        inputs.context.foregroundOpenCount = 2
-        XCTAssertEqual(service.getGreeting(), DaxGreeting.niceToSeeYou.text)
-        inputs.context.foregroundOpenCount = 3
-        let laterDays: [(Weekday, Int, DaxGreeting)] = [
-            (.wednesday, 0, .readyWhenYouAre), (.thursday, 0, .readyToSearchPrivately), (.saturday, 0, .heyThere),
-            (.tuesday, 1, .duckDuckHello), (.wednesday, 1, .youreBack)
-        ]
-        for (weekday, week, expected) in laterDays {
-            inputs.setDate(weekday, week: week, hour: 13)
-            XCTAssertEqual(service.getGreeting(), expected.text, "\(weekday) week \(week)")
-        }
     }
 
     func testWhenSelectingOnLaterDaysThenLastFiveAreExcludedAndOldestIsEvicted() {

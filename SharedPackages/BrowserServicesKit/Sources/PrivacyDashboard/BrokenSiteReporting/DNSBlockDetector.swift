@@ -40,9 +40,12 @@ public enum DNSResolution: String, Sendable {
 /// Detects DNS blockers that answer with unroutable addresses, such as `0.0.0.0`, or with private addresses.
 public struct DNSBlockDetector: Sendable {
 
-    private let timeout: TimeInterval = 1
+    private let timeout: TimeInterval
 
-    public init() {}
+    /// - Parameter timeout: How long to wait for the resolver before answering `.unresolved`.
+    public init(timeout: TimeInterval = 1) {
+        self.timeout = timeout
+    }
 
     public func resolution(for host: String) async -> DNSResolution {
 

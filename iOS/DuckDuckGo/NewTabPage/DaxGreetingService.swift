@@ -35,7 +35,6 @@ protocol DaxGreetingDebugging: AnyObject {
 /// Nil values make the corresponding greeting rules ineligible.
 struct DaxGreetingContext {
     var isFirstOpenOfDay: Bool?
-    var foregroundOpenCount: Int?
     var isTrackerOrAdBlockingEnabled: Bool?
     var isAIChatEnabled: Bool?
 }
@@ -75,10 +74,6 @@ final class DaxGreetingService {
         self.randomIndex = randomIndex
     }
 
-    private func priorityGreetings(context: DaxGreetingContext) -> [DaxGreeting] {
-        (context.foregroundOpenCount ?? 0) >= 3 ? [.youreBack] : []
-    }
-
     private func regularGreetings(date: Date, calendar: Calendar, context: DaxGreetingContext) -> [DaxGreeting] {
         let weekday: [DaxGreeting]
         switch calendar.component(.weekday, from: date) {
@@ -105,12 +100,11 @@ final class DaxGreetingService {
     }
 
     private func shouldKeep(_ selection: Selection, date: Date, day: Date, calendar: Calendar,
-                            eligible: [DaxGreeting], unshownPriority: [DaxGreeting]) -> Bool {
+                            eligible: [DaxGreeting]) -> Bool {
         let isWithinLifetime = date >= selection.date && date < selection.date + Self.greetingLifetime
         let isSameDay = day == selection.day && calendar == selection.calendar
         let isStillEligible = eligible.contains(selection.greeting)
-        let isNotReplacedByPriority = unshownPriority.isEmpty || unshownPriority.contains(selection.greeting)
-        return isWithinLifetime && isSameDay && isStillEligible && isNotReplacedByPriority
+        return isWithinLifetime && isSameDay && isStillEligible
     }
 
     private func leastRecentlyShown(_ pool: [DaxGreeting]) -> [DaxGreeting] {
@@ -133,16 +127,13 @@ extension DaxGreetingService: DaxGreetingProviding {
         func isEligible(_ greeting: DaxGreeting) -> Bool {
             (isEnglish || !greeting.isEnglishOnly) && (context.isAIChatEnabled == true || !greeting.requiresAIChat)
         }
-        let priority = priorityGreetings(context: context).filter(isEligible)
         let regular = regularGreetings(date: date, calendar: calendar, context: context).filter(isEligible)
-        let unshownPriority = priority.filter { !recentGreetings.contains($0) }
         let day = calendar.startOfDay(for: date)
-        if let selection, shouldKeep(selection, date: date, day: day, calendar: calendar,
-                                     eligible: priority + regular, unshownPriority: unshownPriority) {
+        if let selection, shouldKeep(selection, date: date, day: day, calendar: calendar, eligible: regular) {
             return selection.greeting.text
         }
 
-        let candidates = unshownPriority.isEmpty ? leastRecentlyShown(regular) : unshownPriority
+        let candidates = leastRecentlyShown(regular)
         let greeting = candidates[randomIndex(candidates.indices)]
         selection = Selection(greeting: greeting, date: date, day: day, calendar: calendar)
         recentGreetings.append(greeting)

@@ -25,6 +25,29 @@ import XCTest
 final class WebExtensionEventsListenerTests: XCTestCase {
 
     private final class Tab: NSObject, WKWebExtensionTab {}
+    private final class Window: NSObject, WKWebExtensionWindow {}
+
+    func testUpdateActivityForcesOpenCloseTransitionsButCoalescesPropertyChanges() {
+        let listener = WebExtensionEventsListener()
+        // The listener borrows its controller, just as it does from the manager.
+        let controller = WKWebExtensionController(configuration: .nonPersistent())
+        listener.controller = controller
+        var forced: [Bool] = []
+        listener.onUpdateActivity = { forced.append($0) }
+        let tab = Tab()
+        let window = Window()
+
+        listener.didOpenWindow(window)
+        listener.didOpenTab(tab)
+        listener.didChangeTabProperties([.loading, .title], for: tab)
+        listener.didActivateTab(tab, previousActiveTab: nil)
+        listener.didChangeTabProperties(.URL, for: tab)
+        listener.didCloseTab(tab, windowIsClosing: false)
+        listener.didCloseWindow(window)
+
+        XCTAssertEqual(forced, [true, true, false, true, true])
+        withExtendedLifetime(controller) {}
+    }
 
     func testWhenTheUserSwitchesTabsOrATabNavigates_ThenBrowsingActivityIsReported() {
         let listener = WebExtensionEventsListener()

@@ -26,15 +26,18 @@ struct FocusedSuggestionsView: View {
     let isAddressBarAtBottom: Bool
     let isVisible: Bool
     let isFadingOut: Bool
+    var animatesAppearance = true
+    var usesCardSurface = false
 
     var body: some View {
         // Keep the list mounted while hidden to preserve its state and avoid a background flash
         // when returning from favorites or the empty state.
-        SuggestionsListView(viewModel: viewModel, isAddressBarAtBottom: isAddressBarAtBottom)
+        SuggestionsListView(viewModel: viewModel, isAddressBarAtBottom: isAddressBarAtBottom, usesCardSurface: usesCardSurface)
             .opacity(isVisible ? 1 : 0)
             // Fade in on a mode change, but hide immediately so recents do not linger over favorites.
-            .animation(isVisible ? .easeInOut(duration: 0.2) : nil, value: isVisible)
+            .animation(isVisible && animatesAppearance ? FocusedContentFade.fadeIn : nil, value: isVisible)
             .modifier(FocusedContentDismissFade(isFadingOut: isFadingOut))
             .allowsHitTesting(isVisible)
+            .accessibilityHidden(!isVisible)
     }
 }

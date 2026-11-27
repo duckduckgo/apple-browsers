@@ -37,6 +37,7 @@ final class UTIFooterController {
     /// The disclaimer on screen means the next Ask tap accepts the terms.
     var onTermsOfServiceVisibilityChanged: ((Bool) -> Void)?
     var onAttachmentPrivacyEvent: ((AttachmentPrivacyPixel.Action, UTIAttachmentPrivacyKind) -> Void)?
+    var onMessagesChanged: (() -> Void)?
 
     private let termsOfServiceStore: DuckAiTermsOfServiceStore?
     private let viewModel: DuckAiUsageWarningViewModel?
@@ -56,6 +57,7 @@ final class UTIFooterController {
     private var actedOnMessage: UTIFooterMessage?
     private var modelSwitchNotice: CreateImageModelSwitchNotice?
     private var termsOfServiceSendButton: DuckAiTermsOfServiceSendButton = .ask
+    private var isTermsOfServiceShownOnPage = false
     private var promptOverLimit: AIChatPromptLength?
     private var visibleIDs: Set<UTIFooterItem.ID> = []
     private var reportedTermsOfServiceState = (isVisible: false, isInEffect: false)
@@ -68,7 +70,7 @@ final class UTIFooterController {
     var currentMessage: UTIFooterMessage? { currentMessages.first?.message }
     var isTermsOfServiceVisible: Bool { visibleIDs.contains(.termsConsent) }
     var isTermsOfServiceApplicable: Bool {
-        termsOfServiceStore?.hasAccepted == false && viewModel?.warning?.blocksInput != true
+        termsOfServiceStore?.hasAccepted == false && !isTermsOfServiceShownOnPage && viewModel?.warning?.blocksInput != true
     }
     var isTermsOfServiceInEffect: Bool {
         isTermsOfServiceVisible
@@ -166,6 +168,13 @@ final class UTIFooterController {
         applyCurrentState()
     }
 
+
+    /// The page's own card already asks for the terms, so the disclaimer would ask a second time.
+    func setTermsOfServiceShownOnPage(_ shown: Bool) {
+        guard isTermsOfServiceShownOnPage != shown else { return }
+        isTermsOfServiceShownOnPage = shown
+        applyCurrentState()
+    }
 
     func setPromptTooLong(_ overLimit: AIChatPromptLength?) {
         guard promptOverLimit != overLimit else { return }
@@ -316,6 +325,7 @@ final class UTIFooterController {
         guard messages != currentMessages else { return }
         currentMessages = messages
         visibleIDs.formIntersection(messages.map(\.id))
+        onMessagesChanged?()
         let isPrivacyHiddenByError = nextIDs.contains(.attachmentPrivacy)
             && messages.contains { $0.type == .error(.persistent) }
         if !messages.contains(where: { $0.id == .attachmentPrivacy }) && !isPrivacyHiddenByError {

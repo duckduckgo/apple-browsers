@@ -18,6 +18,7 @@
 //
 
 import Bookmarks
+import Common
 import Foundation
 import Onboarding
 import WebExtensions
@@ -39,7 +40,7 @@ enum AutoplayBlockingMode: String, CaseIterable, CustomStringConvertible {
     }
 }
 
-enum AddressBarPosition: String, CaseIterable, CustomStringConvertible {
+enum AddressBarPosition: String, CaseIterable, CustomStringConvertible, Codable {
     case top
     case bottom
 
@@ -87,6 +88,7 @@ enum RefreshButtonPosition: String, CaseIterable, CustomStringConvertible {
     }
 }
 
+/// New stored option? Also add a launch profile key (see .claude/skills/ddg-ios-launch-profile).
 protocol AppSettings: AnyObject, OnboardingDebugAppSettings {
     var autocomplete: Bool { get set }
     var recentlyVisitedSites: Bool { get set }
@@ -176,5 +178,12 @@ extension AppSettings {
         guard rolloutActive else { return }
         duckPlayerMode = .disabled
         duckPlayerNativeYoutubeMode = .never
+    }
+}
+
+extension AppSettings {
+    /// iPad always reports a top bar, so the position is only meaningful on iPhone.
+    var iPhoneAddressBarPosition: AddressBarPosition? {
+        DevicePlatform.isIphone ? currentAddressBarPosition : nil
     }
 }

@@ -23,6 +23,7 @@ import PrivacyConfig
 import Common
 import FoundationExtensions
 import FeatureFlags_iOS
+import UIKit
 
 public final class LaunchOptionsHandler {
 
@@ -140,6 +141,34 @@ public final class LaunchOptionsHandler {
         sanitisedEnvParameter(string: userDefaults.string(forKey: Self.appVariantName))
     }
 
+    public var contextualOnboardingMaxDays: Int? {
+        positiveOnboardingLimit(forKey: "contextualOnboardingMaxDays")
+    }
+
+    public var contextualOnboardingMaxAppOpens: Int? {
+        positiveOnboardingLimit(forKey: "contextualOnboardingMaxAppOpens")
+    }
+
+    /// Seconds since the Unix epoch, used to arrange a past start date in UI tests.
+    public var contextualOnboardingStartDate: Date? {
+#if DEBUG || ALPHA
+        guard let value = userDefaults.string(forKey: "contextualOnboardingStartDate"),
+              let timestamp = TimeInterval(value), timestamp.isFinite else { return nil }
+        return Date(timeIntervalSince1970: timestamp)
+#else
+        return nil
+#endif
+    }
+
+    private func positiveOnboardingLimit(forKey key: String) -> Int? {
+#if DEBUG || ALPHA
+        guard let value = userDefaults.string(forKey: key), let limit = Int(value), limit > 0 else { return nil }
+        return limit
+#else
+        return nil
+#endif
+    }
+
     private func sanitisedEnvParameter(string: String?) -> String? {
         guard let string, string != "null" else { return nil }
         return string
@@ -188,6 +217,22 @@ extension LaunchOptionsHandler {
 
 extension LaunchOptionsHandler {
 
+    /// `-clearAllDefaults` wipes saved state. Called first at launch, so a launch profile and every service start from it.
+    public func resetAppStateIfNeeded() {
+        guard arguments.contains("-clearAllDefaults") else { return }
+        AppStateReset(userDefaults: userDefaults).reset()
+    }
+
+    /// The argument that overrides `flag`, as `-ff.<flag> true` would.
+    public static func featureFlagArgumentKey(for flag: FeatureFlag) -> String {
+        UITestOverrides.featureFlagPrefix + flag.rawValue
+    }
+
+    /// The argument that puts the user in a cohort of `flag`, as `-experiment.<flag> <cohort>` would.
+    public static func experimentArgumentKey(for flag: FeatureFlag) -> String {
+        UITestOverrides.experimentCohortPrefix + flag.rawValue
+    }
+
     /// Applies UI test overrides from launch arguments to the appropriate storage.
     ///
     /// This method reads launch arguments passed by Maestro and translates them into
@@ -196,8 +241,8 @@ extension LaunchOptionsHandler {
     /// ## How it works
     /// iOS automatically stores launch arguments as key-value pairs in UserDefaults.
     /// When Maestro passes `"ff.myFlag": "true"`, iOS stores "true" under the key "ff.myFlag"
-    /// in UserDefaults. We iterate `ProcessInfo.arguments` to discover which keys were passed,
-    /// then read their values from UserDefaults.
+    /// in UserDefaults. We iterate `ProcessInfo.arguments` and the argument domain, which a launch profile
+    /// also writes to, to discover which keys were passed, then read their values from UserDefaults.
     ///
     /// Internal user mode is only enabled when `-isInternalUser true` is explicitly passed.
     /// Other overrides (ff., config.rollout., experiment.) are honored by `FeatureFlagger` in
@@ -210,18 +255,12 @@ extension LaunchOptionsHandler {
         featureFlagOverrideStore: KeyValueStoring,
         configRolloutStore: UserDefaults
     ) {
-        let shouldClearAllDefaults = arguments.contains("-clearAllDefaults")
-        let shouldBackdateInstallDate = arguments.contains("-backdateInstallDate")
-        if shouldClearAllDefaults || shouldBackdateInstallDate {
-            let statisticsGroupName = Bundle.main.appGroup(bundle: .statistics)
+        if isUITesting && environment["UITEST_DISABLE_ANIMATIONS"] == "1" {
+            UIView.setAnimationsEnabled(false)
+        }
 
-            if shouldClearAllDefaults {
-                clearAllDefaults(statisticsGroupName: statisticsGroupName)
-            }
-
-            if shouldBackdateInstallDate {
-                backdateInstallDate(statisticsGroupName: statisticsGroupName)
-            }
+        if arguments.contains("-backdateInstallDate") {
+            backdateInstallDate(statisticsGroupName: Bundle.main.appGroup(bundle: .statistics))
         }
 
 #if DEBUG
@@ -254,43 +293,6 @@ extension LaunchOptionsHandler {
 
     // MARK: - State reset helpers
 
-    /// Wipes all persistent state so the test run starts with a clean slate.
-    /// Must be called before feature-flag overrides are written.
-    private func clearAllDefaults(statisticsGroupName: String) {
-        if let bundleID = Bundle.main.bundleIdentifier {
-            userDefaults.removePersistentDomain(forName: bundleID)
-        }
-        UserDefaults(suiteName: statisticsGroupName)?.removePersistentDomain(forName: statisticsGroupName)
-        clearAppSupportFiles()
-
-        // WebKit stops showing its location prompt for a host after repeated denials and keeps that across launches.
-        if let libraryDir = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first {
-            try? FileManager.default.removeItem(at: libraryDir.appendingPathComponent("WebKit/GeolocationSitesV2.plist"))
-        }
-    }
-
-    private func clearAppSupportFiles() {
-        guard let appSupportDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else { return }
-        let fm = FileManager.default
-
-        // PromptCooldownKeyValueFilesStore — must be removed before AppKeyValueFileStoreService
-        // opens the file and acquires its lock.
-        try? fm.removeItem(at: appSupportDir.appendingPathComponent("AppKeyValueStore"))
-
-        // Tab model — KeyValueFileStore files written by TabsModelPersistence.
-        // Without these the app restores the previous browsing session on relaunch.
-        try? fm.removeItem(at: appSupportDir.appendingPathComponent("TabsModel"))
-        try? fm.removeItem(at: appSupportDir.appendingPathComponent("FireTabsModel"))
-
-        // WebKit per-tab interaction state (scroll position, form data, WKWebView session).
-        // Stored under <AppSupport>/<BundleID>/webview-interaction/ by TabInteractionStateDiskSource.
-        if let bundleID = Bundle.main.bundleIdentifier {
-            try? fm.removeItem(at: appSupportDir
-                .appendingPathComponent(bundleID)
-                .appendingPathComponent("webview-interaction"))
-        }
-    }
-
     /// Sets the ATB install date to 7 days ago so the promo cooldown is already satisfied.
     /// Also writes ATB keys so `hasInstallStatistics` returns true, preventing
     /// `StatisticsLoader.fireInstallPixel` from overwriting the backdated date.
@@ -314,21 +316,17 @@ extension LaunchOptionsHandler {
     private func applyFlagOverrides(featureFlagOverrideStore: KeyValueStoring, configRolloutStore: UserDefaults) {
         let persistor = FeatureFlagLocalOverridesUserDefaultsPersistor(keyValueStore: featureFlagOverrideStore)
 
-        // Focusing the address bar on every new tab breaks UI tests that expect other screens after launch.
-        // Tests that need it pass -ff.alwaysShowKeyboardOnNewTabPage true, which the loop below applies.
-        if isUITesting {
-            persistor.set(false, for: FeatureFlag.alwaysShowKeyboardOnNewTabPage)
-        }
-
-        for arg in arguments {
-            guard arg.hasPrefix("-") else { continue }
-            let key = String(arg.dropFirst())
-
+        for key in argumentKeys {
             if applyInternalUserOverrideIfPresent(key: key) { continue }
             applyFeatureFlagOverride(key: key, persistor: persistor)
             applyConfigRolloutOverride(key: key, configRolloutStore: configRolloutStore)
             applyExperimentOverride(key: key, persistor: persistor)
         }
+    }
+
+    private var argumentKeys: Set<String> {
+        let passed = arguments.filter { $0.hasPrefix("-") }.map { String($0.dropFirst()) }
+        return Set(passed).union(userDefaults.volatileDomain(forName: UserDefaults.argumentDomain).keys)
     }
 
     private func applyInternalUserOverrideIfPresent(key: String) -> Bool {

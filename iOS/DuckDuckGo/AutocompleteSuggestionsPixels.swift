@@ -62,8 +62,9 @@ struct AutocompleteSuggestionsPixels {
     /// pixel plus, for `.askAIChat`, its daily pixel — so no surface can fire a partial set.
     func fireClickPixels(for suggestion: Suggestion,
                          isExperimentalAIChatExperience: @autoclosure () -> Bool,
-                         aiChatDiscoveryParameters: @autoclosure () -> [String: String]) {
-        fireClickPixel(for: suggestion)
+                         aiChatDiscoveryParameters: @autoclosure () -> [String: String],
+                         resubmitOfPrompt: CrossModeResubmitDetector.DelayBucket? = nil) {
+        fireClickPixel(for: suggestion, resubmitOfPrompt: resubmitOfPrompt)
         guard case .askAIChat = suggestion else { return }
         fireAskAIChatClickPixel(isExperimentalExperience: isExperimentalAIChatExperience(),
                                 additionalParameters: aiChatDiscoveryParameters())
@@ -71,14 +72,17 @@ struct AutocompleteSuggestionsPixels {
 
     /// Fires the click pixel matching a tapped suggestion. `.askAIChat` is a daily pixel with
     /// feature-discovery params, so it's fired separately via `fireAskAIChatClickPixel`.
-    func fireClickPixel(for suggestion: Suggestion) {
+    func fireClickPixel(for suggestion: Suggestion, resubmitOfPrompt: CrossModeResubmitDetector.DelayBucket? = nil) {
+        var parameters: [String: String] = [:]
+        parameters[UnifiedToggleInputCoordinatorPixelHelper.resubmitOfPromptKey] = resubmitOfPrompt?.rawValue
         switch suggestion {
         case .bookmark(_, _, let isFavorite, _):
             pixelFiring?.fire(isFavorite ? Pixel.Event.autocompleteClickFavorite : .autocompleteClickBookmark)
         case .historyEntry(_, let url, _):
-            pixelFiring?.fire(url.isDuckDuckGoSearch ? Pixel.Event.autocompleteClickSearchHistory : .autocompleteClickSiteHistory)
+            pixelFiring?.fire(url.isDuckDuckGoSearch ? Pixel.Event.autocompleteClickSearchHistory : .autocompleteClickSiteHistory,
+                              options: .parameters(parameters))
         case .phrase:
-            pixelFiring?.fire(Pixel.Event.autocompleteClickPhrase)
+            pixelFiring?.fire(Pixel.Event.autocompleteClickPhrase, options: .parameters(parameters))
         case .website:
             pixelFiring?.fire(Pixel.Event.autocompleteClickWebsite)
         case .openTab:
@@ -121,4 +125,15 @@ struct DuckAISuggestionsShownPixel: PixelKit.Event {
     var name: String { "autocomplete_duckai_shown" }
     var parameters: [String: String]? { nil }
     var standardParameters: [PixelKitStandardParameter]? { nil }
+}
+
+extension Suggestion {
+    /// The text a tapped suggestion searches for, or nil when it opens a page instead.
+    var searchQueryText: String? {
+        switch self {
+        case .phrase(let phrase): return phrase
+        case .historyEntry(_, let url, _): return url.isDuckDuckGoSearch ? url.searchQuery : nil
+        default: return nil
+        }
+    }
 }

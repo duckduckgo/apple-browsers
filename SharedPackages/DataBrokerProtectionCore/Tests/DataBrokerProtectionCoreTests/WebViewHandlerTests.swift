@@ -20,12 +20,44 @@ import BrowserServicesKit
 import Common
 import ConcurrencyExtensions
 import DataBrokerProtectionCoreTestsUtils
+import ImageIO
 import PixelKit
 import WebKit
 import XCTest
 @testable import DataBrokerProtectionCore
 
 final class WebViewHandlerTests: XCTestCase {
+
+#if DEBUG
+    @MainActor
+    func testActionSnapshotContainsTheRenderedPageAndPreservesTheViewport() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let snapshots = DebugActionSnapshots(directory: directory)
+        let bounds = CGRect(x: 0, y: 0, width: 128, height: 96)
+        let webView = WKWebView(frame: bounds)
+        let loaded = expectation(description: "Local page loaded")
+        let delegate = SnapshotPageDelegate(loaded: loaded)
+        webView.navigationDelegate = delegate
+        defer { withExtendedLifetime(delegate) {} }
+        webView.loadHTMLString("<html style='background:lime'><body style='height:3000px'></body></html>", baseURL: nil)
+        await fulfillment(of: [loaded], timeout: 10)
+
+        let name = await snapshots.capture(webView: webView, step: .scan, action: .extract, moment: .before)
+        let url = try directory.appendingPathComponent(XCTUnwrap(name))
+        let source = try XCTUnwrap(CGImageSourceCreateWithURL(url as CFURL, nil))
+        let image = try XCTUnwrap(CGImageSourceCreateImageAtIndex(source, 0, nil))
+        XCTAssertEqual(image.width * 3, image.height * 4)
+        let pixel = try XCTUnwrap(CGContext(data: nil, width: 1, height: 1, bitsPerComponent: 8, bytesPerRow: 4,
+                                             space: CGColorSpaceCreateDeviceRGB(),
+                                             bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+        pixel.draw(image, in: CGRect(x: 0, y: 0, width: 1, height: 1))
+        let rgba = try XCTUnwrap(pixel.data).assumingMemoryBound(to: UInt8.self)
+        XCTAssertGreaterThan(rgba[1], 200)
+        XCTAssertLessThan(rgba[0], 40)
+        XCTAssertLessThan(rgba[2], 40)
+    }
+#endif
 
     @MainActor
     func testWhenWaitingForWebViewLoadAndTaskIsCancelled_thenThrowsCancelled() async throws {
@@ -93,47 +125,6 @@ final class WebViewHandlerTests: XCTestCase {
         XCTAssertTrue(webView.customUserAgent?.isEmpty ?? true)
     }
 
-#if os(macOS)
-    @MainActor
-    func testWhenChallengeSignalsAreObservedMultipleTimes_thenFiresDailyAndCountPixelsOnce() throws {
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: "\(#function)-\(UUID().uuidString)"))
-        var firedPixelNames: [String] = []
-        var firedPixelParameters: [[String: String]] = []
-        let pixelKit = PixelKit(dryRun: false,
-                                appVersion: "1.0.0",
-                                source: PixelKit.Source.macDMG.rawValue,
-                                defaultHeaders: [:],
-                                defaults: defaults) { pixelName, _, parameters, _, _, _ in
-            firedPixelNames.append(pixelName)
-            firedPixelParameters.append(parameters)
-        }
-        let pixelHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .macOS)
-        let sut = try makeWebViewHandler(pixelHandler: pixelHandler)
-        let response = try XCTUnwrap(HTTPURLResponse(url: URL(string: "https://example.com")!,
-                                                     statusCode: 403,
-                                                     httpVersion: nil,
-                                                     headerFields: ["cf-mitigated": "challenge"]))
-        let cookie = try makeCookie(name: "cf_clearance", value: "opaque-token")
-
-        sut.recordChallengeDetectionIfPresent(in: response, isForMainFrame: true)
-        sut.recordChallengeClearanceIfPresent(in: [cookie])
-        let pixelCountAfterFirstClearance = firedPixelNames.count
-        sut.recordChallengeClearanceIfPresent(in: [cookie])
-
-        XCTAssertEqual(firedPixelNames.count, pixelCountAfterFirstClearance)
-        XCTAssertEqual(firedPixelNames, [
-            "dbp_challenge_main-frame_detected_macos_daily",
-            "dbp_challenge_main-frame_detected_macos_count",
-            "dbp_challenge_clearance_observed_macos_daily",
-            "dbp_challenge_clearance_observed_macos_count"
-        ])
-        for parameters in firedPixelParameters {
-            XCTAssertEqual(parameters["data_broker"], "example.com")
-            XCTAssertEqual(parameters["broker_version"], "1.2.3")
-        }
-    }
-#endif
-
     @MainActor
     private func makeWebViewHandler(
         customUserAgent: String? = nil,
@@ -144,24 +135,11 @@ final class WebViewHandlerTests: XCTestCase {
             prefs: .mock,
             delegate: MockWebViewCommunicationDelegate(),
             executionConfig: BrokerJobExecutionConfig(),
-            challengePixelDataBroker: "example.com",
-            challengePixelBrokerVersion: "1.2.3",
             shouldContinueActionHandler: { true },
             customUserAgent: customUserAgent,
             pixelHandler: pixelHandler
         )
     }
-
-#if os(macOS)
-    private func makeCookie(name: String, value: String) throws -> HTTPCookie {
-        try XCTUnwrap(HTTPCookie(properties: [
-            .name: name,
-            .value: value,
-            .domain: "example.com",
-            .path: "/"
-        ]))
-    }
-#endif
 }
 
 private final class MockWebViewCommunicationDelegate: CCFCommunicationDelegate {
@@ -187,3 +165,17 @@ private final class MockWebViewCommunicationDelegate: CCFCommunicationDelegate {
     func onError(error: Error) {
     }
 }
+
+#if DEBUG
+private final class SnapshotPageDelegate: NSObject, WKNavigationDelegate {
+    let loaded: XCTestExpectation
+
+    init(loaded: XCTestExpectation) {
+        self.loaded = loaded
+    }
+
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        loaded.fulfill()
+    }
+}
+#endif

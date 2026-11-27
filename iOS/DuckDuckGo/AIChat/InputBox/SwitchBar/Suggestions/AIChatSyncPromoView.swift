@@ -31,6 +31,8 @@ struct AIChatSyncPromoView: View {
 
     let onCTATap: () -> Void
     let onCloseTap: () -> Void
+    /// Draws the redesigned New Tab Page card surface, so the promo matches the escape hatch above it.
+    var usesNewTabPageCardBackground = false
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
@@ -63,10 +65,14 @@ struct AIChatSyncPromoView: View {
             .padding(4)
             .accessibilityLabel(UserText.aiChatSyncPromoCloseAccessibilityLabel)
         }
-        .background(
-            RoundedRectangle(cornerRadius: ContainerMetrics.cornerRadius)
-                .fill(Color(designSystemColor: .surface))
-        )
+        .background {
+            if usesNewTabPageCardBackground {
+                RedesignedNewTabPageModuleBackground()
+            } else {
+                RoundedRectangle(cornerRadius: ContainerMetrics.cornerRadius)
+                    .fill(Color(designSystemColor: .surface))
+            }
+        }
     }
 }
 

@@ -297,7 +297,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
                 .setSelectedLocation,
                 .setDNSSettings,
                 .setShowInMenuBar,
-                .setSessionHealthTelemetryEnabled,
                 .setDisableRekeying:
             // Intentional no-op as this is handled by the extension or the agent's app delegate
             break
@@ -376,8 +375,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         // runs on every connect, regardless of whether the user ever opens VPN settings.
         settings.resetEnforceRoutesIfUnavailable(
             strictRoutingAvailable: featureFlagger.isFeatureOn(.vpnStrictRoutingToggle))
-
-        settings.sessionHealthTelemetryEnabled = featureFlagger.isFeatureOn(.vpnSessionHealthTelemetry)
 
         if tunnelManager.localizedDescription == nil {
             tunnelManager.localizedDescription = UserText.networkProtectionTunnelName
@@ -562,10 +559,10 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             includeAppVersionParameter: true)
 
         do {
-            try await networkExtensionController.activateSystemExtension(waitingForUserApproval: waitingForUserApproval)
+            let outcome = try await networkExtensionController.activateSystemExtension(waitingForUserApproval: waitingForUserApproval)
 
             PixelKit.fire(
-                NetworkProtectionPixelEvent.networkProtectionSystemExtensionActivationSuccess,
+                NetworkProtectionPixelEvent.networkProtectionSystemExtensionActivationSuccess(alreadyActive: outcome == .alreadyActive),
                 frequency: .dailyAndCount,
                 includeAppVersionParameter: true)
         } catch is CancellationError {
@@ -621,8 +618,9 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 #endif
             case .simulateControllerFailureError:
                 return "Simulated a controller error as requested"
-            case .startTunnelFailure(let error),
-                    .failedToFetchAuthToken(let error):
+            case .startTunnelFailure(let error):
+                return (error as? VPNStartupMonitor.StartupError)?.disconnectReasonDescription ?? error.localizedDescription
+            case .failedToFetchAuthToken(let error):
                 return error.localizedDescription
             }
         }

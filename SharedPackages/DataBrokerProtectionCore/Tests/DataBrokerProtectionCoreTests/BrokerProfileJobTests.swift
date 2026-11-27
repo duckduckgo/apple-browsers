@@ -21,12 +21,6 @@ import DataBrokerProtectionCoreTestsUtils
 import XCTest
 
 final class BrokerProfileJobTests: XCTestCase {
-    override func setUp() {
-        super.setUp()
-
-        MockDataBrokerProtectionPixelsHandler.lastPixelsFired = []
-    }
-
     lazy var mockOptOutQueryData: [BrokerProfileQueryData] = {
         let brokerId: Int64 = 1
 
@@ -192,6 +186,47 @@ final class BrokerProfileJobTests: XCTestCase {
         XCTAssertFalse(mockDependencies.mockOptOutRunner.wasOptOutCalled)
         XCTAssertTrue(database.scanEvents.contains(where: { $0.type == .scanStarted }))
         XCTAssertTrue(database.scanEvents.contains(where: { $0.type == .noMatchFound }))
+        XCTAssertTrue(database.optOutEvents.isEmpty)
+    }
+
+    func testWhenSigningKeyIsRevoked_thenNoScansOrOptOutsRun() async {
+        let delegate = MockBrokerProfileJobStatusReportingDelegate()
+        let database = MockDatabase()
+        let privacyConfig = PrivacyConfigurationManagingMock()
+        privacyConfig.setRevokedBundleSigningKeyIDs(PrivacyConfigurationManagingMock.builtInBundleSigningKeyIDs)
+        let mockDependencies = MockBrokerProfileJobDependencies()
+        mockDependencies.database = database
+        mockDependencies.privacyConfig = privacyConfig
+        mockDependencies.dataBrokerProtectionSettings = DataBrokerProtectionSettings(defaults: UserDefaults(suiteName: "BrokerProfileJobTests.\(UUID().uuidString)")!)
+
+        let brokerId: Int64 = 1
+        database.brokerProfileQueryDataToReturn = [
+            makeBrokerProfileQueryData(
+                brokerId: brokerId,
+                profileQueryId: 1,
+                dataBroker: makeSubscriptionRequiredBroker(id: brokerId),
+                scanJobData: .mock(withBrokerId: brokerId)
+            )
+        ]
+
+        let job = BrokerProfileJob(dataBrokerID: brokerId,
+                                   jobType: .all,
+                                   showWebView: false,
+                                   statusReportingDelegate: delegate,
+                                   jobDependencies: mockDependencies)
+
+        let expectation = XCTestExpectation(description: "Job should finish")
+        job.completionBlock = {
+            expectation.fulfill()
+        }
+
+        job.start()
+        await fulfillment(of: [expectation], timeout: 15)
+
+        XCTAssertTrue(job.isFinished)
+        XCTAssertFalse(mockDependencies.mockScanRunner.wasScanCalled)
+        XCTAssertFalse(mockDependencies.mockOptOutRunner.wasOptOutCalled)
+        XCTAssertTrue(database.scanEvents.isEmpty)
         XCTAssertTrue(database.optOutEvents.isEmpty)
     }
 
@@ -523,7 +558,6 @@ final class BrokerProfileJobTests: XCTestCase {
         XCTAssertTrue(hasScanStarted(in: database.scanEvents, brokerId: brokerId, profileQueryId: otherProfileQueryId))
         XCTAssertEqual(database.scanEvents.filter { $0.type == .scanStarted }.count, 4)
         XCTAssertEqual(delegate.successIdentifiers.count, 4)
-        XCTAssertFalse(wasPixelFired(.freemiumPIRMaintenanceScanSkipped))
     }
 
     func testWhenAuthenticatedScheduledScanContainsMaintenanceScan_thenScanJobRuns() async {
@@ -556,7 +590,6 @@ final class BrokerProfileJobTests: XCTestCase {
         XCTAssertTrue(mockDependencies.mockScanRunner.wasScanCalled)
         XCTAssertTrue(hasScanStarted(in: database.scanEvents, brokerId: brokerId, profileQueryId: profileQueryId))
         XCTAssertEqual(delegate.successIdentifiers.count, 1)
-        XCTAssertFalse(wasPixelFired(.freemiumPIRMaintenanceScanSkipped))
     }
 
     func testWhenJobErrors_thenIsFreeScanIsComputedOnceAndForwardedToErrorDelegate() async {
@@ -832,7 +865,6 @@ private extension BrokerProfileJobTests {
         XCTAssertFalse(hasScanStarted(in: database.scanEvents, brokerId: brokerId, profileQueryId: profileQueryId))
         XCTAssertTrue(delegate.successIdentifiers.isEmpty)
         XCTAssertTrue(delegate.errorIdentifiers.isEmpty)
-        XCTAssertTrue(wasPixelFired(.freemiumPIRMaintenanceScanSkipped))
     }
 
     func run(_ job: BrokerProfileJob) async {
@@ -903,12 +935,6 @@ private extension BrokerProfileJobTests {
             $0.brokerId == brokerId &&
             $0.profileQueryId == profileQueryId &&
             $0.type == .scanStarted
-        }
-    }
-
-    func wasPixelFired(_ pixel: DataBrokerProtectionSharedPixels) -> Bool {
-        MockDataBrokerProtectionPixelsHandler.lastPixelsFired.contains {
-            $0.name == pixel.name
         }
     }
 

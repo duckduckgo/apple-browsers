@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import UIKit
 import Testing
 @testable import Core
 import Persistence
@@ -43,6 +44,39 @@ final class LaunchOptionsHandlerTests {
     }
 
     // MARK: - isOnboardingCompleted
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func contextualOnboardingOverridesReadLimitsAndStartDate() {
+        userDefaults.set("3", forKey: "contextualOnboardingMaxDays")
+        userDefaults.set("2", forKey: "contextualOnboardingMaxAppOpens")
+        userDefaults.set("1234567890", forKey: "contextualOnboardingStartDate")
+        let sut = LaunchOptionsHandler(userDefaults: userDefaults)
+
+        #expect(sut.contextualOnboardingMaxDays == 3)
+        #expect(sut.contextualOnboardingMaxAppOpens == 2)
+        #expect(sut.contextualOnboardingStartDate == Date(timeIntervalSince1970: 1234567890))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)), arguments: ["0", "-1", "1.5", "true", "invalid", "999999999999999999999999"])
+    func contextualOnboardingOverridesRejectInvalidLimits(value: String) {
+        userDefaults.set(value, forKey: "contextualOnboardingMaxDays")
+        userDefaults.set(value, forKey: "contextualOnboardingMaxAppOpens")
+        let sut = LaunchOptionsHandler(userDefaults: userDefaults)
+
+        #expect(sut.contextualOnboardingMaxDays == nil)
+        #expect(sut.contextualOnboardingMaxAppOpens == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)), arguments: ["nan", "inf", "invalid"])
+    func contextualOnboardingOverridesRejectInvalidStartDate(value: String) {
+        userDefaults.set(value, forKey: "contextualOnboardingStartDate")
+        let sut = LaunchOptionsHandler(userDefaults: userDefaults)
+
+        #expect(sut.contextualOnboardingStartDate == nil)
+    }
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
@@ -278,6 +312,25 @@ final class LaunchOptionsHandlerTests {
         #expect(result == .notOverridden)
     }
 
+    @MainActor
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func testAnimationOverrideRequiresUITestingAndExplicitOptIn() {
+        let original = UIView.areAnimationsEnabled
+        defer { UIView.setAnimationsEnabled(original) }
+        for initiallyEnabled in [false, true] {
+            for (testing, optIn) in [(false, false), (false, true), (true, false), (true, true)] {
+                UIView.setAnimationsEnabled(initiallyEnabled)
+                var environment: [String: String] = [:]
+                if testing { environment["UITEST_MODE"] = "1" }
+                if optIn { environment["UITEST_DISABLE_ANIMATIONS"] = "1" }
+                let sut = LaunchOptionsHandler(environment: environment, userDefaults: userDefaults, arguments: [])
+                sut.applyUITestOverrides(featureFlagOverrideStore: userDefaults, configRolloutStore: userDefaults)
+                #expect(UIView.areAnimationsEnabled == (initiallyEnabled && !(testing && optIn)))
+            }
+        }
+    }
+
     // MARK: - UI Test Overrides
 
 #if DEBUG
@@ -360,6 +413,23 @@ final class LaunchOptionsHandlerTests {
         // Cleanup
         featureFlagStore.removePersistentDomain(forName: "testing_featureFlags")
         configStore.removePersistentDomain(forName: "testing_configRollout")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func testWhenALaunchProfileSetsAFeatureFlagArgumentThenItIsApplied() {
+        let argumentDomain = userDefaults.volatileDomain(forName: UserDefaults.argumentDomain)
+        userDefaults.setVolatileDomain(argumentDomain.merging(["ff.uiTestFeatureFlag": "true"]) { $1 },
+                                       forName: UserDefaults.argumentDomain)
+        defer { userDefaults.setVolatileDomain(argumentDomain, forName: UserDefaults.argumentDomain) }
+        let featureFlagStore = UserDefaults(suiteName: "testing_featureFlags")!
+        defer { featureFlagStore.removePersistentDomain(forName: "testing_featureFlags") }
+        let sut = LaunchOptionsHandler(environment: [:], userDefaults: userDefaults, arguments: [],
+                                       internalUserStore: MockInternalUserStore())
+
+        sut.applyUITestOverrides(featureFlagOverrideStore: featureFlagStore, configRolloutStore: featureFlagStore)
+
+        #expect(featureFlagStore.bool(forKey: "localOverrideUiTestFeatureFlag"))
     }
 
     @available(iOS 16, macOS 13, *)

@@ -25,7 +25,11 @@ struct TabInputState: Equatable {
     var text: String
     var toggleMode: TextEntryMode
     var attachments: [UnifiedToggleInputAttachment]
+    /// The user's own pick on this tab.
     var selectedModelID: String?
+    /// A model this chat moved to without the user picking it, such as for a new chat hint. It wins over
+    /// `selectedModelID` until the chat changes, and is never copied into the last-used defaults.
+    var chatOnlyModelID: String?
     var selectedReasoningMode: AIChatReasoningMode?
     var selectedTool: AIChatRAGTool?
     /// Driven by FE `hideChatInput` / `showChatInput` user-script messages. Persisted per tab
@@ -43,6 +47,7 @@ struct TabInputState: Equatable {
         toggleMode: TextEntryMode = .search,
         attachments: [UnifiedToggleInputAttachment] = [],
         selectedModelID: String? = nil,
+        chatOnlyModelID: String? = nil,
         selectedReasoningMode: AIChatReasoningMode? = nil,
         selectedTool: AIChatRAGTool? = nil,
         aiChatInputBoxVisibility: AIChatInputBoxVisibility = .unknown,
@@ -53,6 +58,7 @@ struct TabInputState: Equatable {
         self.toggleMode = toggleMode
         self.attachments = attachments
         self.selectedModelID = selectedModelID
+        self.chatOnlyModelID = chatOnlyModelID
         self.selectedReasoningMode = selectedReasoningMode
         self.selectedTool = selectedTool
         self.aiChatInputBoxVisibility = aiChatInputBoxVisibility
@@ -65,6 +71,7 @@ struct TabInputState: Equatable {
             && lhs.toggleMode == rhs.toggleMode
             && lhs.attachments.map(\.id) == rhs.attachments.map(\.id)
             && lhs.selectedModelID == rhs.selectedModelID
+            && lhs.chatOnlyModelID == rhs.chatOnlyModelID
             && lhs.selectedReasoningMode == rhs.selectedReasoningMode
             && lhs.selectedTool == rhs.selectedTool
             && lhs.aiChatInputBoxVisibility == rhs.aiChatInputBoxVisibility
@@ -79,6 +86,11 @@ struct TabInputState: Equatable {
         selectedTool = nil
     }
 
+    mutating func startNewChat(on pick: UTIModelSelection) {
+        selectedModelID = pick.modelID
+        selectedReasoningMode = pick.reasoningMode
+    }
+
     /// Compact, privacy-aware description for debug logs. Reports text length and
     /// attachment count rather than the values themselves so user prompts and image
     /// data don't end up in `os_log` output.
@@ -86,9 +98,17 @@ struct TabInputState: Equatable {
         let mode = toggleMode.rawValue
         let textLen = text.count
         let attachments = self.attachments.count
-        let model = selectedModelID ?? "nil"
+        let model = chatOnlyModelID.map { "\($0) (chat only)" } ?? selectedModelID ?? "nil"
         let reasoning = selectedReasoningMode?.rawValue ?? "nil"
         let tool = selectedTool?.rawValue ?? "nil"
         return "mode=\(mode) text.count=\(textLen) attachments=\(attachments) model=\(model) reasoning=\(reasoning) tool=\(tool) inputBox=\(aiChatInputBoxVisibility.rawValue) voice=\(isVoiceSessionActive) modelPickerPin=\(isModelPickerForcedVisible)"
     }
+}
+
+/// What a Duck.ai chat's state contributes to the input's placeholder.
+struct AIChatPlaceholderState: Equatable {
+    let hasSubmittedPrompt: Bool
+    let isImageGenerationSelected: Bool
+
+    static let newChat = AIChatPlaceholderState(hasSubmittedPrompt: false, isImageGenerationSelected: false)
 }

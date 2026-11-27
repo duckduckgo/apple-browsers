@@ -60,9 +60,14 @@ final class AIChatHistoryViewModel: ObservableObject {
     /// currently shown in `pinned`/`recent`.
     private(set) var totalChatCount: Int = 0
 
+    /// Every stored chat, unfiltered by search; nil until the first read and after a failed one, when nothing is known.
+    @Published private(set) var storedChatIds: Set<String>?
+
     private let reader: ChatHistoryReading
     private let fireExecutor: FireExecuting?
     private let downloader: ChatHistoryDownloading?
+    /// Read when an export starts, not when the list is built: a long-lived list would otherwise keep an empty catalog.
+    private let modelDisplays: () -> [String: ModelDisplay]
     private let pinner: ChatPinning?
     private let mutationQueue: DispatchQueue
     private let instrumentation: AIChatHistoryInstrumentation
@@ -83,6 +88,7 @@ final class AIChatHistoryViewModel: ObservableObject {
         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
         fireExecutor: FireExecuting? = nil,
         downloader: ChatHistoryDownloading? = nil,
+        modelDisplays: @escaping () -> [String: ModelDisplay] = { [:] },
         pinner: ChatPinning? = nil,
         source: AIChatHistorySource = .browserMenu,
         isFireMode: Bool = false,
@@ -93,6 +99,7 @@ final class AIChatHistoryViewModel: ObservableObject {
         self.featureFlagger = featureFlagger
         self.fireExecutor = fireExecutor
         self.downloader = downloader
+        self.modelDisplays = modelDisplays
         self.pinner = pinner
         self.source = source
         self.isFireMode = isFireMode
@@ -129,6 +136,7 @@ final class AIChatHistoryViewModel: ObservableObject {
                 : allChats.filter { $0.title.localizedCaseInsensitiveContains(trimmed) }
             loadFailed = false
             totalChatCount = allChats.count
+            storedChatIds = Set(allChats.map(\.chatId))
             pinned = filtered.filter(\.pinned)
             recent = filtered.filter { !$0.pinned }
         case .failure(let error):
@@ -137,6 +145,7 @@ final class AIChatHistoryViewModel: ObservableObject {
             }
             loadFailed = true
             totalChatCount = 0
+            storedChatIds = nil
             pinned = []
             recent = []
         }
@@ -198,6 +207,10 @@ final class AIChatHistoryViewModel: ObservableObject {
         instrumentation.fireAllTapped()
     }
 
+    func screenWillClose() {
+        delegate?.viewModelWillClose()
+    }
+
     func newChatTapped() {
         instrumentation.newChatTapped()
         delegate?.viewModelDidRequestOpenNewChat()
@@ -216,6 +229,10 @@ final class AIChatHistoryViewModel: ObservableObject {
     func openChatProtection() {
         instrumentation.chatProtectionTapped()
         delegate?.viewModelDidRequestChatProtection()
+    }
+
+    func openDataClearingSettings() {
+        delegate?.viewModelDidRequestDataClearingSettings()
     }
 
     func deleteChat(chatId: String) {
@@ -286,11 +303,13 @@ final class AIChatHistoryViewModel: ObservableObject {
     private func exportChats(_ chatIds: [String], onExported: @escaping ([URL]) -> Void) {
         guard let downloader, !chatIds.isEmpty else { return }
         let instrumentation = instrumentation
+        // The catalog lives on the main actor, so it's read here before the export moves off it.
+        let modelDisplays = modelDisplays()
         mutationQueue.async {
             var urls: [URL] = []
             for chatId in chatIds {
                 do {
-                    urls.append(try downloader.downloadChat(chatId: chatId))
+                    urls.append(try downloader.downloadChat(chatId: chatId, modelDisplays: modelDisplays))
                 } catch {
                     Logger.aiChat.debug("Chat export failed: \(error.localizedDescription)")
                     instrumentation.downloadFailed(error: error)
@@ -413,6 +432,9 @@ protocol AIChatHistoryViewModelDelegate: AnyObject {
     /// Dismiss the sheet and open the Duck.ai chat protection page.
     func viewModelDidRequestChatProtection()
 
+    /// Dismiss the sheet and open Settings → Data Clearing.
+    func viewModelDidRequestDataClearingSettings()
+
     /// A chat export finished writing to disk. Present the "Download complete" toast for
     /// `filename` with a "Show" action that dismisses the sheet and opens the in-app
     /// Downloads list.
@@ -426,4 +448,7 @@ protocol AIChatHistoryViewModelDelegate: AnyObject {
     /// An export produced no files — a single download failed, or every selected chat failed.
     /// Present a "download failed" error toast. (Not called when nothing was selected.)
     func viewModelDidFailExport()
+
+    /// The sheet is closing, whether or not it opened anything.
+    func viewModelWillClose()
 }

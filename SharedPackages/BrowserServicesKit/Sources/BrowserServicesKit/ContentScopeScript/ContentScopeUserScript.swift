@@ -50,16 +50,25 @@ public enum ContentScopeScriptContext: Equatable {
     /// Page-world content scope. Optionally carries surrogate-filtered tracker data
     /// (a TDS subset containing only trackers with surrogate rules) which is serialised
     /// as `trackerData` in the user-preferences payload for C-S-S surrogate injection.
-    case contentScope(surrogateTrackerData: TrackerData? = nil)
+    /// `disableScriptSurrogateInjection` is sent as `disableScriptSurrogateInjection: true`, so C-S-S keeps reporting
+    /// resource loads but stops injecting surrogates (when the embedded web extension serves them instead). It is separate
+    /// from the `trackerProtection.surrogateInjection` config setting.
+    case contentScope(surrogateTrackerData: TrackerData? = nil, disableScriptSurrogateInjection: Bool = false)
     case contentScopeIsolated
+    /// Isolated-world script for PIR's broker web views. It carries only `brokerProtection`, so it's far
+    /// smaller than `contentScopeIsolated`.
+    case brokerProtection
     case aiChatDataClearing
     case aiChatHistory
+    /// Isolated-world script for translating a page, injected on demand. It shares the isolated
+    /// message handler, so the tab's isolated script's broker carries its messages.
+    case pageTranslation
 
     public var isIsolated: Bool {
         switch self {
         case .contentScope, .aiChatDataClearing, .aiChatHistory:
             return false
-        case .contentScopeIsolated:
+        case .contentScopeIsolated, .brokerProtection, .pageTranslation:
             return true
         }
     }
@@ -68,9 +77,9 @@ public enum ContentScopeScriptContext: Equatable {
     /// protections off for duck.ai must not disable them.
     var appliesUserUnprotectedDomains: Bool {
         switch self {
-        case .contentScope, .contentScopeIsolated:
+        case .contentScope, .contentScopeIsolated, .brokerProtection:
             return true
-        case .aiChatDataClearing, .aiChatHistory:
+        case .aiChatDataClearing, .aiChatHistory, .pageTranslation:
             return false
         }
     }
@@ -81,10 +90,14 @@ public enum ContentScopeScriptContext: Equatable {
             return "contentScope"
         case .contentScopeIsolated:
             return "contentScopeIsolated"
+        case .brokerProtection:
+            return "brokerProtection"
         case .aiChatDataClearing:
             return "duckAiDataClearing"
         case .aiChatHistory:
             return "duckAiChatHistory"
+        case .pageTranslation:
+            return "pageTranslation"
         }
     }
 
@@ -96,7 +109,7 @@ public enum ContentScopeScriptContext: Equatable {
             return "duckAiDataClearing"
         case .aiChatHistory:
             return "duckAiChatHistory"
-        case .contentScopeIsolated:
+        case .contentScopeIsolated, .brokerProtection, .pageTranslation:
             return "contentScopeScriptsIsolated"
         }
     }
@@ -337,9 +350,10 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
             throw EncodingError.invalidValue(string, EncodingError.Context(codingPath: [], debugDescription: "Failed to encode a string literal"))
         }
         // A JSON string is a valid JavaScript string literal, except that engines before ES2019 reject raw U+2028 and U+2029
+        // `.literal` matches code units: without it the search compares whole character clusters, which is slow on a config this size
         return literal
-            .replacingOccurrences(of: "\u{2028}", with: "\\u2028")
-            .replacingOccurrences(of: "\u{2029}", with: "\\u2029")
+            .replacingOccurrences(of: "\u{2028}", with: "\\u2028", options: .literal)
+            .replacingOccurrences(of: "\u{2029}", with: "\\u2029", options: .literal)
     }
 
     private static func encodeProperties(_ properties: ContentScopeProperties, scriptContext: ContentScopeScriptContext) throws -> String {
@@ -347,7 +361,11 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
         var dict = try JSONSerialization.jsonObject(with: jsonProperties, options: []) as? [String: Any] ?? [:]
         dict["messagingContextName"] = scriptContext.messagingContextName
 
-        if case .contentScope(let surrogateTrackerData?) = scriptContext,
+        if case .contentScope(_, disableScriptSurrogateInjection: true) = scriptContext {
+            dict["disableScriptSurrogateInjection"] = true
+        }
+
+        if case .contentScope(let surrogateTrackerData?, _) = scriptContext,
            let encodedTrackerData = try? JSONEncoder().encode(surrogateTrackerData),
            let trackerDataDict = try? JSONSerialization.jsonObject(with: encodedTrackerData, options: []) as? [String: Any] {
             // Failure here is non-fatal: surrogate tracker data is optional metadata. If

@@ -31,6 +31,14 @@ extension WebExtensionManager {
     }
 
     func registerHandlersForExtension(identifier: String, context: WKWebExtensionContext) {
+        // A manifest's DDG identifier does not authorize access to the browser's internal handlers.
+        guard installingEmbeddedIdentifiers.contains(identifier)
+            || installationStore.installedExtension(withUniqueIdentifier: identifier)?.isEmbedded == true else {
+            return
+        }
+
+        registerSubscriptionEventsHandler(identifier: identifier, context: context)
+
         guard let handlerProvider = handlerProvider else {
             Logger.webExtensions.debug("⚠️ No handler provider configured")
             return
@@ -58,15 +66,23 @@ extension WebExtensionManager: WebExtensionLoadingDelegate {
     public func webExtensionLoader(_ loader: WebExtensionLoading,
                                    willLoad context: WKWebExtensionContext,
                                    identifier: String) {
-        // Keep Chrome Web Store origins stable across launches while retaining the installation UUID.
+        // Use the installation UUID to keep origins stable without exposing the public store identifier.
         if let identity = installingStoreIdentities[identifier]
             ?? installationStore.installedExtension(withUniqueIdentifier: identifier)?.storeIdentity,
            identity.store == .chromeWebStore,
-           let baseURL = URL(string: "webkit-extension://\(identity.id)/") {
+           let baseURL = URL(string: "webkit-extension://\(identifier.lowercased())/") {
             context.baseURL = baseURL
             Logger.webExtensions.debug("Chrome Web Store extension base URL: \(baseURL.absoluteString, privacy: .public)")
         }
         registerHandlersForExtension(identifier: identifier, context: context)
+        // Users who allowed an optional permission (e.g. Bitwarden's nativeMessaging) before this build made it
+        // unavailable still have that grant saved, so the extension never asks again and they never see why the
+        // feature doesn't work. Dropping the grant makes the next request show the explanation.
+        // Required permissions stay, as the extension needs them to load.
+        let revoked = unavailablePermissions.subtracting(context.webExtension.requestedPermissions)
+        if !revoked.isEmpty {
+            context.grantedPermissions = context.grantedPermissions.filter { !revoked.contains($0.key) }
+        }
 #if os(macOS)
         // Saved shortcuts are in place before the extension runs. The app loads extensions on the main thread.
         if let commandShortcuts {
@@ -81,11 +97,6 @@ extension WebExtensionManager: WebExtensionLoadingDelegate {
             }
         }
 #endif
-        if context.webExtension.duckDuckGoWebExtensionType == .embedded {
-            MainActor.assumeIsolated {
-                cpmDiagnosticsRecorder?.contextWillLoad(context)
-            }
-        }
     }
 }
 
@@ -192,6 +203,7 @@ extension WebExtensionManager {
                                   for extensionContext: WKWebExtensionContext) async throws -> Any? {
         guard let nativeMessagingHandler else {
             Logger.webExtensions.error("❌ No native messaging handler, so the message fails")
+            recordNativeMessagingLimitation(for: extensionContext)
             throw WKWebExtension.MessagePort.Error(.notConnected)
         }
 
@@ -238,11 +250,19 @@ extension WebExtensionManager {
             return
         }
 
+        // The background page holds this port only so WebKit keeps it loaded, so no host starts.
+        guard port.applicationIdentifier != WebExtensionAPIStubScript.keepAliveApplicationIdentifier else {
+            port.messageHandler = { _, _ in }
+            completionHandler(nil)
+            return
+        }
+
         let applicationIdentifier = port.applicationIdentifier ?? "(none)"
         Logger.webExtensions.debug("🔗 \(displayName) opens a port to \(applicationIdentifier, privacy: .public)")
 
         guard let nativeMessagingHandler else {
             Logger.webExtensions.error("❌ No native messaging handler, so the port of \(displayName) stays silent")
+            recordNativeMessagingLimitation(for: extensionContext)
             completionHandler(WKWebExtension.MessagePort.Error(.notConnected))
             return
         }
@@ -266,6 +286,7 @@ extension WebExtensionManager {
                 if !replayed.isEmpty {
                     Logger.webExtensions.debug("🔗 Replayed \(replayed.count, privacy: .public) message(s) that \(displayName) posted before its host was up")
                 }
+                keepBackgroundLoadedWhileNativePortsAreOpen(for: extensionContext)
             } catch {
                 // The disconnect is all the extension sees, so this is the one place the failure is recorded.
                 Logger.webExtensions.error("❌ Port of \(displayName) to \(applicationIdentifier, privacy: .public) failed: \(error.localizedDescription, privacy: .public)")
@@ -273,6 +294,78 @@ extension WebExtensionManager {
             }
         }
     }
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+@MainActor
+extension WebExtensionManager {
+
+    /// How often the background page renews its keep-alive port. After WebKit forgets the page's
+    /// ports, it unloads the page about 30 seconds after the last extension event.
+    static let nativePortKeepAliveInterval: Duration = .seconds(15)
+
+    /// Keeps the extension's background page loaded while it has a native messaging port open, as
+    /// Chrome does. Extensions keep their host session only in the background page: iCloud Passwords
+    /// loses its paired session when WebKit unloads the page.
+    ///
+    /// The page holds a keep-alive port and renews it when other ports close, which works around
+    /// WebKit forgetting the page's ports (see `WebExtensionAPIStubScript`). Not every such loss
+    /// reaches the page, and the page's process is suspended while idle, so the app also asks the
+    /// page to renew the port every `nativePortKeepAliveInterval`. The task
+    /// ends, and the page closes the port, when the extension has no native port open. It also ends
+    /// when the page is gone.
+    ///
+    /// A reloaded extension gets a new context with the same identifier, so a task left from the
+    /// previous context is replaced rather than kept.
+    func keepBackgroundLoadedWhileNativePortsAreOpen(for context: WKWebExtensionContext) {
+        let identifier = context.uniqueIdentifier
+        if let existing = nativePortKeepAliveTasks[identifier] {
+            guard existing.context !== context else { return }
+            existing.task.cancel()
+        }
+
+        let displayName = context.webExtension.displayName ?? "(unknown)"
+        let function = "globalThis.\(WebExtensionAPIStubScript.keepBackgroundAliveFunctionName)"
+        let token = UUID()
+        let task = Task { @MainActor [weak self, weak context] in
+            while !Task.isCancelled {
+                guard let self, let context, let webView = self.backgroundWebView(in: context) else { break }
+                guard self.nativeMessagingHandler?.hasOpenPorts(for: context) == true else {
+                    _ = try? await webView.evaluateJavaScript("\(function)?.(false)")
+                    // A port that connected during the release found this task registered and started
+                    // none, so this task keeps the page loaded for it.
+                    if self.nativeMessagingHandler?.hasOpenPorts(for: context) == true {
+                        continue
+                    }
+                    break
+                }
+                let renewed = (try? await webView.evaluateJavaScript("\(function)?.() === true")) as? Bool ?? false
+                guard renewed else {
+                    Logger.webExtensions.error("❌ The background page of \(displayName) did not renew its keep-alive port")
+                    break
+                }
+                do {
+                    try await Task.sleep(for: Self.nativePortKeepAliveInterval)
+                } catch {
+                    break
+                }
+            }
+            Logger.webExtensions.debug("🔗 The background page of \(displayName) is no longer kept loaded")
+            if self?.nativePortKeepAliveTasks[identifier]?.token == token {
+                self?.nativePortKeepAliveTasks[identifier] = nil
+            }
+        }
+        nativePortKeepAliveTasks[identifier] = NativePortKeepAlive(context: context, task: task, token: token)
+    }
+}
+
+/// The task that keeps one context's background page loaded.
+@available(macOS 15.4, iOS 18.4, *)
+struct NativePortKeepAlive {
+    weak var context: WKWebExtensionContext?
+    let task: Task<Void, Never>
+    /// Tells this entry apart from a later one for the same extension identifier.
+    let token: UUID
 }
 
 /// Holds port messages that arrive before a native messaging host is ready for them.

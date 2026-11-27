@@ -1,4 +1,31 @@
 {
+    "m_ios_onboarding_time-limit": {
+        "description": "Fired once per install when contextual onboarding ends at its days or app-opens limit, checked on foreground, page load, opening a new tab, or a dialog action.",
+        "owners": ["rachelmcr"],
+        "triggers": ["startup", "page_load", "new_tab", "user_interaction"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "event",
+                "type": "string",
+                "description": "The contextual onboarding time limit was reached",
+                "enum": ["reached"]
+            },
+            {
+                "key": "value",
+                "type": "string",
+                "description": "Which contextual onboarding limit was reached",
+                "enum": ["days", "app-opens"]
+            },
+            "onboardingInstallType",
+            "onboardingDaysSinceInstall",
+            "onboardingSource",
+            "onboardingFlow",
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
+        ]
+    },
     "m_ios_onboarding_welcome": {
         "description": "Fired during linear onboarding on the Welcome step.",
         "owners": ["rachelmcr"],
@@ -12,7 +39,8 @@
             "onboardingDaysSinceInstall",
             "onboardingSource",
             "onboardingFlow",
-            "onboardingFlowVariant"
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
         ]
     },
     "m_ios_onboarding_skip-onboarding": {
@@ -28,7 +56,8 @@
             "onboardingDaysSinceInstall",
             "onboardingSource",
             "onboardingFlow",
-            "onboardingFlowVariant"
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
         ]
     },
     "m_ios_onboarding_set-default": {
@@ -44,7 +73,8 @@
             "onboardingDaysSinceInstall",
             "onboardingSource",
             "onboardingFlow",
-            "onboardingFlowVariant"
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
         ]
     },
     "m_ios_onboarding_ai-intro": {
@@ -60,7 +90,8 @@
             "onboardingDaysSinceInstall",
             "onboardingSource",
             "onboardingFlow",
-            "onboardingFlowVariant"
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
         ]
     },
     "m_ios_onboarding_add-to-dock": {
@@ -76,7 +107,8 @@
             "onboardingDaysSinceInstall",
             "onboardingSource",
             "onboardingFlow",
-            "onboardingFlowVariant"
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
         ]
     },
     "m_ios_onboarding_app-icon-color": {
@@ -97,7 +129,8 @@
             "onboardingDaysSinceInstall",
             "onboardingSource",
             "onboardingFlow",
-            "onboardingFlowVariant"
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
         ]
     },
     "m_ios_onboarding_address-bar-position": {
@@ -118,7 +151,8 @@
             "onboardingDaysSinceInstall",
             "onboardingSource",
             "onboardingFlow",
-            "onboardingFlowVariant"
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
         ]
     },
     "m_ios_onboarding_search-experience": {
@@ -139,7 +173,8 @@
             "onboardingDaysSinceInstall",
             "onboardingSource",
             "onboardingFlow",
-            "onboardingFlowVariant"
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
         ]
     },
     "m_ios_onboarding_search-chat-toggle": {
@@ -160,7 +195,8 @@
             "onboardingDaysSinceInstall",
             "onboardingSource",
             "onboardingFlow",
-            "onboardingFlowVariant"
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
         ]
     },
     "m_ios_onboarding_search": {
@@ -181,7 +217,8 @@
             "onboardingDaysSinceInstall",
             "onboardingSource",
             "onboardingFlow",
-            "onboardingFlowVariant"
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
         ]
     },
     "m_ios_onboarding_search-results": {
@@ -197,7 +234,8 @@
             "onboardingDaysSinceInstall",
             "onboardingSource",
             "onboardingFlow",
-            "onboardingFlowVariant"
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
         ]
     },
     "m_ios_onboarding_visit-site": {
@@ -218,7 +256,8 @@
             "onboardingDaysSinceInstall",
             "onboardingSource",
             "onboardingFlow",
-            "onboardingFlowVariant"
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
         ]
     },
     "m_ios_onboarding_trackers-blocked": {
@@ -234,7 +273,8 @@
             "onboardingDaysSinceInstall",
             "onboardingSource",
             "onboardingFlow",
-            "onboardingFlowVariant"
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
         ]
     },
     "m_ios_onboarding_fire-button": {
@@ -250,7 +290,8 @@
             "onboardingDaysSinceInstall",
             "onboardingSource",
             "onboardingFlow",
-            "onboardingFlowVariant"
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
         ]
     },
     "m_ios_onboarding_end": {
@@ -266,7 +307,8 @@
             "onboardingDaysSinceInstall",
             "onboardingSource",
             "onboardingFlow",
-            "onboardingFlowVariant"
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
         ]
     },
     "m_ios_onboarding_subscription-promo": {
@@ -282,7 +324,8 @@
             "onboardingDaysSinceInstall",
             "onboardingSource",
             "onboardingFlow",
-            "onboardingFlowVariant"
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
         ]
     },
     "m_ios_onboarding_download-choice": {
@@ -297,38 +340,14 @@
                 "key": "value",
                 "type": "string",
                 "description": "On the engagement (clicked) event: the download reason the user selected",
-                "enum": ["search", "ai-chat", "no-ai", "ad-blocking"]
+                "enum": ["search", "ai-chat", "no-ai", "ad-blocking", "vpn"]
             },
             "onboardingInstallType",
             "onboardingDaysSinceInstall",
             "onboardingSource",
             "onboardingFlow",
-            "onboardingFlowVariant"
-        ]
-    },
-    "m_ios_onboarding_preferences_serp": {
-        "description": "Fired during linear onboarding on the SERP preferences step of the download-reason segmented flow (treatment cohort).",
-        "owners": ["alessandroboron"],
-        "triggers": ["other"],
-        "parameters": [
-            "appVersion",
-            "pixelSource",
-            "onboardingEventType",
-            {
-                "key": "recently_visited_sites_enabled",
-                "type": "boolean",
-                "description": "On the engagement (clicked) event: whether recently visited sites is enabled: true or false"
-            },
-            {
-                "key": "safe_search_enabled",
-                "type": "boolean",
-                "description": "On the engagement (clicked) event: whether safe search is enabled: true or false"
-            },
-            "onboardingInstallType",
-            "onboardingDaysSinceInstall",
-            "onboardingSource",
-            "onboardingFlow",
-            "onboardingFlowVariant"
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
         ]
     },
     "m_ios_onboarding_preferences_ai-model": {
@@ -343,13 +362,14 @@
                 "key": "value",
                 "type": "string",
                 "description": "On the engagement (clicked) event: the provider of the selected AI model",
-                "enum": ["anthropic", "openai", "mistral", "unknown"]
+                "enum": ["anthropic", "openai", "tinfoil", "mistral", "unknown"]
             },
             "onboardingInstallType",
             "onboardingDaysSinceInstall",
             "onboardingSource",
             "onboardingFlow",
-            "onboardingFlowVariant"
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
         ]
     },
     "m_ios_onboarding_preferences_ai-toggle-mode": {
@@ -369,7 +389,8 @@
             "onboardingDaysSinceInstall",
             "onboardingSource",
             "onboardingFlow",
-            "onboardingFlowVariant"
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
         ]
     },
     "m_ios_onboarding_preferences_ai-search": {
@@ -394,7 +415,8 @@
             "onboardingDaysSinceInstall",
             "onboardingSource",
             "onboardingFlow",
-            "onboardingFlowVariant"
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
         ]
     },
     "m_ios_onboarding_preferences_duck-ai": {
@@ -415,7 +437,8 @@
             "onboardingDaysSinceInstall",
             "onboardingSource",
             "onboardingFlow",
-            "onboardingFlowVariant"
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
         ]
     },
     "m_ios_onboarding_preferences_ad-blocking": {
@@ -445,7 +468,8 @@
             "onboardingDaysSinceInstall",
             "onboardingSource",
             "onboardingFlow",
-            "onboardingFlowVariant"
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
         ]
     },
     "m_ios_onboarding_end-try-duckai": {
@@ -461,7 +485,118 @@
             "onboardingDaysSinceInstall",
             "onboardingSource",
             "onboardingFlow",
-            "onboardingFlowVariant"
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
+        ]
+    },
+    "m_ios_onboarding_try-vpn": {
+        "description": "Fired during linear onboarding on the Try VPN step, shown to users who picked VPN as their download reason (treatment cohort).",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["user_interaction"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "onboardingEventType",
+            {
+                "key": "value",
+                "type": "string",
+                "description": "On the engagement (clicked) event: engage for Try for Free, dismiss for Skip",
+                "enum": ["engage", "dismiss"]
+            },
+            "onboardingInstallType",
+            "onboardingDaysSinceInstall",
+            "onboardingSource",
+            "onboardingFlow",
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
+        ]
+    },
+    "m_ios_onboarding_try-vpn-paywall": {
+        "description": "Fired on the subscription paywall opened from the Try VPN onboarding step when a purchase fails, for reasons other than the user cancelling it (the same errors as the subscription purchase failure pixels).",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["feature_lifecycle"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "onboardingEventType",
+            {
+                "key": "value",
+                "type": "string",
+                "description": "On failed: purchase_failed",
+                "enum": ["purchase_failed"]
+            },
+            "onboardingInstallType",
+            "onboardingDaysSinceInstall",
+            "onboardingSource",
+            "onboardingFlow",
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
+        ]
+    },
+    "m_ios_onboarding_try-vpn-subscription-found": {
+        "description": "Fired on the Subscription Found alert of the paywall opened from the Try VPN onboarding step, shown when the App Store finds a subscription the user already has. Users who didn't restore it are shown minus confirmed.",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["user_interaction", "feature_lifecycle"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "onboardingEventType",
+            {
+                "key": "value",
+                "type": "string",
+                "description": "On the engagement (clicked) event: engage for Restore, dismiss for Cancel. The confirmed event means the restore succeeded",
+                "enum": ["engage", "dismiss"]
+            },
+            "onboardingInstallType",
+            "onboardingDaysSinceInstall",
+            "onboardingSource",
+            "onboardingFlow",
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
+        ]
+    },
+    "m_ios_onboarding_vpn-activation": {
+        "description": "Fired during linear onboarding on the Turn on VPN step, shown after Try VPN to users with VPN access: when it's shown, when the user continues, and when turning on the VPN fails.",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["user_interaction", "feature_lifecycle", "scheduled"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "onboardingEventType",
+            {
+                "key": "value",
+                "type": "string",
+                "description": "On clicked: engage for Next with the VPN on, dismiss for Skip with the VPN off. On failed: permission_denied when the user declined the system VPN prompt, connection_failed when the VPN failed to start, reported a connection error, or didn't connect within 60 seconds",
+                "enum": ["engage", "dismiss", "permission_denied", "connection_failed"]
+            },
+            "onboardingInstallType",
+            "onboardingDaysSinceInstall",
+            "onboardingSource",
+            "onboardingFlow",
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
+        ]
+    },
+    "m_ios_onboarding_subscription-reminder": {
+        "description": "Fired during linear onboarding on the If you change your mind step, shown after Try VPN to users without VPN access.",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["user_interaction"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "onboardingEventType",
+            {
+                "key": "value",
+                "type": "string",
+                "description": "On the engagement (clicked) event: the user continued",
+                "enum": ["engage"]
+            },
+            "onboardingInstallType",
+            "onboardingDaysSinceInstall",
+            "onboardingSource",
+            "onboardingFlow",
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
         ]
     }
 }

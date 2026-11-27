@@ -25,6 +25,113 @@ import AIChat
 import WebKit
 import Combine
 
+@MainActor
+enum DuckAIChatScrollInsetStyler {
+
+    /// `keepsEndInView` scrolls a conversation at its end back there when the inset spacer changes height.
+    static func apply(_ insets: UIEdgeInsets, keepsEndInView: Bool = false, to webView: WKWebView) {
+        let top = max(0, insets.top)
+        let bottom = max(0, insets.bottom)
+        let script = """
+        (() => {
+            if (location.hostname !== 'duck.ai' && !location.hostname.endsWith('.duck.ai')) return;
+            const key = '__ddgNativeScrollInsets';
+            let state = window[key];
+            if (!state) {
+                state = { top: 0, bottom: 0, target: null, scheduled: false };
+                state.find = () => \(DuckAIChatScroller.expression);
+                state.apply = () => {
+                    if (!state.target?.isConnected) {
+                        state.target = state.find();
+                        if (state.target) {
+                            state.lastMessage = null;
+                            const style = state.target.style;
+                            state.original = {
+                                scrollTop: style.scrollPaddingTop,
+                                scrollBottom: style.scrollPaddingBottom,
+                                overscroll: style.overscrollBehaviorY
+                            };
+                        }
+                    }
+                    if (!state.target) return;
+                    const style = state.target.style;
+                    const scrollTop = state.top ? `${state.top}px` : state.original.scrollTop;
+                    const scrollBottom = state.bottom ? `${state.bottom}px` : state.original.scrollBottom;
+                    if (state.bottom > 0) {
+                        const wasAtBottom = state.target.scrollTop + state.target.clientHeight >= state.target.scrollHeight - 4;
+                        if (state.spacer?.parentElement !== state.target) {
+                            state.spacer = document.createElement('div');
+                            state.spacer.setAttribute('aria-hidden', 'true');
+                            state.spacer.style.cssText = 'flex: 0 0 auto; width: 100%; pointer-events: none;';
+                            state.target.appendChild(state.spacer);
+                        }
+                        if (state.target.lastElementChild !== state.spacer) {
+                            state.target.appendChild(state.spacer);
+                        }
+                        const lastMessage = state.spacer.previousElementSibling;
+                        const content = lastMessage?.lastElementChild || lastMessage;
+                        if (state.lastMessage !== lastMessage || state.content !== content) {
+                            state.resizeObserver.disconnect();
+                            state.resizeObserver.observe(state.target);
+                            if (content) state.resizeObserver.observe(content);
+                            state.lastMessage = lastMessage;
+                            state.content = content;
+                        }
+                        state.spacer.style.marginTop = `${-(parseFloat(getComputedStyle(state.target).rowGap) || 0)}px`;
+                        const targetRect = state.target.getBoundingClientRect();
+                        const contentEnd = content
+                            ? content.getBoundingClientRect().bottom - targetRect.top - state.target.clientTop + state.target.scrollTop
+                            : 0;
+                        const targetStyle = getComputedStyle(state.target);
+                        const after = getComputedStyle(state.target, '::after');
+                        const afterClearance = after.display !== 'none' && !['none', 'normal'].includes(after.content)
+                            ? (parseFloat(after.height) || 0) + (parseFloat(after.marginTop) || 0)
+                                + (parseFloat(after.marginBottom) || 0) + (parseFloat(targetStyle.rowGap) || 0)
+                            : 0;
+                        const spacerTop = state.spacer.getBoundingClientRect().top - targetRect.top
+                            - state.target.clientTop + state.target.scrollTop;
+                        const existingClearance = Math.max(0, spacerTop - contentEnd
+                            + (parseFloat(targetStyle.paddingBottom) || 0) + afterClearance);
+                        const overlap = Math.max(state.bottom, targetRect.bottom + scrollY - innerHeight);
+                        const height = Math.max(0, overlap - existingClearance);
+                        const previousHeight = state.spacer.getBoundingClientRect().height;
+                        state.spacer.style.height = `${height}px`;
+                        if (Math.abs(height - previousHeight) > 0.5) {
+                            if (wasAtBottom && state.keepsEndInView) state.target.scrollTop = state.target.scrollHeight;
+                            // Auto margins move without resizing content.
+                            state.schedule();
+                        }
+                    } else if (state.spacer?.parentElement === state.target) {
+                        state.spacer.remove();
+                    }
+                    if (style.scrollPaddingTop !== scrollTop) style.scrollPaddingTop = scrollTop;
+                    if (style.scrollPaddingBottom !== scrollBottom) style.scrollPaddingBottom = scrollBottom;
+                    style.overscrollBehaviorY = state.top || state.bottom ? 'contain' : state.original.overscroll;
+                };
+                state.schedule = () => {
+                    if (state.scheduled) return;
+                    state.scheduled = true;
+                    requestAnimationFrame(() => {
+                        state.scheduled = false;
+                        state.apply();
+                    });
+                };
+                state.resizeObserver = new ResizeObserver(state.schedule);
+                window.addEventListener('resize', state.schedule);
+                window.visualViewport?.addEventListener('resize', state.schedule);
+                new MutationObserver(state.schedule).observe(document.documentElement, { childList: true, subtree: true });
+                window[key] = state;
+            }
+            state.top = \(top);
+            state.bottom = \(bottom);
+            state.keepsEndInView = \(keepsEndInView);
+            state.apply();
+        })();
+        """
+        webView.evaluateJavaScript(script)
+    }
+}
+
 // MARK: - Delegate Protocol
 
 protocol AIChatUserScriptDelegate: AnyObject {
@@ -60,6 +167,8 @@ final class AIChatUserScript: NSObject, Subfeature {
         case changeModelAction(modelId: String)
         case openChatProtectionAction
         case nativeInputFocused(Bool)
+        case bonusRecordChanged(AIChatBonusRecordPayload)
+        case openChatAction(chatId: String)
 
         struct ChangeModelActionParams: Encodable {
             let modelId: String
@@ -67,6 +176,10 @@ final class AIChatUserScript: NSObject, Subfeature {
 
         struct NativeInputFocusedParams: Encodable {
             let focused: Bool
+        }
+
+        struct OpenChatActionParams: Encodable {
+            let chatId: String
         }
 
         var methodName: String {
@@ -95,6 +208,10 @@ final class AIChatUserScript: NSObject, Subfeature {
                 return "submitOpenChatProtectionAction"
             case .nativeInputFocused:
                 return "submitNativeInputFocused"
+            case .bonusRecordChanged:
+                return AIChatUserScriptMessages.submitAIChatBonusRecord.rawValue
+            case .openChatAction:
+                return AIChatUserScriptMessages.submitOpenChatAction.rawValue
             }
         }
 
@@ -108,6 +225,10 @@ final class AIChatUserScript: NSObject, Subfeature {
                 return ChangeModelActionParams(modelId: modelId)
             case .nativeInputFocused(let focused):
                 return NativeInputFocusedParams(focused: focused)
+            case .bonusRecordChanged(let payload):
+                return payload
+            case .openChatAction(let chatId):
+                return OpenChatActionParams(chatId: chatId)
             default:
                 return nil
             }
@@ -118,12 +239,31 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     weak var delegate: AIChatUserScriptDelegate?
     weak var broker: UserScriptMessageBroker?
-    weak var webView: WKWebView?
+    weak var webView: WKWebView? {
+        didSet {
+            if let webView {
+                localModelRunPageID = ObjectIdentifier(webView)
+            }
+        }
+    }
 
+    @MainActor weak var browserToolsService: AIChatBrowserToolsService?
+    private let debugSettings: AIChatDebugSettingsHandling
     private let devicePlatform: DevicePlatformProviding.Type
     private let handler: AIChatUserScriptHandling
+    private let bonusMessageLog: AIChatBonusMessageLogging?
+    private let localModelService: AIChatLocalModelServing?
+    /// The page whose local runs this script ends when it goes. `deinit` can't ask a web view
+    /// that's already gone for its identity.
+    private var localModelRunPageID: ObjectIdentifier?
+    /// A replaced script leaves the page's runs to the script that replaced it.
+    private var isReplacedOnItsPage = false
+    private let localModelAccessPrompt: LocalModelAccessAsking?
+    private var localTaskForSubmission: AIChatLocalModelTask?
     private(set) var messageOriginPolicy: MessageOriginPolicy
     private(set) var messageDestinationPolicy: MessageOriginPolicy
+    let messageFramePolicy: MessageFramePolicy
+    private let debugHostname: String?
     private var inputBoxCancellables = Set<AnyCancellable>()
     /// Returns the page context currently attached to the chat session, queried at submit time
     /// and inlined into the `submitPrompt` payload so the FE always sees it. Set by the host that
@@ -135,6 +275,9 @@ final class AIChatUserScript: NSObject, Subfeature {
     private var pendingTabContextSubmission: Task<Void, Never>?
     private var tabContextSubmissionGeneration = 0
     private var latestTabContextSubmissionID: UUID?
+    private var pendingOpenChat: PendingOpenChat?
+    /// How long `openChat(chatId:)` waits for the page's `openChatActionHandled`.
+    var openChatReplyTimeout: TimeInterval = 1.5
 
     /// Text selections to send on the prompt's `selections` key, alongside `pageContext` rather than in place of it.
     var attachedSelectionsProvider: (() -> [AIChatSelectionContextData])?
@@ -156,11 +299,21 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     init(handler: AIChatUserScriptHandling,
          debugSettings: AIChatDebugSettingsHandling,
-         devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self) {
+         devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self,
+         bonusMessageLog: AIChatBonusMessageLogging? = nil,
+         localModelService: AIChatLocalModelServing? = nil,
+         localModelAccessPrompt: LocalModelAccessAsking? = nil) {
+        self.debugSettings = debugSettings
         self.devicePlatform = devicePlatform
         self.handler = handler
+        self.bonusMessageLog = bonusMessageLog
+        self.localModelService = localModelService
+        self.localModelAccessPrompt = localModelAccessPrompt
         self.messageOriginPolicy = .only(rules: Self.buildMessageOriginRules(debugSettings: debugSettings))
         self.messageDestinationPolicy = .only(rules: Self.buildMessageDestinationRules(debugSettings: debugSettings))
+        // A debug hostname may be a local http server, so only the main-frame part applies then.
+        self.messageFramePolicy = debugSettings.messagePolicyHostname == nil ? .secureMainFrame : .mainFrame
+        self.debugHostname = debugSettings.messagePolicyHostname
         super.init()
 
         // Set self as the metric reporting handler
@@ -170,10 +323,20 @@ final class AIChatUserScript: NSObject, Subfeature {
                 self?.submitSyncStatusChanged(status)
             }
         }
+        handler.setBonusRecordChangedHandler { [weak self] payload in
+            self?.submitBonusRecord(payload)
+        }
     }
 
     deinit {
         pendingTabContextSubmission?.cancel()
+        pendingOpenChat?.continuation.resume(returning: nil)
+        // Content-blocking updates replace the script while its page stays open. The page's runs
+        // carry on and reach it through the new script, so only a page that's gone ends them.
+        guard let localModelService, !isReplacedOnItsPage, let pageID = localModelRunPageID else { return }
+        Task { @MainActor in
+            localModelService.cancelRuns(ownerID: pageID)
+        }
     }
 
     private static func buildMessageOriginRules(debugSettings: AIChatDebugSettingsHandling) -> [HostnameMatchingRule] {
@@ -211,6 +374,10 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     func with(broker: UserScriptMessageBroker) {
         self.broker = broker
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            self.localModelService?.register(self)
+        }
     }
 
     func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {
@@ -232,10 +399,18 @@ final class AIChatUserScript: NSObject, Subfeature {
         delegate?.aiChatUserScript(self, didReceiveMessage: message)
 
         switch message {
+        case .executeClientTool:
+            return { @MainActor [weak self, handler = self.handler] params, message in
+                let source = self.flatMap { $0.isBrowserToolsMessage(message) ? $0 : nil }
+                return await handler.executeClientTool(params: params, source: source)
+            }
         case .responseState:
             return handler.getResponseState
         case .getAIChatNativeConfigValues:
-            return handler.getAIChatNativeConfigValues
+            return { @MainActor [weak self, handler = self.handler] params, message in
+                guard let self else { return handler.getAIChatNativeConfigValues(params: params, message: message) }
+                return self.getAIChatNativeConfigValues(params: params, message: message)
+            }
         case .getAIChats:
             return handler.getAIChats
         case .getAIChatNativePrompt:
@@ -277,19 +452,19 @@ final class AIChatUserScript: NSObject, Subfeature {
         case .clearMigrationData:
             return handler.clearMigrationData
         case .getSyncStatus:
-            return handler.getSyncStatus
+            return duckAIMainFrameOnly(handler.getSyncStatus)
         case .getScopedSyncAuthToken:
-            return handler.getScopedSyncAuthToken
+            return duckAIMainFrameOnly(handler.getScopedSyncAuthToken)
         case .encryptWithSyncMasterKey:
-            return handler.encryptWithSyncMasterKey
+            return duckAIMainFrameOnly(handler.encryptWithSyncMasterKey)
         case .decryptWithSyncMasterKey:
-            return handler.decryptWithSyncMasterKey
+            return duckAIMainFrameOnly(handler.decryptWithSyncMasterKey)
         case .sendToSetupSync:
-            return handler.sendToSetupSync
+            return duckAIMainFrameOnly(handler.sendToSetupSync)
         case .sendToSyncSettings:
-            return handler.sendToSyncSettings
+            return duckAIMainFrameOnly(handler.sendToSyncSettings)
         case .setAIChatHistoryEnabled:
-            return handler.setAIChatHistoryEnabled
+            return duckAIMainFrameOnly(handler.setAIChatHistoryEnabled)
         case .voiceSessionStarted:
             return handler.voiceSessionStarted
         case .voiceSessionEnded:
@@ -310,6 +485,8 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.disableChatInput
         case .enableChatInput:
             return handler.enableChatInput
+        case .aiChatPromoVisibility:
+            return handler.aiChatPromoVisibility
         case .focusChatInput:
             return handler.focusChatInput
         case .editPrompt:
@@ -322,13 +499,92 @@ final class AIChatUserScript: NSObject, Subfeature {
         case .attachmentPrivacyShouldDisplay:
             guard !devicePlatform.isIphone else { return nil }
             return handler.attachmentPrivacyShouldDisplay
+        case .getAIChatBonusRecord:
+            return handler.getAIChatBonusRecord
+        case .getAIChatNewBonusRecord:
+            return handler.getAIChatNewBonusRecord
+        case .aiChatBonusRedeemOutcome:
+            return handler.aiChatBonusRedeemOutcome
+        case .aiChatBonusDismiss:
+            return handler.aiChatBonusDismiss
+        case .aiChatBonusEnd:
+            return handler.aiChatBonusEnd
+        case .openChatActionHandled:
+            return { @MainActor [weak self] params, _ in
+                self?.openChatActionHandled(params: params)
+                return nil
+            }
+
+        // Main-actor closures, so the reply isn't held up by a hop in the middle of the handler.
+        case .startAIChatLocalRun:
+            return { @MainActor [weak self] params, message in
+                try self?.startAIChatLocalRun(params: params, message: message)
+            }
+        case .cancelAIChatLocalRun:
+            return { @MainActor [weak self] params, _ in
+                self?.cancelAIChatLocalRun(params: params)
+            }
+        case .requestAIChatLocalModelAccess:
+            return { @MainActor [weak self] _, message in
+                try await self?.requestAIChatLocalModelAccess(message: message)
+            }
+
         default:
             return nil
         }
     }
 
+    @MainActor
+    func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> Encodable? {
+        let response = handler.getAIChatNativeConfigValues(params: params, message: message)
+        guard var configValues = response as? AIChatNativeConfigValues else { return response }
+        // The local model's state and text reach the page only through `pushToDuckAI`, so a page that
+        // can't receive pushes isn't offered it: it would wait for a summary that never arrives.
+        if let localModelService, isDuckAIPushDestination(message.messageWebView?.url) {
+            configValues.localModel = localModelService.config()
+        }
+        if browserToolsService?.isEnabled == true {
+            configValues.clientTools = isBrowserToolsMessage(message) ? browserToolsService?.configuration(for: self) : nil
+        }
+        return configValues
+    }
+
+    /// Sync handlers expose sync secrets, so only Duck.ai's own main frame may call them,
+    /// not any page that passes the duckduckgo.com origin policy.
+    private func duckAIMainFrameOnly(_ handler: @escaping Subfeature.Handler) -> Subfeature.Handler {
+        return { [debugHostname] params, message in
+            guard await message.isFromDuckAIMainFrame(customHostname: debugHostname) else {
+                return AIChatErrorResponse(reason: "sync unavailable")
+            }
+            return try await handler(params, message)
+        }
+    }
+
     func setPayloadHandler(_ payloadHandler: any AIChatConsumableDataHandling) {
         handler.setPayloadHandler(payloadHandler)
+    }
+
+    @MainActor
+    func willHandOff(_ payload: AIChatPayload) {
+        handler.willHandOff(payload)
+    }
+
+    @MainActor
+    var isTermsOfServiceShownOnPage: Bool {
+        get { handler.isTermsOfServiceShownOnPage }
+        set { handler.isTermsOfServiceShownOnPage = newValue }
+    }
+
+    @MainActor
+    var isAIChatPromoVisible: Bool? {
+        get { handler.isAIChatPromoVisible }
+        set { handler.isAIChatPromoVisible = newValue }
+    }
+
+    @MainActor
+    var aiChatStatusOnPage: AIChatStatusValue? {
+        get { handler.aiChatStatusOnPage }
+        set { handler.aiChatStatusOnPage = newValue }
     }
 
     func setOpenLinkHandler(_ openLinkHandler: ((URL) -> Void)?) {
@@ -410,10 +666,12 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     @MainActor
     func cleanUpForReplacement() {
+        detachBrowserTools()
         handler.disconnectInitialPromptSession()
         cancelQueuedTabContextSubmissions()
         inputBoxHandler = nil
         delegate = nil
+        isReplacedOnItsPage = true
         webView = nil
     }
 
@@ -429,11 +687,22 @@ final class AIChatUserScript: NSObject, Subfeature {
                       reasoningEffort: AIChatReasoningEffort? = nil,
                       termsAccepted: Bool = false) {
         let selections = attachedSelectionsPayload
+        let localTask = localTaskForSubmission
         submitWithTabContexts(currentPageContext: pageContext, request: attachedTabContextsProvider?()) { context in
             AIChatNativePrompt.queryPrompt(prompt, autoSubmit: true, modelId: modelId,
-                                           pageContext: context, selections: selections, reasoningEffort: reasoningEffort)
+                                           pageContext: context, selections: selections, reasoningEffort: reasoningEffort,
+                                           localTask: localTask)
                 .withTermsAccepted(termsAccepted)
         }
+    }
+
+    /// Marks a prompt submitted inside `submit` as `localTask`, so Duck.ai can run it on the local model.
+    /// It's set only for the duration of the call: a prompt that's queued and goes out later uses the cloud.
+    @MainActor
+    func submitting(localTask: AIChatLocalModelTask, _ submit: () -> Void) {
+        localTaskForSubmission = localTask
+        defer { localTaskForSubmission = nil }
+        submit()
     }
 
     @MainActor
@@ -465,6 +734,7 @@ final class AIChatUserScript: NSObject, Subfeature {
                       onPromptDispatched: (() -> Void)? = nil) {
         let currentPageContext = pageContext ?? attachedPageContextProvider?()
         let selections = attachedSelectionsPayload
+        let localTask = localTaskForSubmission
         let onPromptSubmitted = onPromptSubmitted
         submitWithTabContexts(currentPageContext: currentPageContext, request: tabAttachmentRequest, didSubmit: {
             onPromptSubmitted?()
@@ -478,7 +748,8 @@ final class AIChatUserScript: NSObject, Subfeature {
                 modelId: modelId,
                 pageContext: context,
                 selections: selections,
-                reasoningEffort: reasoningEffort
+                reasoningEffort: reasoningEffort,
+                localTask: localTask
             ).withTermsAccepted(termsAccepted)
         })
     }
@@ -638,6 +909,41 @@ final class AIChatUserScript: NSObject, Subfeature {
         push(.openChatProtectionAction)
     }
 
+    /// Asks the page to open a chat in place, superseding any open still waiting for its answer.
+    /// - Returns: the page's answer, or `nil` when the push can't be sent, is superseded or gets no answer in time.
+    @MainActor
+    func openChat(chatId: String) async -> AIChatOpenChatOutcome? {
+        finishPendingOpenChat(with: nil)
+        let requestID = UUID()
+        let timeout = openChatReplyTimeout
+        return await withCheckedContinuation { continuation in
+            pendingOpenChat = PendingOpenChat(id: requestID, chatId: chatId, continuation: continuation)
+            guard push(.openChatAction(chatId: chatId)) else {
+                finishPendingOpenChat(with: nil)
+                return
+            }
+            Task { @MainActor [weak self] in
+                try? await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
+                guard self?.pendingOpenChat?.id == requestID else { return }
+                self?.finishPendingOpenChat(with: nil)
+            }
+        }
+    }
+
+    @MainActor
+    private func openChatActionHandled(params: Any) {
+        guard let reply: OpenChatActionHandled = DecodableHelper.decode(from: params),
+              reply.chatId == pendingOpenChat?.chatId else { return }
+        finishPendingOpenChat(with: AIChatOpenChatOutcome(rawValue: reply.status) ?? .failed)
+    }
+
+    @MainActor
+    private func finishPendingOpenChat(with outcome: AIChatOpenChatOutcome?) {
+        let pending = pendingOpenChat
+        pendingOpenChat = nil
+        pending?.continuation.resume(returning: outcome)
+    }
+
     /// Pushes sync status change to the web content when sync state changes (login/logout, availability).
     @MainActor
     func submitSyncStatusChanged(_ status: AIChatSyncHandler.SyncStatus) {
@@ -646,6 +952,17 @@ final class AIChatUserScript: NSObject, Subfeature {
               messageDestinationPolicy.isAllowed(host) else { return }
 
         push(.syncStatusChanged(status))
+    }
+
+    /// Pushes the bonus record to this tab after it changes, so Duck.ai re-derives the offer state.
+    @MainActor
+    func submitBonusRecord(_ payload: AIChatBonusRecordPayload) {
+        // Push only to websites matching origin policy
+        guard let host = webView?.url?.host,
+              messageDestinationPolicy.isAllowed(host) else { return }
+
+        guard push(.bonusRecordChanged(payload)) else { return }
+        bonusMessageLog?.record(.push, method: "\(AIChatUserScriptMessages.submitAIChatBonusRecord.rawValue) → \(host)", body: payload)
     }
 
     // MARK: - Private Helper
@@ -679,10 +996,192 @@ final class AIChatUserScript: NSObject, Subfeature {
     }
 }
 
+// MARK: - Open chat
+
+/// The page's answer to `submitOpenChatAction`.
+enum AIChatOpenChatOutcome: String {
+    case opened
+    case notFound
+    case failed
+}
+
+private struct PendingOpenChat {
+    let id: UUID
+    let chatId: String
+    let continuation: CheckedContinuation<AIChatOpenChatOutcome?, Never>
+}
+
+private struct OpenChatActionHandled: Decodable {
+    let chatId: String
+    let status: String
+}
+
+// MARK: - Local models
+
+extension AIChatUserScript: AIChatLocalModelPushing {
+
+    @MainActor
+    func startAIChatLocalRun(params: Any, message: UserScriptMessage) throws -> Encodable? {
+        guard let localModelService, isDuckAIPushDestination(message.messageWebView?.url) else {
+            throw AIChatLocalModelRequestError.unavailable
+        }
+        guard let request: AIChatLocalRunRequest = DecodableHelper.decode(from: params) else {
+            throw AIChatLocalModelRequestError.invalidArguments
+        }
+        return try localModelService.startRun(request, for: self)
+    }
+
+    /// A notification, but it also answers with `{}` in case the page sends it as a request.
+    @MainActor
+    func cancelAIChatLocalRun(params: Any) -> Encodable? {
+        if let request: AIChatLocalRunCancelRequest = DecodableHelper.decode(from: params) {
+            localModelService?.cancelRun(requestId: request.requestId, for: self)
+        }
+        return [String: String]()
+    }
+
+    /// Waits for the user's answer, so the page must not time it out.
+    @MainActor
+    func requestAIChatLocalModelAccess(message: UserScriptMessage) async throws -> Encodable? {
+        guard let localModelService, let localModelAccessPrompt,
+              isDuckAIPushDestination(message.messageWebView?.url) else {
+            throw AIChatLocalModelRequestError.unavailable
+        }
+        let window = message.messageWebView?.window
+        let result = try await localModelService.requestAccess { request in
+            await localModelAccessPrompt.ask(in: window, request: request)
+        }
+        return AIChatLocalModelAccessReply(result: result)
+    }
+
+    var localModelPage: AnyObject? {
+        webView
+    }
+
+    @MainActor
+    func pushLocalModelState(_ update: AIChatLocalModelStateUpdate) {
+        pushToDuckAI(.submitAIChatLocalModelState, params: update)
+    }
+
+    @MainActor
+    func pushLocalRunChunk(_ chunk: AIChatLocalRunChunk) {
+        pushToDuckAI(.submitAIChatLocalRunChunk, params: chunk)
+    }
+
+    /// Every tab has this script, so the host is checked before anything is pushed.
+    @MainActor
+    private func pushToDuckAI(_ message: AIChatUserScriptMessages, params: Encodable?) {
+        guard let webView, let broker, isDuckAIPushDestination(webView.url) else { return }
+        broker.push(method: message.rawValue, params: params, for: self, into: webView)
+    }
+
+    fileprivate func isDuckAIPushDestination(_ url: URL?) -> Bool {
+        guard let host = url?.host else { return false }
+        return messageDestinationPolicy.isAllowed(host)
+    }
+}
+
 // MARK: - AIChatMetricReportingHandling
 
 extension AIChatUserScript: AIChatMetricReportingHandling {
     func didReportMetric(_ metric: AIChatMetric) {
         delegate?.aiChatUserScript(self, didReceiveMetric: metric)
+    }
+}
+
+extension AIChatUserScript: ClientToolPermissionPrompting {
+    @MainActor
+    func bindBrowserTools(to service: AIChatBrowserToolsService, owner: Tab, presenter: (any AIChatNativePermissionPresenting)? = nil, makeScope: @escaping @MainActor () -> BrowserToolScope?) {
+        detachBrowserTools()
+        service.attach(self, owner: owner, presenter: presenter, makeScope: makeScope)
+        browserToolsService = service
+    }
+
+    @MainActor
+    func detachBrowserTools() {
+        let service = browserToolsService
+        browserToolsService = nil
+        service?.detach(self)
+    }
+
+    @MainActor
+    func browserToolsDocumentDidCommit() {
+        browserToolsService?.documentDidCommit(self)
+    }
+
+    @MainActor
+    func browserToolsDocumentProcessDidTerminate() {
+        browserToolsService?.documentProcessDidTerminate(self)
+    }
+
+    @MainActor
+    var browserToolsDocumentURL: URL? {
+        guard let url = webView?.url, url.isDuckAIURL || debugSettings.matchesCustomURL(url),
+              let host = url.host else { return nil }
+        let policyHost = url.port.map { "\(host):\($0)" } ?? host
+        guard messageOriginPolicy.isAllowed(policyHost) else { return nil }
+        return url
+    }
+
+    @MainActor
+    func invokeBrowserTool(_ request: ExecuteClientToolRequest) async -> ExecuteClientToolResponse {
+        guard let browserToolsService else { return .failure(callId: request.callId, error: .unavailable) }
+        return await browserToolsService.invoke(request, from: self)
+    }
+
+    @MainActor
+    func presentClientToolPermissionPrompt(_ prompt: ClientToolPermissionPrompt) -> Bool {
+        browserToolsService?.presentPermissionPrompt(prompt, from: self) ?? false
+    }
+
+    @MainActor
+    func withdrawClientToolPermissionPrompt(requestID: String) {
+        browserToolsService?.withdrawPermissionPrompt(requestID: requestID, from: self)
+    }
+
+    @MainActor
+    func pushClientToolsChanged(_ data: ClientToolsChangedData) -> Bool {
+        guard browserToolsService?.canPushConfiguration(from: self) == true, let broker, let webView else { return false }
+        broker.push(method: AIChatUserScriptMessages.clientToolsChanged.rawValue, params: data, for: self, into: webView)
+        return true
+    }
+
+    @MainActor
+    func pushBrowserToolsTabChanged(_ data: AIChatTabChangedData) {
+        guard handler.displayMode == .contextual, browserToolsService?.canPushMetadata(from: self) == true, browserToolsDocumentURL != nil, let broker, let webView else { return }
+        let metadata = AIChatTabChangedData(tabId: data.tabId, url: data.url, isAttachable: data.url.flatMap(URL.init(string:)).map {
+            !AIChatTabMetadata.shouldExcludeFromTabPicker($0) && !debugSettings.matchesCustomURL($0)
+        })
+        broker.push(method: AIChatUserScriptMessages.aiChatTabChanged.rawValue, params: metadata, for: self, into: webView)
+    }
+
+    @MainActor
+    private func isBrowserToolsMessage(_ message: UserScriptMessage) -> Bool {
+        guard let message = message as? WKScriptMessage, let webView, message.webView === webView else { return false }
+        let origin = message.frameInfo.securityOrigin
+        return acceptsBrowserToolsMessage(message, senderScheme: origin.protocol, senderHost: origin.host, senderPort: origin.port)
+    }
+
+    @MainActor
+    func acceptsBrowserToolsMessage(_ message: UserScriptMessage, senderScheme: String, senderHost: String, senderPort: Int) -> Bool {
+        guard let webView, message.messageWebView === webView, message.isMainFrame,
+              let document = browserToolsDocumentURL,
+              messageOriginPolicy.isAllowed(message.messageHost) else { return false }
+        return Self.browserToolsOriginMatches(scheme: senderScheme, host: senderHost, port: senderPort, document: document)
+    }
+
+    static func browserToolsOriginMatches(scheme: String, host: String, port: Int, document: URL) -> Bool {
+        func effectivePort(_ port: Int?, scheme: String) -> Int? {
+            if let port, port != 0 { return port }
+            switch scheme.lowercased() {
+            case "https": return 443
+            case "http": return 80
+            default: return nil
+            }
+        }
+        guard let documentScheme = document.scheme, let documentHost = document.host else { return false }
+        return scheme.lowercased() == documentScheme.lowercased() &&
+            host.lowercased() == documentHost.lowercased() &&
+            effectivePort(port, scheme: scheme) == effectivePort(document.port, scheme: documentScheme)
     }
 }

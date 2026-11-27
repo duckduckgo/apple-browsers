@@ -255,8 +255,8 @@ extension AppDelegate {
 
     @MainActor
     @objc func addToDock(_ sender: Any?) {
-        guard dockCustomization.addToDock() else { return }
-        PixelKit.fire(GeneralPixel.userAddedToDockFromMainMenu)
+        AddToDockMenuAction(dockCustomization: dockCustomization, featureFlagger: featureFlagger, videoPresenter: addToDockVideoPresenter)
+            .perform(from: .mainMenu)
     }
 
     @MainActor
@@ -848,7 +848,12 @@ extension AppDelegate {
 
     @objc func resetOnboarding(_ sender: Any?) {
         UserDefaults.standard.set(false, forKey: UserDefaultsWrapper<Bool>.Key.onboardingFinished.rawValue)
-        NonBlockingOnboardingPersistor().reset()
+        Application.appDelegate.onboardingContextualDialogsManager.state = .notStarted
+        // Clears the AI Chat step's choice and the address bar toggle tip, as on a first run.
+        ["aichat.showSearchAndDuckAIToggle",
+         "aichat.showAIChatShortcutOnNewTabPage",
+         "aichat.userDidSeeToggleOnboarding",
+         "aichat.hasInteractedWithSearchDuckAIToggle"].forEach(UserDefaults.standard.removeObject(forKey:))
     }
 
     @objc func resetHomePageSettingsOnboarding(_ sender: Any?) {
@@ -1961,6 +1966,11 @@ extension MainViewController {
 
 extension MainViewController: NSMenuItemValidation {
 
+    private static let menuActionsAllowedWhileLocked: Set<Selector?> = [
+        #selector(findInPage), #selector(findInPageNext), #selector(findInPagePrevious), #selector(findInPageDone),
+        #selector(zoomIn(_:)), #selector(zoomOut(_:)), #selector(actualSize(_:))
+    ]
+
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
         guard !isWindowClosingAndBurning else {
             return false
@@ -1968,6 +1978,10 @@ extension MainViewController: NSMenuItemValidation {
 
         guard fireViewController.fireViewModel.fire.burningData == nil else {
             return true
+        }
+        // While onboarding locks the window, only Find and Zoom stay available. Fire's actions are handled by AppDelegate.
+        guard allowsUserInteraction || Self.menuActionsAllowedWhileLocked.contains(menuItem.action) else {
+            return false
         }
         switch menuItem.action {
         // Back/Forward
@@ -2133,16 +2147,22 @@ extension AppDelegate: NSMenuItemValidation {
             #selector(AppDelegate.openLocation(_:)),
             #selector(AppDelegate.openPreferences),
             #selector(AppDelegate.showManageBookmarks(_:)),
-            #selector(AppDelegate.openImportBrowserDataWindow(_:)):
+            #selector(AppDelegate.openImportBrowserDataWindow(_:)),
+            #selector(AppDelegate.openImportBookmarksWindow(_:)),
+            #selector(AppDelegate.openImportPasswordsWindow(_:)),
+            #selector(AppDelegate.recentlyClosedAction(_:)),
+            #selector(AppDelegate.openHistoryEntryVisit(_:)),
+            #selector(AppDelegate.showReleaseNotes(_:)),
+            #selector(AppDelegate.showWhatIsNew(_:)):
             return isUserInteractionAllowed
 
         // Reopen Last Removed Tab
         case #selector(AppDelegate.reopenLastClosedTab(_:)):
-            return recentlyClosedCoordinator.canReopenRecentlyClosedTab
+            return isUserInteractionAllowed && recentlyClosedCoordinator.canReopenRecentlyClosedTab
 
         // Reopen All Windows and Tabs From Last Session
         case #selector(AppDelegate.reopenAllWindowsFromLastSession(_:)):
-            return stateRestorationManager.canRestoreLastSessionState
+            return isUserInteractionAllowed && stateRestorationManager.canRestoreLastSessionState
 
         // Enables and disables export bookmarks items
         case #selector(AppDelegate.openExportBookmarks(_:)):
@@ -2167,7 +2187,7 @@ extension AppDelegate: NSMenuItemValidation {
 
     @MainActor
     private var isUserInteractionAllowed: Bool {
-        OnboardingActionsManager.isOnboardingFinished || NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking
+        !windowControllersManager.userInteractionLock.isLocked
     }
 
     private var areTherePasswords: Bool {

@@ -32,7 +32,7 @@ struct DuckAISubscriptionUpsellPolicy {
     }
 
     func allowsUpsell(for userTier: AIChatUserTier) -> Bool {
-        userTier != .free || isPurchaseEligible
+        userTier.allowsSubscriptionUpsell(isPurchaseEligible: isPurchaseEligible)
     }
 
     func shouldShowHeaderUpsell(for userTier: AIChatUserTier) -> Bool {

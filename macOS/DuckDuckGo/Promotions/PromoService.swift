@@ -459,11 +459,13 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
         dispatchPrecondition(condition: .onQueue(stateQueue))
         var hideTasks: [Task<Void, Never>] = []
         let visiblePromos = Array(activeSessions.keys)
+        let promoIDsShowingOverVisiblePromos = Set(promos.filter(\.showsOverVisiblePromos).map(\.id))
         for promoID in visiblePromos {
             guard activeSessions[promoID] != nil,
                   let promo = promos.first(where: { $0.id == promoID }),
-                  promo.delegate is InternalPromoDelegate else { continue }
-            if !checkRules(for: promo),
+                  promo.delegate is InternalPromoDelegate,
+                  !promo.showsOverVisiblePromos else { continue }
+            if !checkRules(for: promo, ignoring: promoIDsShowingOverVisiblePromos),
                let hideTask = recordResultAndCleanup(promoId: promoID, result: .noChange) {
                 hideTasks.append(hideTask)
             }
@@ -544,45 +546,46 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
         visiblePromoIds.send(Set(activeSessions.keys).union(externalVisiblePromoIds))
     }
 
-    private func checkRules(for promo: Promo) -> Bool {
+    private func checkRules(for promo: Promo, ignoring ignoredIds: Set<String> = []) -> Bool {
         dispatchPrecondition(condition: .onQueue(stateQueue))
         if promo.promoType.severity == .low { return true }
-        if externalActivationSuppression.isSet { return false }
+        return !externalActivationSuppression.isSet
+            && !conflictsWithVisiblePromos(promo, ignoring: ignoredIds)
+            && !isInGlobalCooldown(promo, ignoring: ignoredIds)
+    }
 
-        let visibleIds = Set(activeSessions.keys).union(externalVisiblePromoIds)
-        let promoId = promo.id
-        let severity = promo.promoType.severity
-        let context = promo.context
-        let coexisting = promo.coexistingPromoIDs
-
-        for otherId in visibleIds where otherId != promoId {
-            // Global rules only apply between medium+ promos. A visible low-severity promo must not
-            // block anything; the early return above covers a low-severity promo being blocked.
-            guard let other = promos.first(where: { $0.id == otherId }),
-                  other.promoType.severity >= .medium else { continue }
-
-            // Coexistence has to be declared by both promos, and is deliberately non-transitive:
-            // it's evaluated per pair, so A<->B plus B<->C still leaves A and C blocking each other.
-            let mutuallyCoexisting = coexisting.contains(otherId) && other.coexistingPromoIDs.contains(promoId)
-            guard !mutuallyCoexisting else { continue }
-
-            // One medium+ promo per context, and `.global` is exclusive with every other context.
-            if context == .global || other.context == .global || context == other.context {
-                return false
-            }
+    private func conflictsWithVisiblePromos(_ promo: Promo, ignoring ignoredIds: Set<String>) -> Bool {
+        guard !promo.showsOverVisiblePromos else { return false }
+        let visibleIds = Set(activeSessions.keys).union(externalVisiblePromoIds).subtracting(ignoredIds)
+        return visibleIds.contains { otherId in
+            guard otherId != promo.id, let other = promos.first(where: { $0.id == otherId }) else { return false }
+            return conflicts(promo, with: other)
         }
+    }
 
-        if promo.respectsGlobalCooldown && severity >= .medium {
-            let lastDismissedForType = promos
-                .filter { $0.initiated == promo.initiated && $0.setsGlobalCooldown && $0.promoType.severity >= .medium }
-                .compactMap { historyStore.record(for: $0.id).lastDismissed }
-                .max()
-            if let last = lastDismissedForType, currentDate.timeIntervalSince(last) < promo.initiated.cooldown {
-                return false
-            }
-        }
+    private func conflicts(_ promo: Promo, with other: Promo) -> Bool {
+        // Global rules only apply between medium+ promos. A visible low-severity promo must not
+        // block anything; `checkRules` returns early for a low-severity promo being blocked.
+        guard other.promoType.severity >= .medium else { return false }
 
-        return true
+        // Coexistence has to be declared by both promos, and is deliberately non-transitive:
+        // it's evaluated per pair, so A<->B plus B<->C still leaves A and C blocking each other.
+        let mutuallyCoexisting = promo.coexistingPromoIDs.contains(other.id) && other.coexistingPromoIDs.contains(promo.id)
+        guard !mutuallyCoexisting else { return false }
+
+        // One medium+ promo per context, and `.global` is exclusive with every other context.
+        return promo.context == .global || other.context == .global || promo.context == other.context
+    }
+
+    private func isInGlobalCooldown(_ promo: Promo, ignoring ignoredIds: Set<String>) -> Bool {
+        guard promo.respectsGlobalCooldown, promo.promoType.severity >= .medium else { return false }
+        let lastDismissedForType = promos
+            .filter { $0.initiated == promo.initiated && $0.setsGlobalCooldown && $0.promoType.severity >= .medium }
+            .filter { !ignoredIds.contains($0.id) }
+            .compactMap { historyStore.record(for: $0.id).lastDismissed }
+            .max()
+        guard let lastDismissedForType else { return false }
+        return currentDate.timeIntervalSince(lastDismissedForType) < promo.initiated.cooldown
     }
 
     // MARK: - Show / Session Management

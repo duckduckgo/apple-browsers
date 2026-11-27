@@ -224,7 +224,7 @@ enum DefaultBrowserAndDockPromptDebugPixelEvent: PixelKit.Event {
 
 // MARK: - Helpers
 
-private extension DefaultBrowserAndDockPromptType {
+extension DefaultBrowserAndDockPromptType {
 
     var promptTypeDescription: String {
         switch self {

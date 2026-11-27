@@ -25,87 +25,134 @@ struct SnapshotEnvironmentTests {
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func macOS2700IsAccepted() {
-        let message = SnapshotEnvironment.validationMessage(
+    func macOSCIVersionIsCompared() {
+        let mode = SnapshotEnvironment.comparisonMode(
             platform: .macOS,
-            operatingSystemVersion: OperatingSystemVersion(majorVersion: 27, minorVersion: 0, patchVersion: 0)
+            operatingSystemVersion: OperatingSystemVersion(majorVersion: 27, minorVersion: 0, patchVersion: 0),
+            environment: [:]
         )
 
-        #expect(message == nil)
+        #expect(mode == .compare)
     }
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func macOSWrongMajorVersionIsRejected() {
-        let message = SnapshotEnvironment.validationMessage(
+    func macOSCIVersionWithDifferentPatchIsCompared() {
+        let mode = SnapshotEnvironment.comparisonMode(
             platform: .macOS,
-            operatingSystemVersion: OperatingSystemVersion(majorVersion: 26, minorVersion: 6, patchVersion: 0)
+            operatingSystemVersion: OperatingSystemVersion(majorVersion: 27, minorVersion: 0, patchVersion: 1),
+            environment: ["REQUIRE_SNAPSHOT_REFERENCES": "1"]
         )
 
-        #expect(message == "UI snapshots must run on macOS 27. Current OS is 26.6.0.")
+        #expect(mode == .compare)
     }
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func macOSDifferentMinorVersionIsAccepted() {
-        let message = SnapshotEnvironment.validationMessage(
+    func macOSWrongMajorVersionSkipsAssertionsLocally() {
+        let mode = SnapshotEnvironment.comparisonMode(
             platform: .macOS,
-            operatingSystemVersion: OperatingSystemVersion(majorVersion: 27, minorVersion: 1, patchVersion: 0)
+            operatingSystemVersion: OperatingSystemVersion(majorVersion: 26, minorVersion: 6, patchVersion: 0),
+            environment: [:]
         )
 
-        #expect(message == nil)
+        #expect(mode == .skipAssertion(reason: "UI snapshots must run on macOS 27. Current OS is 26.6.0. Snapshot assertions are skipped."))
     }
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func macOSDifferentPatchVersionIsAccepted() {
-        let message = SnapshotEnvironment.validationMessage(
+    func macOSWrongMajorVersionIsRejectedWhenReferencesAreRequired() {
+        let mode = SnapshotEnvironment.comparisonMode(
             platform: .macOS,
-            operatingSystemVersion: OperatingSystemVersion(majorVersion: 27, minorVersion: 0, patchVersion: 1)
+            operatingSystemVersion: OperatingSystemVersion(majorVersion: 26, minorVersion: 6, patchVersion: 0),
+            environment: ["REQUIRE_SNAPSHOT_REFERENCES": "1"]
         )
 
-        #expect(message == nil)
+        #expect(mode == .unsupported(reason: "UI snapshots must run on macOS 27. Current OS is 26.6.0."))
     }
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func iOS270At3xIsAccepted() {
-        let message = SnapshotEnvironment.validationMessage(
+    func macOSDifferentMinorVersionSkipsComparisonLocally() {
+        let mode = SnapshotEnvironment.comparisonMode(
+            platform: .macOS,
+            operatingSystemVersion: OperatingSystemVersion(majorVersion: 27, minorVersion: 2, patchVersion: 0),
+            environment: [:]
+        )
+
+        #expect(mode == .skipComparison(
+            reason: "macOS 27.2.0 isn't the CI version (27.0), so existing references aren't compared and CI verifies them instead. Missing references are still recorded. Set COMPARE_SNAPSHOTS=1 to compare anyway."
+        ))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func macOSDifferentMinorVersionIsComparedWhenForced() {
+        let mode = SnapshotEnvironment.comparisonMode(
+            platform: .macOS,
+            operatingSystemVersion: OperatingSystemVersion(majorVersion: 27, minorVersion: 2, patchVersion: 0),
+            environment: ["COMPARE_SNAPSHOTS": "1"]
+        )
+
+        #expect(mode == .compare)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func macOSDifferentMinorVersionIsComparedWithWarningWhenReferencesAreRequired() {
+        let mode = SnapshotEnvironment.comparisonMode(
+            platform: .macOS,
+            operatingSystemVersion: OperatingSystemVersion(majorVersion: 27, minorVersion: 2, patchVersion: 0),
+            environment: ["REQUIRE_SNAPSHOT_REFERENCES": "1"]
+        )
+
+        #expect(mode == .compareWithWarning(
+            reason: "macOS 27.2.0 isn't the CI version (27.0), so references are compared anyway. Bump SnapshotEnvironment.ciMacOSVersion, and re-record the references that no longer match."
+        ))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func iOS270At3xIsCompared() {
+        let mode = SnapshotEnvironment.comparisonMode(
             platform: .iOS,
             operatingSystemVersion: OperatingSystemVersion(majorVersion: 27, minorVersion: 0, patchVersion: 0),
-            displayScale: 3
+            displayScale: 3,
+            environment: [:]
         )
 
-        #expect(message == nil)
+        #expect(mode == .compare)
     }
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func iOSWrongMinorVersionIsRejected() {
-        let message = SnapshotEnvironment.validationMessage(
+        let mode = SnapshotEnvironment.comparisonMode(
             platform: .iOS,
             operatingSystemVersion: OperatingSystemVersion(majorVersion: 27, minorVersion: 1, patchVersion: 0),
-            displayScale: 3
+            displayScale: 3,
+            environment: [:]
         )
 
-        #expect(message == "UI snapshots must run on iOS 27.0. Current OS is 27.1.0.")
+        #expect(mode == .unsupported(reason: "UI snapshots must run on iOS 27.0. Current OS is 27.1.0."))
     }
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func iOS27At2xIsRejected() {
-        let message = SnapshotEnvironment.validationMessage(
+        let mode = SnapshotEnvironment.comparisonMode(
             platform: .iOS,
             operatingSystemVersion: OperatingSystemVersion(majorVersion: 27, minorVersion: 0, patchVersion: 0),
-            displayScale: 2
+            displayScale: 2,
+            environment: [:]
         )
 
-        #expect(message == "iOS UI snapshots must run at @3x scale. Current scale is 2.0.")
+        #expect(mode == .unsupported(reason: "iOS UI snapshots must run at @3x scale. Current scale is 2.0."))
     }
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func referenceEnvironmentSuffixMatchesGuardGranularity() {
+    func onlyIOSReferencesCarryAnEnvironmentSuffix() {
         #expect(
             SnapshotEnvironment.referenceEnvironmentSuffix(
                 platform: .iOS,
@@ -117,7 +164,7 @@ struct SnapshotEnvironmentTests {
             SnapshotEnvironment.referenceEnvironmentSuffix(
                 platform: .macOS,
                 operatingSystemVersion: OperatingSystemVersion(majorVersion: 27, minorVersion: 0, patchVersion: 1)
-            ) == "macOS-27"
+            ) == nil
         )
     }
 }

@@ -28,9 +28,28 @@ enum IdleReturnTreatment {
     case lut
 }
 
+enum IdleReturnOutcome: Equatable {
+
+    case afterIdle(treatment: IdleReturnTreatment, timeAwayMs: Int?)
+    case ordinary(timeAwayMs: Int?)
+
+    var timeAwayMs: Int? {
+        switch self {
+        case .afterIdle(_, let timeAwayMs), .ordinary(let timeAwayMs):
+            return timeAwayMs
+        }
+    }
+
+    /// True for any return that crossed the threshold, whichever treatment applies.
+    var isAfterIdle: Bool {
+        if case .afterIdle = self { return true }
+        return false
+    }
+
+}
+
 protocol IdleReturnEvaluating {
-    func didReturnAfterIdle(lastBackgroundDate: Date?) -> Bool
-    func treatmentForIdleReturn() -> IdleReturnTreatment
+    func evaluateReturn() -> IdleReturnOutcome
 }
 
 /// Key namespace for idle-return NTP debug overrides (typed storage, no dotted keys).
@@ -97,21 +116,37 @@ struct IdleReturnThresholdResolver {
 final class IdleReturnEvaluator: IdleReturnEvaluating {
 
     private let eligibilityManager: IdleReturnEligibilityManaging
+    private let lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>
+    private let now: () -> Date
 
-    init(eligibilityManager: IdleReturnEligibilityManaging) {
+    init(eligibilityManager: IdleReturnEligibilityManaging,
+         lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>,
+         now: @escaping () -> Date = Date.init) {
         self.eligibilityManager = eligibilityManager
+        self.lastBackgroundDateStorage = lastBackgroundDateStorage
+        self.now = now
     }
 
-    func didReturnAfterIdle(lastBackgroundDate: Date?) -> Bool {
+    func evaluateReturn() -> IdleReturnOutcome {
+        let timeAway = timeAwaySinceLastBackground()
+        let timeAwayMs = timeAway.map { Int($0 * 1000) }
+
         guard eligibilityManager.isFeatureAvailable(),
-              let lastBackgroundDate else {
-            return false
+              let timeAway,
+              timeAway >= Double(eligibilityManager.idleThresholdSeconds()) else {
+            return .ordinary(timeAwayMs: timeAwayMs)
         }
-        let thresholdSeconds = eligibilityManager.idleThresholdSeconds()
-        return Date().timeIntervalSince(lastBackgroundDate) >= Double(thresholdSeconds)
+        return .afterIdle(treatment: treatment(), timeAwayMs: timeAwayMs)
     }
 
-    func treatmentForIdleReturn() -> IdleReturnTreatment {
+    private func timeAwaySinceLastBackground() -> TimeInterval? {
+        guard let lastBackgroundDate = (try? lastBackgroundDateStorage.lastBackgroundDate) ?? nil else {
+            return nil
+        }
+        return now().timeIntervalSince(lastBackgroundDate)
+    }
+
+    private func treatment() -> IdleReturnTreatment {
         switch eligibilityManager.effectiveAfterInactivityOption() {
         case .newTab:
             return .ntp

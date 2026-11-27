@@ -13,6 +13,10 @@ inputs:
   pixel-params:
     description: 'Additional query parameters as YAML key-value pairs'
     required: false
+  scope:
+    description: 'Use workflow when the start and stop steps run in different jobs'
+    default: job
+    required: false
 outputs:
   start-timestamp:
     description: 'Start timestamp (returned in start mode)'
@@ -49,3 +53,43 @@ runs:
         query-params: |
           seconds: ${{ steps.stop.outputs.duration }}
           ${{ inputs.pixel-params }}
+
+    - name: Read runner queue time
+      id: queue
+      if: >-
+        inputs.mode == 'stop' && inputs.scope == 'job' &&
+        startsWith(inputs.pixel-name, 'm_ci_apple_duration_') &&
+        github.event_name == 'pull_request' && github.repository == 'duckduckgo/apple-browsers'
+      continue-on-error: true
+      uses: actions/github-script@v8
+      env:
+        CHECK_RUN_ID: ${{ job.check_run_id }}
+        DURATION_PIXEL: ${{ inputs.pixel-name }}
+      with:
+        script: |
+          const { data: job } = await github.rest.actions.getJobForWorkflowRun({
+            ...context.repo,
+            job_id: Number(process.env.CHECK_RUN_ID)
+          });
+          const seconds = (Date.parse(job.started_at) - Date.parse(job.created_at)) / 1000;
+          if (!Number.isFinite(seconds) || seconds < 0) {
+            core.warning(`Invalid queue timestamps for job ${job.id}`);
+            return;
+          }
+          const pool = job.labels.filter(label => !label.startsWith('image:'));
+          core.setOutput('params', {
+            seconds,
+            job: job.name,
+            job_id: job.id,
+            runner: job.labels.join(','),
+            runner_pool: (pool.length ? pool : job.labels).join(',')
+          });
+          core.setOutput('pixel', process.env.DURATION_PIXEL.replace(/^m_ci_apple_duration_/, 'm_ci_apple_queue_time_'));
+
+    - name: Send runner queue time pixel
+      if: steps.queue.outputs.pixel != ''
+      continue-on-error: true
+      uses: ./.github/actions/send-pixel
+      with:
+        pixel-name: ${{ steps.queue.outputs.pixel }}
+        query-params: ${{ steps.queue.outputs.params }}

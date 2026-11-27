@@ -18,15 +18,15 @@
 
 import Foundation
 
-public struct Sleeper {
+public struct Sleeper: Sendable {
 
     public static let `default` = Sleeper(sleep: {
         try await Task<Never, Never>.sleep(interval: $0)
     })
 
-    private let sleep: (TimeInterval) async throws -> Void
+    private let sleep: @Sendable (TimeInterval) async throws -> Void
 
-    public init(sleep: @escaping (TimeInterval) async throws -> Void) {
+    public init(sleep: @escaping @Sendable (TimeInterval) async throws -> Void) {
         self.sleep = sleep
     }
 

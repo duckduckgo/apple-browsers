@@ -46,6 +46,9 @@ protocol TabsBarDelegate: NSObjectProtocol {
     func tabsBarDidRequestToggleAIChatContextualSheet(_ controller: TabsBarViewController)
     func tabsBarDidPressAIChatMenuButton(_ controller: TabsBarViewController)
     func tabsBarDidRequestOpenAISettings(_ controller: TabsBarViewController)
+    func tabsBarDidRequestOpenDataClearingSettings(_ controller: TabsBarViewController)
+    /// False while a flow owns the Fire sheet (Duck.ai Fire onboarding), so it can't be left via Settings.
+    func tabsBarOffersDataClearingSettings(_ controller: TabsBarViewController) -> Bool
     func tabsBarDidRequestDismissContextualSheet(_ controller: TabsBarViewController, completion: @escaping () -> Void)
 
 }
@@ -390,7 +393,11 @@ class TabsBarViewController: UIViewController {
                     guard let self = self else { return }
                     self.delegate?.tabsBarDidRequestForgetAll(self, fireRequest: fireRequest)
                 },
-                onCancel: { }
+                onCancel: { },
+                onOpenSettings: delegate?.tabsBarOffersDataClearingSettings(self) == true ? { [weak self] in
+                    guard let self else { return }
+                    self.delegate?.tabsBarDidRequestOpenDataClearingSettings(self)
+                } : nil
             )
         }
 
@@ -1195,7 +1202,6 @@ extension MainViewController: TabsBarDelegate {
             let tabsToClose = currentModel.tabs.filter { $0 !== keptTab }
             guard !tabsToClose.isEmpty else { return }
             let shouldFocusKeyboard = keptTab !== currentModel.currentTab && keptTab.isHomeTab
-                && self.featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
             PixelKit.fire(Pixel.Event.tabBarCloseOtherTabs, frequency: .dailyAndCount)
             if shouldFocusKeyboard {
                 self.dismissOmniBar(animated: false)
@@ -1295,6 +1301,14 @@ extension MainViewController: TabsBarDelegate {
 
     func tabsBarDidRequestOpenAISettings(_ controller: TabsBarViewController) {
         segueToSettingsAIChat()
+    }
+
+    func tabsBarDidRequestOpenDataClearingSettings(_ controller: TabsBarViewController) {
+        segueToSettingsDataClearing()
+    }
+
+    func tabsBarOffersDataClearingSettings(_ controller: TabsBarViewController) -> Bool {
+        !duckAIFireOnboardingFlow.isRunning
     }
 
     func tabsBarDidRequestDismissContextualSheet(_ controller: TabsBarViewController, completion: @escaping () -> Void) {

@@ -26,14 +26,11 @@ protocol ContextualDaxDialogsFactory {
 
 struct DefaultContextualDaxDialogViewFactory: ContextualDaxDialogsFactory {
     private let onboardingPixelReporter: OnboardingPixelReporting
-    private let subscriptionUpsellMetrics: OnboardingSubscriptionUpsellMetricsReporting
     private let fireCoordinator: FireCoordinator
 
     init(onboardingPixelReporter: OnboardingPixelReporting = OnboardingPixelReporter(),
-         subscriptionUpsellMetrics: OnboardingSubscriptionUpsellMetricsReporting = OnboardingSubscriptionUpsellMetricsReporter(),
          fireCoordinator: FireCoordinator) {
         self.onboardingPixelReporter = onboardingPixelReporter
-        self.subscriptionUpsellMetrics = subscriptionUpsellMetrics
         self.fireCoordinator = fireCoordinator
     }
 
@@ -54,8 +51,13 @@ struct DefaultContextualDaxDialogViewFactory: ContextualDaxDialogsFactory {
             dialogView = AnyView(highFiveDialog(onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed))
             onboardingPixelReporter.measureLastDialogShown()
         case .subscriptionUpsell:
-            dialogView = AnyView(Self.subscriptionUpsellDialog(delegate: delegate, metrics: subscriptionUpsellMetrics, onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed))
-            subscriptionUpsellMetrics.report(.upsellShown)
+            dialogView = AnyView(Self.subscriptionUpsellDialog(delegate: delegate, pixelReporter: onboardingPixelReporter, onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed))
+        case .tryDuckAI:
+            assertionFailure("The Try Duck.ai ending isn't offered on macOS 12")
+            dialogView = AnyView(highFiveDialog(onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed))
+        case .thatsDuckAI:
+            assertionFailure("The Duck.ai path isn't offered on macOS 12")
+            dialogView = AnyView(tryFireButtonDialog(onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed))
         }
         onboardingPixelReporter.measureDialogShown(dialogType: type)
         let adjustedView = {
@@ -111,24 +113,23 @@ struct DefaultContextualDaxDialogViewFactory: ContextualDaxDialogsFactory {
     }
 
     static func subscriptionUpsellDialog(delegate: any OnboardingNavigationDelegate,
-                                         metrics: OnboardingSubscriptionUpsellMetricsReporting,
+                                         pixelReporter: OnboardingDialogsReporting,
                                          onDismiss: @escaping () -> Void,
                                          onManualDismiss: @escaping () -> Void,
                                          onGotItPressed: @escaping () -> Void) -> OnboardingSubscriptionUpsellDialog {
         OnboardingSubscriptionUpsellDialog(
             acceptAction: {
-                metrics.report(.tryForFreeClick)
+                pixelReporter.measureSubscriptionUpsellAccepted()
                 onGotItPressed()
                 onDismiss()
                 delegate.navigateToSubscriptionUpsellPurchasePage()
             },
             declineAction: {
-                metrics.report(.noThanksClick)
+                pixelReporter.measureSubscriptionUpsellDeclined()
                 onGotItPressed()
                 onDismiss()
             },
             onManualDismiss: {
-                metrics.report(.upsellDismissed)
                 onGotItPressed()
                 onManualDismiss()
             }

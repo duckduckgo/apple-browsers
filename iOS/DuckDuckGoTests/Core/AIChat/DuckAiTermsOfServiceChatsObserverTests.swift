@@ -20,6 +20,7 @@
 import AIChat
 import Combine
 import DuckAiDataStore
+@_spi(Testing) import PixelKit
 import XCTest
 @testable import DuckDuckGo
 
@@ -32,6 +33,7 @@ final class DuckAiTermsOfServiceChatsObserverTests: XCTestCase {
     private var store: DuckAiTermsOfServiceStore!
     private var storage: ObservableChatStorage!
     private var queue: DispatchQueue!
+    private var pixelKitMock: PixelKitMock!
     private var sut: DuckAiTermsOfServiceChatsObserver?
 
     private var suiteName: String { String(describing: self) }
@@ -43,6 +45,7 @@ final class DuckAiTermsOfServiceChatsObserverTests: XCTestCase {
         store = DuckAiTermsOfServiceStore(keyValueStore: userDefaults)
         storage = ObservableChatStorage()
         queue = DispatchQueue(label: suiteName)
+        pixelKitMock = PixelKitMock()
     }
 
     override func tearDown() {
@@ -51,6 +54,7 @@ final class DuckAiTermsOfServiceChatsObserverTests: XCTestCase {
         store = nil
         storage = nil
         queue = nil
+        pixelKitMock = nil
         sut = nil
         super.tearDown()
     }
@@ -110,6 +114,66 @@ final class DuckAiTermsOfServiceChatsObserverTests: XCTestCase {
         XCTAssertEqual(storage.chatsPublisherRequests, 0)
     }
 
+    // MARK: - Web acceptance
+
+    /// Accepted on the web before the app kept its own record, with no chats left to prove it.
+    func testWhenOnlyTheWebRecordedAnAcceptanceThenTheAppAdoptsItAndReportsIt() throws {
+        try storage.putEntry(key: termsKey, value: "true")
+
+        start()
+
+        XCTAssertTrue(store.hasAccepted)
+        XCTAssertEqual(firedPixelNames, [DuckAiTermsOfServicePixel.acceptedFromWeb.name])
+    }
+
+    /// The web reports nothing for an acceptance it already holds, so no report may be awaited.
+    func testWhenTheAppAdoptsTheWebAcceptanceThenALaterWebReportCountsAsARepeat() throws {
+        try storage.putEntry(key: termsKey, value: "true")
+        start()
+
+        XCTAssertEqual(store.recordWebReport(), .alreadyAccepted)
+    }
+
+    func testWhenTheAppAlreadyAcceptedThenTheWebAcceptanceIsNotReported() throws {
+        store.recordWebReport()
+        try storage.putEntry(key: termsKey, value: "true")
+
+        start()
+
+        XCTAssertEqual(firedPixelNames, [])
+    }
+
+    func testWhenTheWebRecordIsNotAnAcceptanceThenNothingIsAdopted() throws {
+        try storage.putEntry(key: termsKey, value: "false")
+
+        start()
+
+        XCTAssertFalse(store.hasAccepted)
+        XCTAssertEqual(firedPixelNames, [])
+    }
+
+    /// The web moves its records into native storage on Duck.ai's first load, which can follow launch.
+    func testWhenTheWebAcceptanceArrivesAfterLaunchThenRefreshingAdoptsIt() throws {
+        start()
+        try storage.putEntry(key: termsKey, value: "true")
+
+        sut?.refreshWebAcceptance()
+        queue.sync {}
+
+        XCTAssertTrue(store.hasAccepted)
+        XCTAssertEqual(firedPixelNames, [DuckAiTermsOfServicePixel.acceptedFromWeb.name])
+    }
+
+    func testWhenRefreshedAgainThenTheAdoptionIsReportedOnce() throws {
+        try storage.putEntry(key: termsKey, value: "true")
+        start()
+
+        sut?.refreshWebAcceptance()
+        queue.sync {}
+
+        XCTAssertEqual(firedPixelNames, [DuckAiTermsOfServicePixel.acceptedFromWeb.name])
+    }
+
     func testWhenNativeTermsOfServiceIsOffThenNothingIsObserved() {
         XCTAssertNil(DuckAiTermsOfServiceChatsObserver(storageHandler: storage,
                                                        feature: StubNativeTermsOfServiceFeature(isAvailable: false),
@@ -128,9 +192,14 @@ final class DuckAiTermsOfServiceChatsObserverTests: XCTestCase {
         sut = DuckAiTermsOfServiceChatsObserver(storageHandler: storage,
                                                 feature: StubNativeTermsOfServiceFeature(isAvailable: true),
                                                 store: store,
-                                                queue: queue)
+                                                queue: queue,
+                                                pixelFiring: pixelKitMock)
         sut?.start()
         queue.sync {}
+    }
+
+    private var firedPixelNames: [String] {
+        pixelKitMock.actualFireCalls.map(\.pixel.name)
     }
 }
 

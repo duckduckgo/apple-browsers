@@ -34,6 +34,7 @@ import Common
 import SystemSettingsPiPTutorialTestSupport
 import Combine
 import PrivacyConfig
+import AIChat
 import AIChatTestingUtilities
 
 private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibilityManaging {
@@ -107,7 +108,8 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
                                                                               contentScopeExperimentsManager: MockContentScopeExperimentManager(),
                                                                               internalUserDecider: MockInternalUserDecider(),
                                                                               syncErrorHandler: CapturingAdapterErrorHandler(),
-                                                                              webExtensionAvailability: nil)
+                                                                              webExtensionAvailability: nil,
+                                                                              aiChatBonusOffer: AIChatBonusOfferDependencies(handler: MockAIChatBonusHandling(), messageLog: AIChatBonusMessageLog()))
 
         let fireModel = TabsModel(tabs: [], desktop: false, mode: .fire)
         let modelProvider = TabsModelProvider(normalTabsModel: tabsModel, fireModeTabsModel: fireModel, persistence: tabsPersistence)
@@ -243,6 +245,69 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
         try super.tearDownWithError()
     }
 
+    func testWhenIPadInitialLayoutHasRemoteMessageThenSuggestionsStayHiddenWhileUnfocused() throws {
+        try XCTSkipUnless(UIDevice.current.userInterfaceIdiom == .pad)
+        let configuration = HomePageConfiguration(
+            remoteMessagingStore: ActivationRemoteMessagingStore(message: makeRemoteMessage(id: "message")),
+            subscriptionDataReporter: MockSubscriptionDataReporter(),
+            isStillOnboarding: { false },
+            promptExposureReporter: MockPromptExposureReporter()
+        )
+        let host = makeHost(configuration)
+
+        host.loadViewIfNeeded()
+
+        XCTAssertTrue(AppWidthObserver.shared.isLargeWidth)
+        XCTAssertTrue(try XCTUnwrap(host.suggestionTrayController).canShow(for: .favorites))
+        XCTAssertFalse(host.omniBar.isTextFieldEditing)
+        XCTAssertFalse(host.omniBar.isInputFirstResponder)
+        XCTAssertTrue(host.viewCoordinator.suggestionTrayContainer.isHidden)
+    }
+
+    func testWhenIPadAddressBarWillBeginEditingThenSuggestionsShowBeforeFocus() throws {
+        try XCTSkipUnless(UIDevice.current.userInterfaceIdiom == .pad)
+        let configuration = HomePageConfiguration(
+            remoteMessagingStore: ActivationRemoteMessagingStore(message: makeRemoteMessage(id: "message")),
+            subscriptionDataReporter: MockSubscriptionDataReporter(),
+            isStillOnboarding: { false },
+            promptExposureReporter: MockPromptExposureReporter()
+        )
+        let host = makeHost(configuration)
+        let websiteURL = try XCTUnwrap(URL(string: "https://example.com"))
+        host.tabManager.currentTabsModel.currentTab?.link = Link(title: nil, url: websiteURL)
+        host.loadInitialViewIfNeeded(drawsIdleReturnNewTabPage: false)
+        host.hideSuggestionTray()
+
+        host.onTextFieldWillBeginEditing(host.omniBar.barView, tapped: false)
+
+        XCTAssertFalse(host.omniBar.isTextFieldEditing)
+        XCTAssertFalse(host.omniBar.isInputFirstResponder)
+        XCTAssertFalse(host.viewCoordinator.suggestionTrayContainer.isHidden)
+    }
+
+    func testWhenIPadAutocompleteIsSuspendedThenPlusButtonRefreshesSuggestions() throws {
+        try XCTSkipUnless(UIDevice.current.userInterfaceIdiom == .pad)
+        let websiteURL = try XCTUnwrap(URL(string: "https://example.com"))
+        let tray = makeSuggestionTraySpy(for: sut, websiteURL: websiteURL)
+        tray.showsAutocompleteSuggestions = true
+        sut.suggestionTrayController = tray
+        sut.viewCoordinator.suggestionTrayContainer.isHidden = false
+        XCTAssertFalse(sut.omniBar.isTextFieldEditing)
+        switch sut.onEditingEnd() {
+        case .suspended:
+            break
+        case .dismissed:
+            XCTFail("Visible autocomplete should keep the editing session suspended")
+        }
+        let query = "weather tomorrow"
+
+        sut.autocomplete(pressedPlusButtonForSuggestion: .phrase(phrase: query))
+
+        XCTAssertEqual(sut.omniBar.text, query)
+        XCTAssertFalse(sut.omniBar.isTextFieldEditing)
+        XCTAssertTrue(tray.eligibilityRequests.contains(.autocomplete(query: query)))
+    }
+
     func testWhenSuggestionTrayActivatesThenPromoPreparationRespectsCoordinationMode() throws {
         let websiteURL = try XCTUnwrap(URL(string: "https://example.com"))
         let message = RemoteMessageModel(
@@ -323,7 +388,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
         host.tabManager.setBrowsingMode(.fire, source: .tabSelection)
         host.tabManager.addHomeTab()
 
-        _ = host.view
+        host.loadInitialViewIfNeeded(drawsIdleReturnNewTabPage: false)
         host.prepareHomePageMessagesForForegroundIfNeeded()
 
         XCTAssertTrue(store.fetchedTriggerFilters.isEmpty)
@@ -372,7 +437,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
         )
         let host = makeHost(configuration)
 
-        _ = host.view
+        host.loadInitialViewIfNeeded(drawsIdleReturnNewTabPage: false)
         let context = configuration.presentationContext(for: .remoteMessage(remoteMessage: message))
         host.tabManager.setBrowsingMode(.fire, source: .tabSelection)
         host.newTab(allowingKeyboard: false)
@@ -396,7 +461,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
         )
         let host = makeHost(configuration)
 
-        _ = host.view
+        host.loadInitialViewIfNeeded(drawsIdleReturnNewTabPage: false)
         configuration.handleAppForegrounded()
         host.prepareHomePageMessagesForForegroundIfNeeded()
 
@@ -421,7 +486,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
         let host = makeHost(configuration)
 
         host.tabManager.currentTabsModel.currentTab?.link = Link(title: nil, url: websiteURL)
-        _ = host.view
+        host.loadInitialViewIfNeeded(drawsIdleReturnNewTabPage: false)
         host.newTabPageViewController = nil
         configuration.handleAppForegrounded()
         host.prepareHomePageMessagesForForegroundIfNeeded()
@@ -494,7 +559,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
         )
         let host = makeHost(configuration)
 
-        _ = host.view
+        host.loadInitialViewIfNeeded(drawsIdleReturnNewTabPage: false)
         configuration.handleAppForegrounded()
         host.tabManager.currentTabsModel.currentTab?.openedAfterIdle = true
         host.prepareHomePageMessagesForForegroundIfNeeded()
@@ -521,7 +586,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
 
     private func makeSuggestionTraySpy(for host: MainViewController, websiteURL: URL) -> SuggestionTrayEligibilitySpy {
         host.tabManager.currentTabsModel.currentTab?.link = Link(title: nil, url: websiteURL)
-        _ = host.view
+        host.loadInitialViewIfNeeded(drawsIdleReturnNewTabPage: false)
         host.newTabPageViewController = nil
         let dependencies = host.suggestionTrayDependencies
         let tray = SuggestionTrayEligibilitySpy(
@@ -592,6 +657,11 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
 private final class SuggestionTrayEligibilitySpy: SuggestionTrayViewController {
     private(set) var eligibilityRequests: [SuggestionType] = []
     var onEligibilityCheck: (() -> Void)?
+    var showsAutocompleteSuggestions = false
+
+    override var isShowingAutocompleteSuggestions: Bool {
+        showsAutocompleteSuggestions
+    }
 
     override func canShow(for type: SuggestionType, animated: Bool = true) -> Bool {
         eligibilityRequests.append(type)

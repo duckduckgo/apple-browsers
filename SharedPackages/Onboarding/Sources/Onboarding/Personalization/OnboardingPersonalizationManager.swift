@@ -56,32 +56,10 @@ extension OnboardingPersonalizationManager {
             // Chose "block ads and pop-ups" → enable cookie pop-up protection, but leave
             // "accept cookies that can't be rejected" off by default.
             setCookiePopUpProtection(true)
-        case .browserPrivately, .privateAIChat:
+        case .browserPrivately, .privateAIChat, .vpn:
             // Presented toggles already match the app's existing defaults; nothing to override.
             break
         }
-    }
-
-}
-
-// MARK: - OnboardingSearchPersonalizing
-
-extension OnboardingPersonalizationManager {
-
-    public var isRecentlyVisitedSitesEnabled: Bool {
-        appSettings.recentlyVisitedSitesEnabled
-    }
-
-    public var isSafeSearchEnabled: Bool {
-        serpSettings.isSafeSearchEnabled
-    }
-
-    public func setRecentlyVisitedSites(_ enabled: Bool) {
-        appSettings.recentlyVisitedSitesEnabled = enabled
-    }
-
-    public func setSafeSearch(_ enabled: Bool) {
-        serpSettings.isSafeSearchEnabled = enabled
     }
 
 }

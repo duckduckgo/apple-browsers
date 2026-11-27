@@ -184,7 +184,20 @@ public final class InternalUserDeciderStoreMock: InternalUserStoring {
     public var isInternalUser: Bool = false
 }
 
+public extension PrivacyConfigurationManagingMock {
+    static let builtInBundleSigningKeyIDs = (BrokerBundleSigningKeys.builtIn.production + BrokerBundleSigningKeys.builtIn.staging)
+        .compactMap { BrokerBundleSigningKey(base64SPKI: $0)?.id }
+
+    func setRevokedBundleSigningKeyIDs(_ keyIDs: [String]) {
+        (privacyConfig as? PrivacyConfigurationMock)?.featureSettings[.dbp] = ["revokedBundleSigningKeys": keyIDs]
+    }
+}
+
 public final class PrivacyConfigurationManagingMock: PrivacyConfigurationManaging {
+    public var userUnprotectedDomainsPublisher: AnyPublisher<Void, Never> {
+        Empty(completeImmediately: false).eraseToAnyPublisher()
+    }
+
     public var currentConfig: Data = Data()
 
     public var updatesPublisher: AnyPublisher<Void, Never> = .init(Just(()))
@@ -212,6 +225,7 @@ public final class PrivacyConfigurationMock: PrivacyConfiguration {
     public var trackerAllowlist = PrivacyConfigurationData.TrackerAllowlist(entries: [String: [PrivacyConfigurationData.TrackerAllowlist.Entry]](), state: "mock")
 
     public var isSubfeatureEnabledCheck: ((any PrivacySubfeature) -> Bool)?
+    public var featureSettings: [PrivacyFeature: PrivacyConfigurationData.PrivacyFeature.FeatureSettings] = [:]
 
     public func isSubfeatureEnabled(_ subfeature: any PrivacySubfeature, versionProvider: AppVersionProvider, randomizer: (Range<Double>) -> Double, defaultValue: Bool) -> Bool {
         return isSubfeatureEnabledCheck?(subfeature) ?? false
@@ -254,7 +268,7 @@ public final class PrivacyConfigurationMock: PrivacyConfiguration {
     }
 
     public func settings(for feature: PrivacyFeature) -> PrivacyConfigurationData.PrivacyFeature.FeatureSettings {
-        [String: Any]()
+        featureSettings[feature] ?? [:]
     }
 
     public func settings(for subfeature: any PrivacySubfeature) -> PrivacyConfigurationData.PrivacyFeature.SubfeatureSettings? {
@@ -786,11 +800,27 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
                          removedAt: nil)
         }
 
-        return nil
+        return brokers.first { $0.url == name }
     }
 
     public func fetchAllBrokers() throws -> [DataBroker] {
         return brokers
+    }
+
+    public func resetBrokerVersionsAndETags() throws {
+        brokers = brokers.map {
+            DataBroker(id: $0.id,
+                       name: $0.name,
+                       url: $0.url,
+                       steps: $0.steps,
+                       version: "0",
+                       schedulingConfig: $0.schedulingConfig,
+                       parent: $0.parent,
+                       mirrorSites: $0.mirrorSites,
+                       optOutUrl: $0.optOutUrl,
+                       eTag: "",
+                       removedAt: $0.removedAt)
+        }
     }
 
     public func fetchAllBrokerResources() throws -> [BrokerResource] {
@@ -2213,19 +2243,22 @@ public final class MockDBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeature
     public let isOptOutRetryErrorFrequencyExperimentOn: Bool
     public let isFreemiumPIREnabled: Bool
     public let isExtractedProfileRefreshOn: Bool
+    public let isChallengeSolverOn: Bool
 
     public init(isForegroundRunningOnAppActiveFeatureOn: Bool = true,
                 isContinuedProcessingFeatureOn: Bool = true,
                 isCustomWebViewUserAgentOn: Bool = false,
                 isOptOutRetryErrorFrequencyExperimentOn: Bool = false,
                 isFreemiumPIREnabled: Bool = false,
-                isExtractedProfileRefreshOn: Bool = true) {
+                isExtractedProfileRefreshOn: Bool = true,
+                isChallengeSolverOn: Bool = false) {
         self.isForegroundRunningOnAppActiveFeatureOn = isForegroundRunningOnAppActiveFeatureOn
         self.isContinuedProcessingFeatureOn = isContinuedProcessingFeatureOn
         self.isCustomWebViewUserAgentOn = isCustomWebViewUserAgentOn
         self.isOptOutRetryErrorFrequencyExperimentOn = isOptOutRetryErrorFrequencyExperimentOn
         self.isFreemiumPIREnabled = isFreemiumPIREnabled
         self.isExtractedProfileRefreshOn = isExtractedProfileRefreshOn
+        self.isChallengeSolverOn = isChallengeSolverOn
     }
 }
 
@@ -2443,6 +2476,12 @@ public final class MockFileManager: FileManager, @unchecked Sendable {
         hasUnzippedContent = false
     }
 
+    public override func createDirectory(at url: URL, withIntermediateDirectories createIntermediates: Bool, attributes: [FileAttributeKey: Any]? = nil) throws {
+    }
+
+    public override func moveItem(at srcURL: URL, to dstURL: URL) throws {
+    }
+
     public override func unzipArchive(at sourceURL: URL, to destinationURL: URL) throws {
         hasUnzippedContent = true
     }
@@ -2597,8 +2636,9 @@ extension SecureStorageError: @retroactive Equatable {
             return status1 == status2
         case (.secError(let status1), .secError(let status2)):
             return status1 == status2
-        case (.keystoreReadError(let status1), .keystoreReadError(let status2)):
-            return status1 == status2
+        case (.keystoreReadError(let lhsField, let lhsServiceName, let lhsStatus),
+              .keystoreReadError(let rhsField, let rhsServiceName, let rhsStatus)):
+            return lhsField == rhsField && lhsServiceName == rhsServiceName && lhsStatus == rhsStatus
         case (.keystoreUpdateError(let status1), .keystoreUpdateError(let status2)):
             return status1 == status2
         case (.authRequired, .authRequired), (.invalidPassword, .invalidPassword),

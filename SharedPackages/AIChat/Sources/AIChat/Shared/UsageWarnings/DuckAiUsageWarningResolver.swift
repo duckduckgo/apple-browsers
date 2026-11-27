@@ -45,6 +45,7 @@ public struct DuckAiUsageWarningResolver {
 
     public func resolve(snapshot: DuckAiUsageSnapshot,
                         isTrialEligible: Bool,
+                        allowsSubscriptionUpsell: Bool = true,
                         now: Date) -> Outcome {
         guard let notice = snapshot.notice else { return .none(reason: .noNotice) }
 
@@ -59,7 +60,10 @@ public struct DuckAiUsageWarningResolver {
         }
 
         let suggestion = snapshot.cta.map(modelSuggester.resolve) ?? .none(reason: .notApplicable)
-        let action = self.action(for: snapshot.cta, suggestion: suggestion, isTrialEligible: isTrialEligible)
+        let action = self.action(for: snapshot.cta,
+                                 suggestion: suggestion,
+                                 isTrialEligible: isTrialEligible,
+                                 allowsSubscriptionUpsell: allowsSubscriptionUpsell)
 
         let warning = DuckAiUsageWarning(
             window: notice.window,
@@ -78,7 +82,8 @@ public struct DuckAiUsageWarningResolver {
     /// model" case, and what happens when nothing web offered fits this draft.
     private func action(for cta: DuckAiUsageCta?,
                         suggestion: DuckAiModelSuggestionOutcome,
-                        isTrialEligible: Bool) -> DuckAiUsageAction? {
+                        isTrialEligible: Bool,
+                        allowsSubscriptionUpsell: Bool) -> DuckAiUsageAction? {
         guard let cta else { return nil }
 
         switch cta.id {
@@ -87,7 +92,8 @@ public struct DuckAiUsageWarningResolver {
         case .switchToFree:
             return suggestion.suggestion.map(DuckAiUsageAction.switchToFreeModel)
         case .subscribe:
-            return .tryForFree(isTrialEligible: isTrialEligible)
+            // Nothing to buy where the storefront sells nothing.
+            return allowsSubscriptionUpsell ? .tryForFree(isTrialEligible: isTrialEligible) : nil
         case .bypassWeekly:
             // Nothing to write means nothing would happen on tap.
             return cta.putEntries.isEmpty ? nil : .startUsingWeeklyLimit(entries: cta.putEntries)

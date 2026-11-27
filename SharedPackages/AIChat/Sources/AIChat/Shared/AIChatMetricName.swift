@@ -72,6 +72,12 @@ public enum AIChatMetricName: String, Codable {
     case userDidClickActivateOnSubscribeModal
     case userDidOpenUpgradeToProModal
     case userDidClickUpgradeOnUpgradeToProModal
+
+    // MARK: - Browser tools answer metrics
+    // Sent only when `AIChatNativeConfigValues.supportsBrowserToolsAnswerMetrics` is true. They carry
+    // `modelTier` and `browserTools`; the rated one also carries `rating`.
+    case browserToolsAnswerCompleted
+    case browserToolsAnswerRated
 }
 
 // Model tier for AI Chat metrics
@@ -96,15 +102,36 @@ public struct AIChatMetric: Codable {
     /// Funnel entry point a modal was opened from (e.g. `freelimit`). Decoded as a plain string so a new FE
     /// slug never breaks decoding. Carried by the subscription funnel modal metrics.
     public let source: String?
+    /// Every distinct browser tool an answer called. Carried by the browser tools answer metrics.
+    public let browserTools: [AIChatBrowserToolAnswerTool]?
+    /// `up` or `down`. Decoded as a plain string, checked by the receiver. Carried by `browserToolsAnswerRated`.
+    public let rating: String?
 
-     public init(metricName: AIChatMetricName, modelTier: AIChatModelTier? = nil, suggestionId: String? = nil, pageType: String? = nil, isSmart: Bool? = nil, source: String? = nil) {
+     public init(metricName: AIChatMetricName, modelTier: AIChatModelTier? = nil, suggestionId: String? = nil, pageType: String? = nil, isSmart: Bool? = nil, source: String? = nil,
+                 browserTools: [AIChatBrowserToolAnswerTool]? = nil, rating: String? = nil) {
          self.metricName = metricName
          self.modelTier = modelTier
          self.suggestionId = suggestionId
          self.pageType = pageType
          self.isSmart = isSmart
          self.source = source
+         self.browserTools = browserTools
+         self.rating = rating
      }
+}
+
+/// One browser tool an answer called. Both fields are plain strings so a new FE value never breaks decoding;
+/// the receiver drops anything it doesn't know.
+public struct AIChatBrowserToolAnswerTool: Codable, Equatable {
+    /// Capability name, e.g. `listOpenTabs`.
+    public let name: String
+    /// `success` if any call succeeded, else `not_allowed` if any was denied or cancelled, else `error`.
+    public let result: String
+
+    public init(name: String, result: String) {
+        self.name = name
+        self.result = result
+    }
 }
 
 extension AIChatMetric {

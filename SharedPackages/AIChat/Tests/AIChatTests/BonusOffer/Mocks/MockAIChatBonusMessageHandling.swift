@@ -27,7 +27,7 @@ final class MockAIChatBonusMessageHandling: AIChatBonusMessageHandling {
 
     private(set) var claimedCampaignNames: [String] = []
     private(set) var appliedOutcomes: [AIChatBonusRedeemOutcome] = []
-    private(set) var dismissCallCount = 0
+    private(set) var dismissedCampaignNames: [String] = []
     private(set) var endCallCount = 0
 
     var recordPublisher: AnyPublisher<AIChatBonusRecord, Never> {
@@ -52,8 +52,8 @@ final class MockAIChatBonusMessageHandling: AIChatBonusMessageHandling {
         if let error { throw error }
     }
 
-    func dismiss() throws {
-        dismissCallCount += 1
+    func dismiss(campaignName: String) throws {
+        dismissedCampaignNames.append(campaignName)
         if let error { throw error }
     }
 

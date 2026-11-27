@@ -426,6 +426,8 @@ struct OnboardingIntroContentProviderTests {
             let expectedTitle: String = switch reason {
             case .browserPrivately, .privateAIChat:
                 UserText.Onboarding.BrowsersComparison.titleGenericDownloadReasonExperiment
+            case .vpn:
+                UserText.Onboarding.BrowsersComparison.titleVPNDownloadReasonExperiment
             case .noAI:
                 UserText.Onboarding.BrowsersComparison.titleNoAIDownloadReasonExperiment
             case .blockAds:
@@ -438,7 +440,7 @@ struct OnboardingIntroContentProviderTests {
 
         @Test(
             "Browser-style reasons return their tailored feature list with no sub-header",
-            arguments: [OnboardingDownloadReason.browserPrivately, .noAI, .blockAds]
+            arguments: [OnboardingDownloadReason.browserPrivately, .noAI, .blockAds, .vpn]
         )
         func browserStyleReasons(reason: OnboardingDownloadReason) {
             // GIVEN
@@ -471,6 +473,7 @@ struct OnboardingIntroContentProviderTests {
             arguments: [
                 (.browserPrivately, .safari),
                 (.blockAds, .safari),
+                (.vpn, .safari),
                 (.privateAIChat, .ai),
                 (.noAI, .google),
             ] as [(OnboardingDownloadReason, OnboardingComparisonContent.Competitor)]
@@ -486,6 +489,53 @@ struct OnboardingIntroContentProviderTests {
             #expect(result.competitor == expectedCompetitor)
         }
 
+        @available(iOS 16, macOS 13, *)
+        @Test("The VPN reason shows the subscription note, and only the other reasons omit it", .timeLimit(.minutes(1)), arguments: OnboardingDownloadReason.allCases)
+        func subscriptionFooterPerReason(reason: OnboardingDownloadReason) {
+            // GIVEN
+            let sut = makeSUT(reason: reason)
+
+            // WHEN
+            let result = sut.setDefaultBrowserContent
+
+            // THEN
+            let expectedFooter = reason == .vpn ? UserText.Onboarding.BrowsersComparison.vpnSubscriptionFooter : nil
+            #expect(result.footer == expectedFooter)
+        }
+
+        @available(iOS 16, macOS 13, *)
+        @Test("Only the VPN reason's table springs its checkmarks in already drawn", .timeLimit(.minutes(1)), arguments: [nil] + OnboardingDownloadReason.allCases.map(Optional.some))
+        func drawsCheckmarksPerReason(reason: OnboardingDownloadReason?) {
+            // GIVEN
+            let sut = makeSUT(reason: reason)
+
+            // WHEN
+            let result = sut.setDefaultBrowserContent
+
+            // THEN
+            #expect(result.drawsCheckmarks == (reason != .vpn))
+        }
+
+        @available(iOS 16, macOS 13, *)
+        @Test("The VPN reason's table reuses the ad-blocking rows without AI chat and trackers, then adds two subscription VPN rows", .timeLimit(.minutes(1)))
+        func vpnFeaturesReuseAdBlockingRows() {
+            // WHEN
+            let features = RebrandedComparisonTableModel.browserFeatures(for: .vpn)
+
+            // THEN
+            let adBlockingFeatures = RebrandedComparisonTableModel.browserFeatures(for: .blockAds)
+            #expect(Array(features.prefix(3)) == Array(adBlockingFeatures.prefix(3)))
+            #expect(features.map(\.title) == [
+                BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.cookiePopupsAndAds,
+                BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.duckplayer,
+                BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.privateSearch,
+                BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.hideLocationWithVPN,
+                BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.secureWiFiWithVPN
+            ])
+            #expect(features.map(\.ddgAvailability) == [.available, .available, .available, .subscription, .subscription])
+            #expect(features.allSatisfy { $0.competitorAvailability == .unavailable })
+        }
+
         @Test("Nil Download Reason keeps Safari as the competitor")
         func nilReasonUsesSafariCompetitor() {
             // GIVEN
@@ -497,6 +547,65 @@ struct OnboardingIntroContentProviderTests {
             // THEN
             #expect(result.competitor == .safari)
         }
+    }
+
+    @MainActor
+    @Suite("Try VPN Content")
+    struct TryVPNContent {
+
+        @available(iOS 16, macOS 13, *)
+        @Test("Check Try VPN content uses its copy and a skip button", .timeLimit(.minutes(1)))
+        func checkTryVPNContent() {
+            // GIVEN
+            let sut = OnboardingIntroContentProvider(flowType: .default, featureFlagger: MockFeatureFlagger())
+
+            // WHEN
+            let result = sut.tryVPNContent
+
+            // THEN
+            #expect(result.title == UserText.Onboarding.TryVPN.title)
+            #expect(result.message == UserText.Onboarding.TryVPN.message)
+            #expect(result.footer == UserText.Onboarding.TryVPN.footer)
+            #expect(result.primaryCTA == UserText.Onboarding.TryVPN.cta)
+            #expect(result.secondaryCTA == UserText.onboardingSkip)
+        }
+
+        @available(iOS 16, macOS 13, *)
+        @Test("Check VPN activation content reuses the subscription onboarding copy", .timeLimit(.minutes(1)))
+        func checkVPNActivationContent() {
+            // GIVEN
+            let sut = OnboardingIntroContentProvider(flowType: .default, featureFlagger: MockFeatureFlagger())
+
+            // WHEN
+            let result = sut.vpnActivationContent
+
+            // THEN
+            #expect(result.offTitle == UserText.subscriptionOnboardingVPNActivationOffTitle)
+            #expect(result.onTitle == UserText.subscriptionOnboardingVPNActivationOnTitle)
+            #expect(result.turnOnCTA == UserText.subscriptionOnboardingVPNActivationTurnOnButton)
+            #expect(result.skipCTA == UserText.onboardingSkip)
+            #expect(result.nextCTA == UserText.subscriptionOnboardingVPNActivationNextButton)
+        }
+
+        @available(iOS 16, macOS 13, *)
+        @Test("Check subscription reminder content bolds the Settings path", .timeLimit(.minutes(1)))
+        func checkSubscriptionReminderContent() {
+            // GIVEN
+            let sut = OnboardingIntroContentProvider(flowType: .default, featureFlagger: MockFeatureFlagger())
+
+            // WHEN
+            let result = sut.subscriptionReminderContent
+
+            // THEN
+            #expect(result.title == UserText.Onboarding.SubscriptionReminder.title)
+            #expect(String(result.message.characters) == "Add the subscription anytime in Settings > DuckDuckGo Subscription.")
+            let boldText = result.message.runs
+                .filter { $0.inlinePresentationIntent?.contains(.stronglyEmphasized) == true }
+                .map { String(result.message[$0.range].characters) }
+            #expect(boldText == ["Settings > DuckDuckGo Subscription"])
+            #expect(result.cta == UserText.Onboarding.SubscriptionReminder.cta)
+        }
+
     }
 
     @MainActor
@@ -1149,18 +1258,70 @@ struct OnboardingIntroContentProviderTests {
         func checkDownloadReasonOptions(flow: OnboardingFlowType) {
             // GIVEN
             let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
-            let expectedOptions: [OnboardingDownloadReasonContent.Option] = [
-                .init(reason: .browserPrivately, animation: .search, title: UserText.Onboarding.DownloadReason.browsePrivately),
-                .init(reason: .privateAIChat, animation: .duckAIChat, title: UserText.Onboarding.DownloadReason.chatWithAI),
-                .init(reason: .noAI, animation: .noAI, title: UserText.Onboarding.DownloadReason.removeAI),
-                .init(reason: .blockAds, animation: .imageSweep, title: UserText.Onboarding.DownloadReason.blockAds)
-            ]
 
             // WHEN
             let result = sut.downloadReasonContent
 
-            #expect(result.options == expectedOptions)
+            // THEN
+            #expect(result.layout == .grid)
+            #expect(result.options == Self.expectedGridOptions)
         }
+
+        @available(iOS 16, macOS 13, *)
+        @Test(
+            "When the VPN download reason is available the list with VPN last is shown, otherwise the grid",
+            .timeLimit(.minutes(1)),
+            arguments: [true, false]
+        )
+        func layoutAndOptionsFollowVPNAvailability(isVPNDownloadReasonAvailable: Bool) {
+            // GIVEN
+            let sut = OnboardingIntroContentProvider(
+                flowType: .default,
+                featureFlagger: MockFeatureFlagger(),
+                isVPNDownloadReasonAvailable: { isVPNDownloadReasonAvailable }
+            )
+
+            // WHEN
+            let result = sut.downloadReasonContent
+
+            // THEN
+            #expect(result.layout == (isVPNDownloadReasonAvailable ? .list : .grid))
+            #expect(result.options == (isVPNDownloadReasonAvailable ? Self.expectedListOptions : Self.expectedGridOptions))
+        }
+
+        @available(iOS 16, macOS 13, *)
+        @Test("The VPN option's availability is read each time the content is built", .timeLimit(.minutes(1)))
+        func vpnOptionAvailabilityIsReadOnDemand() {
+            // GIVEN
+            var isVPNDownloadReasonAvailable = false
+            let sut = OnboardingIntroContentProvider(
+                flowType: .default,
+                featureFlagger: MockFeatureFlagger(),
+                isVPNDownloadReasonAvailable: { isVPNDownloadReasonAvailable }
+            )
+            #expect(!sut.downloadReasonContent.options.contains { $0.reason == .vpn })
+
+            // WHEN
+            isVPNDownloadReasonAvailable = true
+
+            // THEN
+            #expect(sut.downloadReasonContent.options.last?.reason == .vpn)
+        }
+
+        private static let expectedGridOptions: [OnboardingDownloadReasonContent.Option] = [
+            .init(reason: .browserPrivately, asset: .animation(.search), title: UserText.Onboarding.DownloadReason.browsePrivately),
+            .init(reason: .privateAIChat, asset: .animation(.duckAIChat), title: UserText.Onboarding.DownloadReason.chatWithAI),
+            .init(reason: .noAI, asset: .animation(.noAI), title: UserText.Onboarding.DownloadReason.removeAI),
+            .init(reason: .blockAds, asset: .animation(.imageSweep), title: UserText.Onboarding.DownloadReason.blockAds)
+        ]
+
+        private static let expectedListOptions: [OnboardingDownloadReasonContent.Option] = [
+            .init(reason: .browserPrivately, asset: .icon(.search), title: UserText.Onboarding.DownloadReason.List.browsePrivately),
+            .init(reason: .privateAIChat, asset: .icon(.aiChat), title: UserText.Onboarding.DownloadReason.List.chatWithAI),
+            .init(reason: .blockAds, asset: .icon(.adsBlocked), title: UserText.Onboarding.DownloadReason.List.blockAds),
+            .init(reason: .noAI, asset: .icon(.block), title: UserText.Onboarding.DownloadReason.List.removeAI),
+            .init(reason: .vpn, asset: .icon(.vpn), title: UserText.Onboarding.DownloadReason.vpn)
+        ]
 
     }
 
@@ -1173,33 +1334,12 @@ struct OnboardingIntroContentProviderTests {
             sut = OnboardingIntroContentProvider(flowType: .default, featureFlagger: MockFeatureFlagger())
         }
 
-        @Test("SERP personalization content matches the expected copy and toggles")
-        func serpPersonalizationContent() {
-            // GIVEN
-            let expected = OnboardingPersonalizationContent(
-                title: "Your search, your way.",
-                message: nil,
-                items: [
-                    .init(type: .recentlyVisitedSites, title: "Search History", subtitle: "Show recently visited sites in search suggestions. Private, only on your device."),
-                    .init(type: .safeSearch, title: "Safe Search", subtitle: "Omit questionable (mostly adult) material in results.")
-                ],
-                primaryCTA: "Next",
-                daxAnimation: .wingLeft
-            )
-
-            // WHEN
-            let result = sut.serpPersonalizationContent
-
-            // THEN
-            #expect(result == expected)
-        }
-
         @Test("AI-model personalization content matches the expected copy")
         func aiModelPersonalizationContent() {
             // GIVEN
             let expected = OnboardingAIModelContent(
-                title: "Your chats, your way.",
-                message: "Change your default AI now, or anytime during chat.",
+                title: "Pick an AI to try first",
+                message: "With Duck.ai, you can swap anytime.",
                 primaryCTA: "Next",
                 daxAnimation: .wingLeft
             )

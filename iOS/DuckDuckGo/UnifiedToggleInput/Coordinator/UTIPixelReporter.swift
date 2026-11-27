@@ -53,6 +53,9 @@ struct UTIPixelContext {
     let isToggleVisible: Bool
     let pageType: UnifiedToggleInputPromptPageType
     let duckAIEntrySource: AIChatEntryPointSource?
+    var addressBarPosition: AddressBarPosition?
+    /// Whether the simplified prompt box is showing; sent as the temporary `simplified_prompt_box` param.
+    var usesSimplifiedPromptBox = false
 }
 
 /// Owns the omnibar UTI's pixel firing. Resolves the surface (and the other live inputs) through a
@@ -61,6 +64,8 @@ struct UTIPixelContext {
 /// `UnifiedToggleInputCoordinatorPixelHelper` for the pixels also fired from other surfaces (iPad).
 @MainActor
 final class UTIPixelReporter {
+
+    private typealias PixelKeys = UnifiedToggleInputCoordinatorPixelHelper
 
     private let firing: UTIPixelFiring
     private let context: () -> UTIPixelContext?
@@ -92,15 +97,28 @@ final class UTIPixelReporter {
     func reportModeSwitched(to mode: TextEntryMode, currentText: String, defaultOmnibarMode: DefaultOmnibarMode) {
         let direction = mode == .search ? "to_search" : "to_duckai"
         let hadText = !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        firing.fire(.aiChatExperimentalOmnibarModeSwitched, [
+        var parameters = [
             "direction": direction,
             "had_text": String(hadText),
             "default_position": defaultOmnibarMode.rawValue
-        ])
+        ]
+        parameters[PixelKeys.addressBarPositionKey] = context()?.addressBarPosition?.rawValue
+        firing.fire(.aiChatExperimentalOmnibarModeSwitched, parameters)
     }
 
     func reportStopGenerationTapped() {
-        withContext { firing.fire(.unifiedToggleInputStopGenerationTapped, ["surface": $0.surface.rawValue]) }
+        withContext {
+            var parameters = ["surface": $0.surface.rawValue]
+            parameters[PixelKeys.addressBarPositionKey] = $0.addressBarPosition?.rawValue
+            firing.fire(.unifiedToggleInputStopGenerationTapped, parameters)
+        }
+    }
+
+    func reportSearchDuckDuckGoRowSelected(resubmitDelay: CrossModeResubmitDetector.DelayBucket?) {
+        var parameters: [String: String] = [:]
+        parameters[PixelKeys.addressBarPositionKey] = context()?.addressBarPosition?.rawValue
+        parameters[PixelKeys.resubmitOfPromptKey] = resubmitDelay?.rawValue
+        firing.fire(.autocompleteDuckAIClickSearchDuckDuckGo, parameters)
     }
 
     // MARK: - Message edit
@@ -156,7 +174,7 @@ final class UTIPixelReporter {
     }
 
     func reportFileAttached(source: String) {
-        withContext { firing.fireDailyAndCount(.unifiedToggleInputFileAttached, ["surface": $0.surface.rawValue, "source": source]) }
+        withContext { firing.fireDailyAndCount(.unifiedToggleInputFileAttached, Self.parameters($0, ["source": source])) }
     }
 
     func reportImageValidationFailed(reason: String, source: String) {
@@ -170,7 +188,16 @@ final class UTIPixelReporter {
     }
 
     func reportImageAttached(source: String) {
-        withContext { firing.fireDailyAndCount(.unifiedToggleInputImageAttached, ["surface": $0.surface.rawValue, "source": source]) }
+        withContext { firing.fireDailyAndCount(.unifiedToggleInputImageAttached, Self.parameters($0, ["source": source])) }
+    }
+
+    func reportAttachMenuShown() {
+        withContext { firing.fire(UnifiedToggleInputAttachMenuPixel.shown(surface: $0.surface, simplifiedPromptBox: $0.usesSimplifiedPromptBox), frequency: .dailyAndCount) }
+    }
+
+    func reportAttachMenuItemSelected(_ item: UnifiedToggleInputAttachMenuItem) {
+        withContext { firing.fire(UnifiedToggleInputAttachMenuPixel.itemSelected(item, surface: $0.surface,
+                                                                         simplifiedPromptBox: $0.usesSimplifiedPromptBox), frequency: .dailyAndCount) }
     }
 
     func reportTabAttachment(_ action: MultiTabAttachmentPixel.Action, source: TabAttachmentOrigin,
@@ -245,7 +272,10 @@ final class UTIPixelReporter {
     }
 
     func reportToolSelected(_ tool: AIChatRAGTool) {
-        withContext { UnifiedToggleInputCoordinatorPixelHelper.fireToolSelectedPixel(for: tool, surface: $0.surface, firing: firing) }
+        withContext {
+            UnifiedToggleInputCoordinatorPixelHelper.fireToolSelectedPixel(
+                for: tool, surface: $0.surface, simplifiedPromptBox: $0.usesSimplifiedPromptBox, firing: firing)
+        }
     }
 
     func reportToolDeselected(_ tool: AIChatRAGTool) {
@@ -253,7 +283,7 @@ final class UTIPixelReporter {
     }
 
     func reportCustomizeResponsesSelected() {
-        withContext { firing.fireDailyAndCount(.unifiedToggleInputCustomizeResponsesSelected, ["surface": $0.surface.rawValue]) }
+        withContext { firing.fireDailyAndCount(.unifiedToggleInputCustomizeResponsesSelected, Self.parameters($0)) }
     }
 
     // MARK: - Submission
@@ -264,7 +294,9 @@ final class UTIPixelReporter {
                                reasoningMode: AIChatReasoningMode?,
                                modelId: String?,
                                defaultOmnibarMode: DefaultOmnibarMode,
-                               isFirstPromptNewInstall: Bool) {
+                               isFirstPromptNewInstall: Bool,
+                               resubmitDelay: CrossModeResubmitDetector.DelayBucket? = nil,
+                               modelSource: DuckAINewChatModelSource? = nil) {
         withContext {
             UnifiedToggleInputCoordinatorPixelHelper.fireUnifiedPromptSubmittedPixel(
                 hasText: hasText,
@@ -277,12 +309,18 @@ final class UTIPixelReporter {
                 origin: Self.promptOrigin(for: $0),
                 defaultMode: defaultOmnibarMode,
                 isFirstPromptNewInstall: isFirstPromptNewInstall,
+                addressBarPosition: $0.addressBarPosition,
+                resubmitOfSearch: resubmitDelay,
+                simplifiedPromptBox: $0.usesSimplifiedPromptBox,
+                modelSource: modelSource,
                 firing: firing
             )
         }
     }
 
-    func reportQuerySubmitted(defaultOmnibarMode: DefaultOmnibarMode, queryType: UnifiedToggleInputQueryType) {
+    func reportQuerySubmitted(defaultOmnibarMode: DefaultOmnibarMode,
+                              queryType: UnifiedToggleInputQueryType,
+                              resubmitDelay: CrossModeResubmitDetector.DelayBucket? = nil) {
         withContext {
             UnifiedToggleInputCoordinatorPixelHelper.fireUnifiedQuerySubmittedPixel(
                 surface: $0.surface,
@@ -290,6 +328,8 @@ final class UTIPixelReporter {
                 isToggleVisible: $0.isToggleVisible,
                 defaultMode: defaultOmnibarMode,
                 queryType: queryType,
+                addressBarPosition: $0.addressBarPosition,
+                resubmitOfPrompt: resubmitDelay,
                 firing: firing
             )
         }
@@ -320,6 +360,14 @@ final class UTIPixelReporter {
     }
 
     // MARK: - Context resolution
+
+    /// `surface` plus the temporary `simplified_prompt_box` param, merged over `extra`.
+    private static func parameters(_ context: UTIPixelContext, _ extra: [String: String] = [:]) -> [String: String] {
+        var parameters = extra
+        parameters["surface"] = context.surface.rawValue
+        parameters[PixelKeys.simplifiedPromptBoxKey] = PixelKeys.simplifiedPromptBoxValue(context.usesSimplifiedPromptBox)
+        return parameters
+    }
 
     /// Resolves the live context and runs `body`; a nil context (coordinator gone) fires nothing.
     private func withContext(_ body: (UTIPixelContext) -> Void) {

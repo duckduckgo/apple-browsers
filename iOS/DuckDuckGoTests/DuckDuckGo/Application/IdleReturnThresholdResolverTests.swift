@@ -27,7 +27,7 @@ import PrivacyConfig
 struct IdleReturnThresholdResolverTests {
 
     private func makeUserStorage() throws -> (store: MockKeyValueFileStore, storage: any ThrowingKeyedStoring<AfterInactivitySettingKeys>) {
-        let store = try MockKeyValueFileStore()
+        let store = MockKeyValueFileStore()
         let storage: any ThrowingKeyedStoring<AfterInactivitySettingKeys> = store.throwingKeyedStoring()
         return (store, storage)
     }

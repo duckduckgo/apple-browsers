@@ -24,7 +24,7 @@ extension DefaultBrowserAndDockPromptInactiveUserViewModel {
     static var setAsDefault: DefaultBrowserAndDockPromptInactiveUserViewModel {
         DefaultBrowserAndDockPromptInactiveUserViewModel(
             message: UserText.setAsDefaultInactiveUserPromptMessage,
-            image: NSImage(resource: .daxSearch),
+            image: NSImage(resource: .defaultBrowserAndDockPromptDax),
             primaryButtonLabel: UserText.setAsDefaultInactiveUserPrimaryAction,
             dismissButtonLabel: UserText.setAsDefaultAndAddToDockInactiveUserDismissAction,
             primaryButtonAction: {},
@@ -35,7 +35,7 @@ extension DefaultBrowserAndDockPromptInactiveUserViewModel {
     static var addToDock: DefaultBrowserAndDockPromptInactiveUserViewModel {
         DefaultBrowserAndDockPromptInactiveUserViewModel(
             message: UserText.addToDockInactiveUserPromptMessage,
-            image: NSImage(resource: .daxSearch),
+            image: NSImage(resource: .defaultBrowserAndDockPromptDax),
             primaryButtonLabel: UserText.addToDockInactiveUserPrimaryAction,
             dismissButtonLabel: UserText.setAsDefaultAndAddToDockInactiveUserDismissAction,
             primaryButtonAction: {},
@@ -46,7 +46,7 @@ extension DefaultBrowserAndDockPromptInactiveUserViewModel {
     static var addToDockAndSetAsDefault: DefaultBrowserAndDockPromptInactiveUserViewModel {
         DefaultBrowserAndDockPromptInactiveUserViewModel(
             message: UserText.bothSetAsDefaultAndAddToDockInactiveUserPromptMessage,
-            image: NSImage(resource: .daxSearch),
+            image: NSImage(resource: .defaultBrowserAndDockPromptDax),
             primaryButtonLabel: UserText.bothSetAsDefaultAndAddToDockInactiveUserPrimaryAction,
             dismissButtonLabel: UserText.setAsDefaultAndAddToDockInactiveUserDismissAction,
             primaryButtonAction: {},

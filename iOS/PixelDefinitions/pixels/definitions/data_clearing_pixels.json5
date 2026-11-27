@@ -61,7 +61,10 @@
         "description": "Fired when the fire button is triggered again within 20 seconds of a previous fire",
         "owners": ["hanyutang-sandra"],
         "triggers": ["user_submitted"],
-        "suffixes": ["daily_standard", "platform", "form_factor"],
+        "suffixes": [
+            ["daily", "platform", "form_factor"],
+            ["platform", "form_factor"]
+        ],
         "parameters": ["appVersion", "pixelSource"]
     },
 
@@ -94,11 +97,70 @@
         ]
     },
 
+    "fire_confirmation-settings-tapped": {
+        "description": "Fires when the user taps the settings button on a Fire confirmation sheet, which opens Data Clearing settings.",
+        "owners": ["bkunat"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "source",
+                "description": "Where the Fire button that opened the sheet is: the browser, the tab switcher, the Duck.ai chats list (or its Delete All Chats menu command), or the contextual Duck.ai sheet",
+                "type": "string",
+                "enum": ["browsing", "tabSwitcher", "chatHistory", "contextualChat"]
+            }
+        ]
+    },
+
+    "data_clearing_settings-duckai_chats_toggled": {
+        "description": "Fires when the user turns the Duck.ai chats toggle in Data Clearing settings on or off.",
+        "owners": ["bkunat"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "enabled",
+                "description": "Whether the toggle was turned on",
+                "type": "boolean"
+            },
+            {
+                "key": "source",
+                "description": "How the user reached Data Clearing settings: from the Settings menu, or with Settings opened straight to Data Clearing (for example from a Fire sheet)",
+                "type": "string",
+                "enum": ["settings", "deepLink"]
+            }
+        ]
+    },
+
+    "data_clearing_settings-fireproof_sites_opened": {
+        "description": "Fires when the user opens Fireproof Sites from Data Clearing settings.",
+        "owners": ["bkunat"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "source",
+                "description": "How the user reached Data Clearing settings: from the Settings menu, or with Settings opened straight to Data Clearing (for example from a Fire sheet)",
+                "type": "string",
+                "enum": ["settings", "deepLink"]
+            }
+        ]
+    },
+
     "m_fire_user_action_before_completion": {
         "description": "Fired when user performs an action before the clearing operation completes",
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
-        "suffixes": ["daily_standard", "platform", "form_factor"],
+        "suffixes": [
+            ["daily", "platform", "form_factor"],
+            ["platform", "form_factor"]
+        ],
         "parameters": ["appVersion", "pixelSource"]
     },
 

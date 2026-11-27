@@ -46,6 +46,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     private var isTransitioningSize = false
     /// Launch-time snapshot: re-reading the feature costs a privacy-config evaluation each time.
     private let usesFloatingInput: Bool
+    private let usesLiquidGlass: Bool
     private var cancellables = Set<AnyCancellable>()
     private let duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation
     private let duckAIWideEventFlowScope = DuckAIWideEventFlowScope.contextual(UUID())
@@ -90,6 +91,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         attachMoreTabsFeature: AIChatContextualAttachMoreTabsFeatureProviding = AIChatContextualAttachMoreTabsFeature(),
         start: ContextualInputStart = .expandedOnExistingChat,
         usageLimitsStore: DuckAiUsageLimitsStore? = nil,
+        userDefaultModelStorage: @escaping (_ isFireTab: Bool) -> DuckAiNativeStorageHandling? = { _ in nil },
         floatingUIManager: FloatingUIManaging = FloatingUIManager(isFloatingUIFeatureEnabled: false),
         tabAttachmentSource: MultiTabAttachmentSource? = nil,
         duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation? = nil,
@@ -100,6 +102,11 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         self.attachMoreTabsFeature = attachMoreTabsFeature
         self.startsPreSubmit = start.isPreSubmit
         self.usesFloatingInput = isFloatingInputAvailable
+        if #available(iOS 26, *) {
+            self.usesLiquidGlass = floatingUIManager.isDuckAIAndInputLiquidGlassEnabled
+        } else {
+            self.usesLiquidGlass = false
+        }
         self.hasDeliveredFirstPrompt = !start.isPreSubmit
         let wideEventInstrumentation = duckAIWideEventInstrumentation ?? DefaultDuckAIWideEventInstrumentation(
             wideEvent: AppDependencyProvider.shared.wideEvent
@@ -116,6 +123,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
             attachmentPasteEnabled: unifiedToggleInputFeature.isAttachmentPasteEnabled,
             placesAttachmentsAboveInput: isFloatingInputAvailable,
             usageLimitsStore: usageLimitsStore,
+            userDefaultModelStorage: userDefaultModelStorage,
             floatingUIManager: floatingUIManager
         )
         self.chipViewModel = UnifiedToggleInputPageContextChipViewModel(
@@ -321,7 +329,11 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
                 viewController.view.trailingAnchor.constraint(equalTo: contextualChatViewController.view.trailingAnchor),
                 viewController.view.bottomAnchor.constraint(equalTo: contextualChatViewController.view.keyboardLayoutGuide.topAnchor),
             ])
-            contextualChatViewController.anchorWebViewBottom(to: viewController.view.topAnchor)
+            if usesLiquidGlass {
+                contextualChatViewController.setFloatingInputView(viewController.view)
+            } else {
+                contextualChatViewController.anchorWebViewBottom(to: viewController.view.topAnchor)
+            }
             viewController.didMove(toParent: contextualChatViewController)
             applyHostedExpansion(activatesInput: true)
             applyCurrentRenderState()
@@ -577,6 +589,8 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         // Back on the start state, so the next prompt is a first prompt again and reports itself.
         hasDeliveredFirstPrompt = false
         clearAttachedContext()
+        currentUserScript?.isAIChatPromoVisible = nil
+        currentUserScript?.aiChatStatusOnPage = nil
         if startsPreSubmit, let currentUserScript {
             coordinator.unbind()
             isBoundToUserScript = false

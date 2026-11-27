@@ -29,7 +29,8 @@ import FeatureFlags_iOS
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import UserScript
-import Network
+import AIChat
+import AIChatTestingUtilities
 @_spi(Testing) import PixelKit
 @_spi(Testing) import Persistence
 @testable import SitePermissions
@@ -60,6 +61,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
     let configManager = PrivacyConfigurationManagerMock()
     let rulesManager = ContentBlockerRulesManagerMock()
     var updating: ContentBlockingUpdating!
+    let segmentSkipPreferences = SegmentSkipPreferences(store: InMemoryKeyValueStore())
 
     override func setUp() {
         super.setUp()
@@ -71,7 +73,9 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                                                                           contentScopeExperimentsManager: MockContentScopeExperimentManager(),
                                                                           internalUserDecider: MockInternalUserDecider(),
                                                                           syncErrorHandler: CapturingAdapterErrorHandler(),
-                                                                          webExtensionAvailability: nil))
+                                                                          webExtensionAvailability: nil,
+                                                                          aiChatBonusOffer: AIChatBonusOfferDependencies(handler: MockAIChatBonusHandling(), messageLog: AIChatBonusMessageLog())),
+                                           segmentSkipPreferences: segmentSkipPreferences)
     }
 
     override static func setUp() {
@@ -81,124 +85,6 @@ final class ContentBlockingUpdatingTests: XCTestCase {
     }
     override static func tearDown() {
         WKContentRuleList.restoreDealloc()
-    }
-
-    func testWhenSupportedOSAndFlagIsEnabledThenSitePermissionsAreAvailableAtLaunch() throws {
-        let (flagger, _, _) = try makeFeatureFlagger(sitePermissionsState: "enabled")
-
-        XCTAssertTrue(AppDependencyProvider.sitePermissionsEnabledAtLaunch(featureFlagger: flagger, isSupportedOSProvider: { true }))
-    }
-
-    func testWhenSupportedOSAndFlagIsDisabledThenSitePermissionsAreUnavailableAtLaunch() throws {
-        let (flagger, _, _) = try makeFeatureFlagger(sitePermissionsState: "disabled")
-
-        XCTAssertFalse(AppDependencyProvider.sitePermissionsEnabledAtLaunch(featureFlagger: flagger, isSupportedOSProvider: { true }))
-    }
-
-    func testWhenUnsupportedOSAndFlagIsEnabledThenSitePermissionsAreUnavailableAtLaunch() throws {
-        let (flagger, _, _) = try makeFeatureFlagger(sitePermissionsState: "enabled")
-        XCTAssertTrue(flagger.isFeatureOn(.sitePermissions))
-
-        XCTAssertFalse(AppDependencyProvider.sitePermissionsEnabledAtLaunch(featureFlagger: flagger, isSupportedOSProvider: { false }))
-    }
-
-    func testWhenUnsupportedOSAndFlagIsForcedOnThenSitePermissionsAreUnavailableAtLaunch() throws {
-        let (flagger, _, overrides) = try makeFeatureFlagger(sitePermissionsState: "disabled")
-        overrides.toggleOverride(for: FeatureFlag.sitePermissions)
-        XCTAssertTrue(flagger.isFeatureOn(.sitePermissions))
-
-        XCTAssertFalse(AppDependencyProvider.sitePermissionsEnabledAtLaunch(featureFlagger: flagger, isSupportedOSProvider: { false }))
-    }
-
-    func testWhenRemoteFlagIsAddedThenNextLaunchAvailabilityIsEnabled() throws {
-        let (flagger, manager, _) = try makeFeatureFlagger(sitePermissionsState: nil)
-        XCTAssertFalse(AppDependencyProvider.sitePermissionsEnabledAtLaunch(featureFlagger: flagger, isSupportedOSProvider: { true }))
-
-        manager.privacyConfig = try makePrivacyConfiguration(sitePermissionsState: "enabled")
-        manager.updatesSubject.send()
-
-        XCTAssertTrue(AppDependencyProvider.sitePermissionsEnabledAtLaunch(featureFlagger: flagger, isSupportedOSProvider: { true }))
-    }
-
-    func testWhenRemoteFlagIsDisabledThenNextLaunchAvailabilityIsDisabled() throws {
-        let (flagger, manager, _) = try makeFeatureFlagger(sitePermissionsState: "enabled")
-        XCTAssertTrue(AppDependencyProvider.sitePermissionsEnabledAtLaunch(featureFlagger: flagger, isSupportedOSProvider: { true }))
-
-        manager.privacyConfig = try makePrivacyConfiguration(sitePermissionsState: "disabled")
-        manager.updatesSubject.send()
-
-        XCTAssertFalse(AppDependencyProvider.sitePermissionsEnabledAtLaunch(featureFlagger: flagger, isSupportedOSProvider: { true }))
-    }
-
-    func testWhenRemoteFlagIsRemovedThenNextLaunchAvailabilityIsDisabled() throws {
-        let (flagger, manager, _) = try makeFeatureFlagger(sitePermissionsState: "enabled")
-        XCTAssertTrue(AppDependencyProvider.sitePermissionsEnabledAtLaunch(featureFlagger: flagger, isSupportedOSProvider: { true }))
-
-        manager.privacyConfig = try makePrivacyConfiguration(sitePermissionsState: nil)
-        manager.updatesSubject.send()
-
-        XCTAssertFalse(AppDependencyProvider.sitePermissionsEnabledAtLaunch(featureFlagger: flagger, isSupportedOSProvider: { true }))
-    }
-
-    func testWhenForcedOnOverrideIsClearedThenNextLaunchUsesRemoteDisabledState() throws {
-        let (flagger, _, overrides) = try makeFeatureFlagger(sitePermissionsState: "disabled")
-        overrides.toggleOverride(for: FeatureFlag.sitePermissions)
-        XCTAssertTrue(AppDependencyProvider.sitePermissionsEnabledAtLaunch(featureFlagger: flagger, isSupportedOSProvider: { true }))
-
-        overrides.clearOverride(for: FeatureFlag.sitePermissions)
-
-        XCTAssertFalse(AppDependencyProvider.sitePermissionsEnabledAtLaunch(featureFlagger: flagger, isSupportedOSProvider: { true }))
-    }
-
-    func testWhenForcedOffOverrideIsClearedThenNextLaunchUsesRemoteEnabledState() throws {
-        let (flagger, _, overrides) = try makeFeatureFlagger(sitePermissionsState: "enabled")
-        overrides.toggleOverride(for: FeatureFlag.sitePermissions)
-        XCTAssertFalse(AppDependencyProvider.sitePermissionsEnabledAtLaunch(featureFlagger: flagger, isSupportedOSProvider: { true }))
-
-        overrides.clearOverride(for: FeatureFlag.sitePermissions)
-
-        XCTAssertTrue(AppDependencyProvider.sitePermissionsEnabledAtLaunch(featureFlagger: flagger, isSupportedOSProvider: { true }))
-    }
-
-    private func makeFeatureFlagger(sitePermissionsState: String?) throws
-        -> (DefaultFeatureFlagger, PrivacyConfigurationManagerMock, FeatureFlagLocalOverrides) {
-        let manager = PrivacyConfigurationManagerMock()
-        manager.privacyConfig = try makePrivacyConfiguration(sitePermissionsState: sitePermissionsState)
-        let internalUserDecider = PrivacyConfig.MockInternalUserDecider(isInternalUser: true)
-        let overrides = FeatureFlagLocalOverrides(
-            keyValueStore: InMemoryKeyValueStore(),
-            actionHandler: FeatureFlagOverridesPublishingHandler<FeatureFlag>())
-
-        // DefaultFeatureFlagger explicitly permits tests through this switch; restore the caller's environment after initialization.
-        let previousMode = ProcessInfo.processInfo.environment["TESTS_FEATUREFLAGGER_MODE"]
-        setenv("TESTS_FEATUREFLAGGER_MODE", "1", 1)
-        defer {
-            if let previousMode {
-                setenv("TESTS_FEATUREFLAGGER_MODE", previousMode, 1)
-            } else {
-                unsetenv("TESTS_FEATUREFLAGGER_MODE")
-            }
-        }
-        let base = DefaultFeatureFlagger(internalUserDecider: internalUserDecider,
-                                        privacyConfigManager: manager,
-                                        localOverrides: overrides,
-                                        experimentManager: nil,
-                                        for: FeatureFlag.self)
-        return (base, manager, overrides)
-    }
-
-    private func makePrivacyConfiguration(sitePermissionsState: String?) throws -> AppPrivacyConfiguration {
-        var subfeatures = [String: Any]()
-        if let sitePermissionsState {
-            subfeatures["sitePermissions"] = ["state": sitePermissionsState]
-        }
-        let data = try JSONSerialization.data(withJSONObject: [
-            "features": [PrivacyFeature.iOSBrowserConfig.rawValue: ["state": "enabled", "features": subfeatures]]
-        ])
-        return AppPrivacyConfiguration(data: try PrivacyConfigurationData(data: data),
-                                       identifier: "site-permissions-session-tests",
-                                       localProtection: PrivacyConfigTestsUtils.MockDomainsProtectionStore(),
-                                       internalUserDecider: PrivacyConfig.MockInternalUserDecider())
     }
 
     func testInitialUpdateIsBuffered() {
@@ -243,103 +129,58 @@ final class ContentBlockingUpdatingTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenRequiredAssetsTimeOutThenNavigationCancelsOnceAndRefreshRetriesItsURL() async throws {
-        let tab = TabViewController.fake(customWebView: { MockWebView(frame: .zero, configuration: $0) },
-                                        featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions]), sitePermissionsEnabled: true,
-                                        contentBlockingAssetsPublisher: updating.userContentBlockingAssets)
-        tab.specialErrorPageNavigationHandler.delegate = nil
-        defer { tab.prepareForDataClearing() }
-        tab.sitePermissionsNavigationTimeout = 0.03
-        let webView = try XCTUnwrap(tab.webView as? MockWebView)
-        let failedURL = try XCTUnwrap(URL(string: "https://example.com/failed"))
-        let frame = WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com", request: URLRequest(url: failedURL))
-        let action = MockNavigationAction(request: URLRequest(url: failedURL), navigationType: .other, targetFrame: frame)
-        let cancelled = expectation(description: "Timed-out navigation cancelled")
+    func testWhenAssetsArriveWithoutGeolocationThenNavigationKeepsWaiting() async throws {
+        let assets = PassthroughSubject<ContentBlockingUpdating.NewContent, Never>()
+        let controller = UserContentController(assetsPublisher: assets, privacyConfigurationManager: configManager)
+        defer { controller.cleanUpBeforeClosing() }
+        let pixelFiring = PixelKitMock()
+        let notifications = NotificationCenter()
+        let tab = TabViewController.fake(customWebView: { configuration in
+            (configuration.userContentController as? UserContentController)?.cleanUpBeforeClosing()
+            configuration.userContentController = controller
+            return MockWebView(frame: .zero, configuration: configuration)
+        }, featureFlagger: MockFeatureFlagger(), sitePermissionsEnabled: true, pixelFiring: pixelFiring)
+        tab.contentBlockingWaitNotificationCenter = notifications
+        tab.contentBlockingWaitPixelTimeout = 0
+
+        let cancelled = expectation(description: "Only teardown ends the wait")
         cancelled.assertForOverFulfill = true
-        var decisions = [WKNavigationActionPolicy]()
-        tab.webView(webView, decidePolicyFor: action) { policy in
-            decisions.append(policy)
+        var decisions = [Bool]()
+        XCTAssertTrue(tab.shouldWaitUntilContentBlockingIsLoaded({ ready in
+            decisions.append(ready)
             cancelled.fulfill()
-        }
-        await fulfillment(of: [cancelled], timeout: 1)
-        XCTAssertEqual(decisions, [.cancel])
-        XCTAssertTrue(tab.isError)
-        XCTAssertEqual(tab.errorText, URLError(.timedOut).localizedDescription)
-        XCTAssertEqual(tab.url, failedURL)
-        XCTAssertTrue(tab.sitePermissionsState.contentBlockingWaitTasks.isEmpty)
-        XCTAssertEqual(webView.loadCallCount, 0, "Timeout must not automatically retry")
-
-        let controller = try XCTUnwrap(webView.configuration.userContentController as? UserContentController)
-        let installed = expectation(description: "Late assets installed")
+        }, for: URL(string: "https://example.com")!))
+        notifications.post(name: UIApplication.didEnterBackgroundNotification, object: nil)
+        let installed = expectation(description: "Assets without geolocation are installed")
         let subscription = controller.$contentBlockingAssets.compactMap { $0 }.first().sink { _ in installed.fulfill() }
-        rulesManager.updatesSubject.send(Self.testUpdate())
+        defer { subscription.cancel() }
+        assets.send(.init(rulesUpdate: .init(rules: [], changes: [:], completionTokens: []),
+                          sourceProvider: makeScriptSourceProvider(),
+                          duckAiNativeStorageHandler: nil,
+                          segmentSkipPreferences: segmentSkipPreferences))
         await fulfillment(of: [installed], timeout: 10)
-        subscription.cancel()
-        XCTAssertEqual(decisions, [.cancel], "Late readiness must not resume a timed-out decision")
-        XCTAssertTrue(tab.isError)
-        XCTAssertEqual(webView.loadCallCount, 0)
 
-        let retried = expectation(description: "Refresh retries attempted URL")
-        webView.loadCompletionHandler = { retried.fulfill() }
-        tab.refresh()
-        await fulfillment(of: [retried], timeout: 1)
-        XCTAssertEqual(webView.lastLoadedRequest?.url, failedURL)
-        XCTAssertEqual(webView.loadCallCount, 1)
-    }
+        notifications.post(name: UIApplication.willEnterForegroundNotification, object: nil)
+        try await assertTimeoutPixelFires(pixelFiring)
+        XCTAssertTrue(decisions.isEmpty, "Assets without geolocation must not resume the navigation")
 
-    @MainActor
-    func testWhenUnrelatedAssetsKeepArrivingThenTheyDoNotExtendTheGeolocationDeadline() async throws {
-        let originalReleased = expectation(description: "Displaced content controller released")
-        let replacementReleased = expectation(description: "Fixture content controller released after timeout")
-        func exerciseTimeout() async throws {
-            let assets = PassthroughSubject<NonGeolocationContent, Never>()
-            let controller = UserContentController(assetsPublisher: assets, privacyConfigurationManager: configManager)
-            controller.onDeinit { replacementReleased.fulfill() }
-            let tab = TabViewController.fake(customWebView: { configuration in
-                if let originalController = configuration.userContentController as? UserContentController {
-                    originalController.onDeinit { originalReleased.fulfill() }
-                    // Replacing the controller transfers its teardown responsibility to this fixture.
-                    originalController.cleanUpBeforeClosing()
-                } else {
-                    XCTFail("Tab must install its content controller before creating the web view")
-                }
-                configuration.userContentController = controller
-                return WKWebView(frame: .zero, configuration: configuration)
-            }, featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions]), sitePermissionsEnabled: true)
-            tab.specialErrorPageNavigationHandler.delegate = nil
-            defer { tab.prepareForDataClearing() }
-            tab.sitePermissionsNavigationTimeout = 0.3
-            var installedCount = 0
-            let installedSubscription = controller.$contentBlockingAssets.compactMap { $0 }.sink { _ in installedCount += 1 }
-            let updates = Timer.publish(every: 0.02, on: .main, in: .common).autoconnect().sink { _ in
-                assets.send(NonGeolocationContent())
-            }
-            defer {
-                updates.cancel()
-                installedSubscription.cancel()
-            }
-            let cancelled = expectation(description: "Nonready updates cannot postpone deadline")
-            cancelled.assertForOverFulfill = true
-            XCTAssertTrue(tab.shouldWaitUntilContentBlockingIsLoaded({ ready in
-                XCTAssertFalse(ready)
-                cancelled.fulfill()
-            }, for: URL(string: "https://example.com")!))
-            await fulfillment(of: [cancelled], timeout: 2)
-            XCTAssertGreaterThan(installedCount, 1)
-            XCTAssertTrue(tab.isError)
-            XCTAssertTrue(tab.sitePermissionsState.contentBlockingWaitTasks.isEmpty)
-        }
-        try await exerciseTimeout()
-        await fulfillment(of: [originalReleased, replacementReleased], timeout: 2)
+        tab.closeSitePermissions()
+        await fulfillment(of: [cancelled], timeout: 2)
+        XCTAssertEqual(decisions, [false])
+        XCTAssertFalse(tab.isError)
     }
 
     @MainActor
     func testWhenMainFrameNavigationReplacesAWaitThenOnlyTheNewDecisionCanResume() async throws {
-        let tab = TabViewController.fake(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions]), sitePermissionsEnabled: true,
+        let tab = TabViewController.fake(customWebView: { MockWebView(frame: .zero, configuration: $0) },
+                                        featureFlagger: MockFeatureFlagger(), sitePermissionsEnabled: true,
                                         contentBlockingAssetsPublisher: updating.userContentBlockingAssets)
         tab.specialErrorPageNavigationHandler.delegate = nil
         defer { tab.prepareForDataClearing() }
-        tab.sitePermissionsNavigationTimeout = 0.25
+        tab.contentBlockingWaitPixelTimeout = 3600
+        let compilationPixels = PixelKitMock()
+        tab.rulesCompilationMonitor = RulesCompilationMonitor { compilationPixels }
+        let webView = try XCTUnwrap(tab.webView as? MockWebView)
         let cancelled = expectation(description: "Superseded main-frame decision cancelled")
         cancelled.assertForOverFulfill = true
         let continued = expectation(description: "Replacement decision resumes with required assets")
@@ -351,36 +192,37 @@ final class ContentBlockingUpdatingTests: XCTestCase {
             return MockNavigationAction(request: request, navigationType: .other,
                                         targetFrame: .mock(isMainFrame: true, securityOriginHost: "example.com", request: request))
         }
-        tab.webView(tab.webView, decidePolicyFor: action(path: "old")) { policy in
+        tab.webView(webView, decidePolicyFor: action(path: "old")) { policy in
             oldDecisions.append(policy)
             cancelled.fulfill()
         }
         await Task.yield()
-        tab.sitePermissionsNavigationTimeout = 10
-        tab.webView(tab.webView, decidePolicyFor: action(path: "new")) { policy in
+        tab.webView(webView, decidePolicyFor: action(path: "new")) { policy in
             newDecisions.append(policy)
             continued.fulfill()
         }
         await fulfillment(of: [cancelled], timeout: 1)
         XCTAssertEqual(oldDecisions, [.cancel])
         XCTAssertTrue(newDecisions.isEmpty)
+        XCTAssertTrue(compilationPixels.actualFireCalls.isEmpty, "A superseded wait must not report the rules as compiled")
         rulesManager.updatesSubject.send(Self.testUpdate())
         await fulfillment(of: [continued], timeout: 10)
-        try await Task.sleep(nanoseconds: 300_000_000)
         XCTAssertEqual(oldDecisions, [.cancel])
         XCTAssertEqual(newDecisions.count, 1)
         XCTAssertNotEqual(newDecisions.first, .cancel)
-        XCTAssertFalse(tab.isError, "The cancelled deadline must not replace the new page with an error")
-        XCTAssertTrue(tab.sitePermissionsState.contentBlockingWaitTasks.isEmpty)
+        XCTAssertEqual(compilationPixels.actualFireCalls.count, 1)
+        XCTAssertTrue(compilationPixels.actualFireCalls.first?.pixel.name.hasPrefix("m_compilation_result_success_") == true)
+        XCTAssertFalse(tab.isError, "The superseded wait must not replace the new page with an error")
+        XCTAssertEqual(webView.loadCallCount, 0)
     }
 
     @MainActor
     func testWhenExplicitLoadReplacesAWaitThenItCancelsBeforeTheNextPolicyDecision() async throws {
         let tab = TabViewController.fake(customWebView: { MockWebView(frame: .zero, configuration: $0) },
-                                        featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions]), sitePermissionsEnabled: true)
+                                        featureFlagger: MockFeatureFlagger(), sitePermissionsEnabled: true)
         tab.specialErrorPageNavigationHandler.delegate = nil
         defer { tab.prepareForDataClearing() }
-        tab.sitePermissionsNavigationTimeout = 0.25
+        tab.contentBlockingWaitPixelTimeout = 3600
         let webView = try XCTUnwrap(tab.webView as? MockWebView)
         let oldRequest = URLRequest(url: URL(string: "https://example.com/old")!)
         let action = MockNavigationAction(request: oldRequest, navigationType: .other,
@@ -400,11 +242,10 @@ final class ContentBlockingUpdatingTests: XCTestCase {
         XCTAssertTrue(tab.sitePermissionsState.contentBlockingWaitTasks.isEmpty)
         // MockWebView.load does not invoke a navigation delegate: replacement itself must cancel the wait.
         await fulfillment(of: [cancelled, loaded], timeout: 1)
-        try await Task.sleep(nanoseconds: 300_000_000)
         XCTAssertEqual(decisions, [.cancel])
         XCTAssertEqual(webView.lastLoadedRequest?.url, replacementURL)
         XCTAssertEqual(tab.url, replacementURL)
-        XCTAssertFalse(tab.isError, "The old deadline must not replace the new URL with a timeout page")
+        XCTAssertFalse(tab.isError, "The replaced wait must not show an error page")
     }
 
     @MainActor
@@ -462,34 +303,39 @@ final class ContentBlockingUpdatingTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenGeolocationWaitTimesOutThenPixelCountsOnlyForegroundStalls() async throws {
-        let cases = [(true, "https://example.com", false), (true, "https://duckduckgo.com/?q=maps", false),
-                     (false, "https://example.com", false), (false, "https://duckduckgo.com/?q=maps", true)]
-        for (contentBlockingEnabled, url, backgrounded) in cases {
+    func testWhenGeolocationWaitStallsThenPixelCountsOnlyForegroundTimeAndDoesNotEndTheWait() async throws {
+        let cases = [(true, "https://example.com"), (true, "https://duckduckgo.com/?q=maps"),
+                     (false, "https://example.com"), (false, "https://duckduckgo.com/?q=maps")]
+        for (contentBlockingEnabled, url) in cases {
             let pixelFiring = PixelKitMock()
             let notifications = NotificationCenter()
-            let tab = TabViewController.fake(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions]), sitePermissionsEnabled: true,
+            let tab = TabViewController.fake(featureFlagger: MockFeatureFlagger(), sitePermissionsEnabled: true,
                                             pixelFiring: pixelFiring)
             tab.specialErrorPageNavigationHandler.delegate = nil
             defer { tab.prepareForDataClearing() }
             let config = try XCTUnwrap(tab.privacyConfigurationManager.privacyConfig as? PrivacyConfigurationMock)
             config.enabledFeaturesForVersions = contentBlockingEnabled ? [.contentBlocking: [AppVersionProvider().appVersion() ?? ""]] : [:]
             tab.contentBlockingWaitNotificationCenter = notifications
-            // Equal deadlines mirror production; await the navigation decision instead of racing a sleep.
             tab.contentBlockingWaitPixelTimeout = 0
-            tab.sitePermissionsNavigationTimeout = 0
-            let cancelled = expectation(description: "Geolocation wait times out")
+            let cancelled = expectation(description: "Teardown ends the stalled wait")
+            var decisions = [Bool]()
             XCTAssertTrue(tab.shouldWaitUntilContentBlockingIsLoaded({ ready in
-                XCTAssertFalse(ready)
+                decisions.append(ready)
                 cancelled.fulfill()
             }, for: URL(string: url)!))
-            if backgrounded { notifications.post(name: UIApplication.didEnterBackgroundNotification, object: nil) }
-            await fulfillment(of: [cancelled], timeout: 10)
-            XCTAssertTrue(tab.isError)
-            XCTAssertNil(tab.sitePermissionsState.contentBlockingWaitTimeoutPixel, "Finished navigations must no longer be measured")
+
+            notifications.post(name: UIApplication.didEnterBackgroundNotification, object: nil)
+            try await Task.sleep(nanoseconds: 100_000_000)
+            XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty, "Time in the background must not count")
             notifications.post(name: UIApplication.willEnterForegroundNotification, object: nil)
-            let expected = backgrounded ? [] : [ExpectedFireCall(pixel: ContentBlockingPixel.rulesCompilationTimeout, frequency: .dailyAndCount)]
-            XCTAssertEqual(pixelFiring.actualFireCalls, expected)
+            try await assertTimeoutPixelFires(pixelFiring)
+            XCTAssertTrue(decisions.isEmpty, "Emitting the pixel must not resolve navigation")
+            XCTAssertFalse(tab.isError)
+
+            tab.closeSitePermissions()
+            await fulfillment(of: [cancelled], timeout: 2)
+            XCTAssertEqual(decisions, [false])
+            XCTAssertNil(tab.sitePermissionsState.contentBlockingWaitTimeoutPixel, "Finished navigations must no longer be measured")
         }
     }
 
@@ -504,11 +350,10 @@ final class ContentBlockingUpdatingTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenTabClosesDuringAssetWaitThenCancellationDoesNotPresentTimeoutError() async throws {
-        let tab = TabViewController.fake(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions]), sitePermissionsEnabled: true)
+    func testWhenTabClosesDuringAssetWaitThenCancellationDoesNotPresentAnErrorPage() async throws {
+        let tab = TabViewController.fake(featureFlagger: MockFeatureFlagger(), sitePermissionsEnabled: true)
         tab.specialErrorPageNavigationHandler.delegate = nil
         defer { tab.prepareForDataClearing() }
-        tab.sitePermissionsNavigationTimeout = 3600
         tab.contentBlockingWaitPixelTimeout = 3600
         try XCTUnwrap(tab.privacyConfigurationManager.privacyConfig as? PrivacyConfigurationMock).enabledFeaturesForVersions = [:]
         let cancelled = expectation(description: "Teardown cancels the pending decision")
@@ -566,7 +411,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                 let webView = SuspendedGeolocationWebView(frame: .zero, configuration: configuration)
                 webView.evaluation = evaluation
                 return webView
-            }, featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions]), sitePermissionsEnabled: true)
+            }, featureFlagger: MockFeatureFlagger(), sitePermissionsEnabled: true)
             tab.specialErrorPageNavigationHandler.delegate = nil
             let webView = try XCTUnwrap(tab.webView)
             weakWebView = webView
@@ -628,14 +473,15 @@ final class ContentBlockingUpdatingTests: XCTestCase {
     func testWhenUserStopsDuringAssetWaitThenLateAssetsCannotResumeNavigationOrShowAnError() async throws {
         let controllerReleased = expectation(description: "Stopped navigation releases its content controller")
         func exerciseStop() async throws {
-            let tab = TabViewController.fake(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions]), sitePermissionsEnabled: true,
+            let tab = TabViewController.fake(featureFlagger: MockFeatureFlagger(), sitePermissionsEnabled: true,
                                             contentBlockingAssetsPublisher: updating.userContentBlockingAssets)
             let controller = try XCTUnwrap(tab.webView.configuration.userContentController as? UserContentController)
             controller.onDeinit { controllerReleased.fulfill() }
             tab.specialErrorPageNavigationHandler.delegate = nil
             defer { tab.prepareForDataClearing() }
-            tab.sitePermissionsNavigationTimeout = 3600
             tab.contentBlockingWaitPixelTimeout = 3600
+            let compilationPixels = PixelKitMock()
+            tab.rulesCompilationMonitor = RulesCompilationMonitor { compilationPixels }
             try XCTUnwrap(tab.privacyConfigurationManager.privacyConfig as? PrivacyConfigurationMock).enabledFeaturesForVersions = [:]
             let request = URLRequest(url: URL(string: "https://example.com/stopped")!)
             let action = MockNavigationAction(request: request, navigationType: .other,
@@ -660,6 +506,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
             await fulfillment(of: [installed], timeout: 10)
             subscription.cancel()
             XCTAssertEqual(decisions, [.cancel])
+            XCTAssertTrue(compilationPixels.actualFireCalls.isEmpty, "A stopped wait must not report the rules as compiled")
             XCTAssertFalse(tab.isError)
             XCTAssertTrue(tab.sitePermissionsState.contentBlockingWaitTasks.isEmpty)
         }
@@ -668,17 +515,14 @@ final class ContentBlockingUpdatingTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenRemoteFlagChangesBeforeFirstAssetsThenNavigationStillWaitsForLaunchTimeScripts() async throws {
-        let remoteFlagger = MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions])
-        let launchEnabled = remoteFlagger.isFeatureOn(.sitePermissions)
-        let tab = TabViewController.fake(featureFlagger: remoteFlagger, sitePermissionsEnabled: launchEnabled,
+    func testWhenSERPNavigationWaitsBeforeFirstAssetsThenItResumesOnceScriptsAreInstalled() async throws {
+        let tab = TabViewController.fake(featureFlagger: MockFeatureFlagger(), sitePermissionsEnabled: true,
                                         contentBlockingAssetsPublisher: updating.userContentBlockingAssets)
         tab.specialErrorPageNavigationHandler.delegate = nil
         defer { tab.prepareForDataClearing() }
         let config = try XCTUnwrap(tab.privacyConfigurationManager.privacyConfig as? PrivacyConfigurationMock)
         config.enabledFeaturesForVersions = [:]
         tab.contentBlockingWaitPixelTimeout = 3600
-        tab.sitePermissionsNavigationTimeout = 3600
         let controller = try XCTUnwrap(tab.webView.configuration.userContentController as? UserContentController)
         XCTAssertNil(controller.contentBlockingAssets)
 
@@ -691,24 +535,19 @@ final class ContentBlockingUpdatingTests: XCTestCase {
         }, for: URL(string: "https://duckduckgo.com/?q=maps")!))
         let pendingTask = try XCTUnwrap(tab.sitePermissionsState.contentBlockingWaitTasks.values.first)
         defer { pendingTask.cancel() }
-        remoteFlagger.enabledFeatureFlags = []
-        remoteFlagger.triggerUpdate()
         await Task.yield()
         XCTAssertTrue(decisions.isEmpty)
-        XCTAssertTrue(tab.isSitePermissionsEnabled)
 
         let mainTimer = ObjectIdentifier(try XCTUnwrap(tab.sitePermissionsState.contentBlockingWaitTimeoutPixel))
-        tab.sitePermissionsNavigationTimeout = 0
-        let subframe = expectation(description: "Subframe timeout does not end the main-frame measurement")
+        let subframe = expectation(description: "Subframe wait resumes with the same assets")
         XCTAssertTrue(tab.shouldWaitUntilContentBlockingIsLoaded({ ready in
-            XCTAssertFalse(ready)
+            XCTAssertTrue(ready)
             subframe.fulfill()
         }, for: URL(string: "https://example.com")!, isMainFrame: false))
-        XCTAssertEqual(tab.sitePermissionsState.contentBlockingWaitTimeoutPixel.map(ObjectIdentifier.init), mainTimer)
-        await fulfillment(of: [subframe], timeout: 10)
-        XCTAssertEqual(tab.sitePermissionsState.contentBlockingWaitTimeoutPixel.map(ObjectIdentifier.init), mainTimer)
+        XCTAssertEqual(tab.sitePermissionsState.contentBlockingWaitTimeoutPixel.map(ObjectIdentifier.init), mainTimer,
+                       "A subframe wait must not restart the main-frame measurement")
         rulesManager.updatesSubject.send(Self.testUpdate())
-        await fulfillment(of: [resumed], timeout: 10)
+        await fulfillment(of: [resumed, subframe], timeout: 10)
         await pendingTask.value
         XCTAssertNil(tab.sitePermissionsState.contentBlockingWaitTimeoutPixel)
         XCTAssertEqual(decisions, [true])
@@ -717,230 +556,16 @@ final class ContentBlockingUpdatingTests: XCTestCase {
     }
 
     @MainActor
-    func testRemoteFlagChangesApplyToDocumentsOnlyAfterRelaunch() async throws {
-        for initiallyEnabled in [false, true] {
-            let remoteFlagger = MockFeatureFlagger(enabledFeatureFlags: initiallyEnabled ? [.sitePermissions] : [])
-            let launchEnabled = remoteFlagger.isFeatureOn(.sitePermissions)
-            remoteFlagger.enabledFeatureFlags = initiallyEnabled ? [] : [.sitePermissions]
-            remoteFlagger.triggerUpdate()
-
-            // New tabs in the current process keep the launch decision. A fresh launch snapshot adopts the update.
-            for isRelaunch in [false, true] {
-                let sitePermissionsEnabled = isRelaunch ? remoteFlagger.isFeatureOn(.sitePermissions) : launchEnabled
-                let expectedEnabled = isRelaunch ? !initiallyEnabled : initiallyEnabled
-                let tab = TabViewController.fake(featureFlagger: remoteFlagger, sitePermissionsEnabled: sitePermissionsEnabled,
-                                                contentBlockingAssetsPublisher: updating.userContentBlockingAssets)
-                tab.specialErrorPageNavigationHandler.delegate = nil
-                defer { tab.prepareForDataClearing() }
-                let controller = try XCTUnwrap(tab.webView.configuration.userContentController as? UserContentController)
-                let navigationDelegate = MockWKNavigationDelegate()
-                tab.webView.navigationDelegate = navigationDelegate
-
-                let installed = expectation(description: "Scripts installed for launch state \(expectedEnabled)")
-                let subscription = controller.$contentBlockingAssets.compactMap { $0 }.first()
-                    .sink { _ in installed.fulfill() }
-                rulesManager.updatesSubject.send(Self.testUpdate())
-                await fulfillment(of: [installed], timeout: 10)
-                subscription.cancel()
-                let scripts = try XCTUnwrap(controller.contentBlockingAssets?.userScripts as? UserScripts)
-                XCTAssertEqual(scripts.geolocationUserScript != nil, expectedEnabled)
-
-                let loaded = expectation(description: "New document loaded")
-                navigationDelegate.didFinishNavigation = { _, _ in loaded.fulfill() }
-                tab.webView.loadHTMLString("<html><body>Launch-time geolocation</body></html>", baseURL: nil)
-                await fulfillment(of: [loaded], timeout: 10)
-                let hasShim: Bool? = try await tab.webView.evaluateJavaScript("typeof window.__ddgSitePermissionsGeolocation !== 'undefined'")
-                XCTAssertEqual(hasShim, expectedEnabled)
-                let hasPolicy = try await tab.webView.callAsyncJavaScript(
-                    "return typeof globalThis.__ddgSitePermissionsGeolocationPolicy !== 'undefined';",
-                    arguments: [:], in: nil, contentWorld: .defaultClient)
-                XCTAssertEqual(hasPolicy as? Bool, expectedEnabled)
-                let hasPagePolicy: Bool? = try await tab.webView.evaluateJavaScript(
-                    "typeof globalThis.__ddgSitePermissionsGeolocationPolicy !== 'undefined'")
-                XCTAssertEqual(hasPagePolicy, false)
-            }
-        }
-    }
-
-    @MainActor
-    func testWhenRemoteFlagIsDisabledThenRestoredCachedDocumentStillRoutesGeolocationUntilRelaunch() async throws {
-        // Use the same loopback HTTP fixture pattern as the package's WebKit tests so WebKit
-        // can restore a real document from its back-forward cache instead of reloading HTML.
-        let parameters = NWParameters.tcp
-        parameters.requiredLocalEndpoint = .hostPort(host: .ipv4(.loopback), port: .any)
-        let listener = try NWListener(using: parameters)
-        defer { listener.cancel() }
-        let serverReady = expectation(description: "Loopback server listening")
-        listener.stateUpdateHandler = { state in
-            switch state {
-            case .ready:
-                serverReady.fulfill()
-            case .failed(let error):
-                XCTFail("Loopback server failed: \(error)")
-                serverReady.fulfill()
-            default:
-                break
-            }
-        }
-        let body = Data("""
-        <html><body><script>
-        window.testDocumentID = Math.random().toString(36);
-        window.testRestoredFromCache = false;
-        addEventListener('pageshow', event => { window.testRestoredFromCache = event.persisted; });
-        </script></body></html>
-        """.utf8)
-        let headers = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: \(body.count)\r\nConnection: close\r\n\r\n"
-        let response = Data(headers.utf8) + body
-        let serverQueue = DispatchQueue(label: "ContentBlockingUpdatingTests.HTTPServer")
-        listener.newConnectionHandler = { connection in
-            connection.start(queue: serverQueue)
-            connection.receive(minimumIncompleteLength: 1, maximumLength: 65_536) { _, _, _, _ in
-                connection.send(content: response, completion: .contentProcessed { _ in connection.cancel() })
-            }
-        }
-        listener.start(queue: serverQueue)
-        await fulfillment(of: [serverReady], timeout: 3)
-        let port = try XCTUnwrap(listener.port)
-        let pageA = try XCTUnwrap(URL(string: "http://localhost:\(port.rawValue)/a"))
-        let pageB = try XCTUnwrap(URL(string: "http://localhost:\(port.rawValue)/b"))
-
-        let flagger = MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions])
-        let tab = TabViewController.fake(featureFlagger: flagger, sitePermissionsEnabled: flagger.isFeatureOn(.sitePermissions),
-                                        contentBlockingAssetsPublisher: updating.userContentBlockingAssets)
-        defer { tab.prepareForDataClearing() }
-        let errorHandler = try XCTUnwrap(tab.specialErrorPageNavigationHandler as? DummySpecialErrorPageNavigationHandler)
-        errorHandler.handlesNavigationResponse = false
-        defer {
-            errorHandler.delegate = nil
-            tab.closeSitePermissions()
-        }
-        let store = SitePermissionsStore(storage: InMemoryKeyValueStore().keyedStoring())
-        let dependencies = SitePermissionsDependencies(store: store, systemPermissionClient: SystemPermissionClient())
-        tab.sitePermissionsDependenciesProvider = { dependencies }
-        var promptCount = 0
-        tab.sitePermissionsPromptHandlerOverride = { _, completion in
-            promptCount += 1
-            completion(.denyOnce)
-        }
-
-        let originalWindow = UIApplication.shared.firstKeyWindow
-        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
-        let window = UIWindow(windowScene: scene)
-        window.rootViewController = tab
-        window.makeKeyAndVisible()
-        defer {
-            window.isHidden = true
-            originalWindow?.makeKey()
-        }
-
-        let controller = try XCTUnwrap(tab.webView.configuration.userContentController as? UserContentController)
-        func waitForScripts(enabled: Bool, update: () -> Void) async {
-            let installed = expectation(description: "Geolocation script enabled: \(enabled)")
-            let subscription = controller.$contentBlockingAssets
-                .compactMap { $0?.userScripts as? UserScripts }
-                .filter { ($0.geolocationUserScript != nil) == enabled }
-                .first()
-                .sink { _ in installed.fulfill() }
-            update()
-            await fulfillment(of: [installed], timeout: 10)
-            subscription.cancel()
-        }
-        func navigate(to url: URL, action: () -> WKNavigation?) async throws {
-            let loaded = expectation(description: "Loaded \(url.path) through production navigation delegate")
-            let observation = tab.webView.observe(\.isLoading, options: [.new]) { webView, _ in
-                if !webView.isLoading, webView.url == url {
-                    loaded.fulfill()
-                }
-            }
-            defer { observation.invalidate() }
-            XCTAssertTrue(tab.webView.navigationDelegate === tab)
-            XCTAssertNotNil(action())
-            await fulfillment(of: [loaded], timeout: 10)
-            let readyState: String? = try await tab.webView.evaluateJavaScript("document.readyState")
-            XCTAssertEqual(readyState, "complete")
-        }
-
-        await waitForScripts(enabled: true) { rulesManager.updatesSubject.send(Self.testUpdate()) }
-        try await navigate(to: pageA) { tab.webView.load(URLRequest(url: pageA)) }
-        let originalDocument: String? = try await tab.webView.evaluateJavaScript("window.testDocumentID")
-        let originalShim: String? = try await tab.webView.evaluateJavaScript("window.__ddgSitePermissionsGeolocation?.documentID")
-        XCTAssertNotNil(originalDocument)
-        XCTAssertNotNil(originalShim)
-
-        flagger.enabledFeatureFlags = []
-        flagger.triggerUpdate()
-        try await navigate(to: pageB) { tab.webView.load(URLRequest(url: pageB)) }
-        let hasShim: Bool? = try await tab.webView.evaluateJavaScript("typeof window.__ddgSitePermissionsGeolocation !== 'undefined'")
-        XCTAssertEqual(hasShim, true)
-
-        try await navigate(to: pageA) { tab.webView.goBack() }
-        let restoredDocument: String? = try await tab.webView.evaluateJavaScript("window.testDocumentID")
-        let restoredShim: String? = try await tab.webView.evaluateJavaScript("window.__ddgSitePermissionsGeolocation?.documentID")
-        let restoredFromCache: Bool? = try await tab.webView.evaluateJavaScript("window.testRestoredFromCache")
-        XCTAssertEqual(restoredDocument, originalDocument)
-        XCTAssertEqual(restoredShim, originalShim)
-        XCTAssertEqual(restoredFromCache, true, "A fresh load would not exercise the cached document bridge")
-
-        let state = try await tab.webView.callAsyncJavaScript("""
-        return await Promise.race([
-            navigator.permissions.query({ name: 'geolocation' }).then(status => status.state),
-            new Promise(resolve => setTimeout(() => resolve('timeout'), 3000))
-        ]);
-        """, arguments: [:], in: nil, contentWorld: .page)
-        XCTAssertEqual(state as? String, "prompt")
-        let errorCode = try await tab.webView.callAsyncJavaScript("""
-        return await new Promise(resolve => {
-            const timer = setTimeout(() => resolve(-1), 3000);
-            navigator.geolocation.getCurrentPosition(
-                () => { clearTimeout(timer); resolve(0); },
-                error => { clearTimeout(timer); resolve(error.code); }
-            );
-        });
-        """, arguments: [:], in: nil, contentWorld: .page)
-        XCTAssertEqual(errorCode as? Int, 1)
-        XCTAssertEqual(promptCount, 1, "The restored document must reach the coordinator; denial prevents an OS prompt")
-    }
-
-    @MainActor
-    func testWhenRemoteFlagChangesThenAssetsAndReloadNotificationsAreNotReplayed() async {
-        let flagger = MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions])
-        let tab = TabViewController.fake(featureFlagger: flagger, sitePermissionsEnabled: flagger.isFeatureOn(.sitePermissions),
-                                        contentBlockingAssetsPublisher: updating.userContentBlockingAssets)
-        tab.specialErrorPageNavigationHandler.delegate = nil
-        defer { tab.prepareForDataClearing() }
-        let initial = expectation(description: "Content update includes reload notification")
-        let replayed = expectation(description: "Flag update must not replay assets")
-        replayed.isInverted = true
-        var updates = [ContentBlockerRulesManager.UpdateEvent]()
-        let subscription = tab.makeTabContentBlockingAssetsPublisher(mediaCaptureUserScript: MediaCaptureUserScript())
-            .sink { content in
-                updates.append(content.rulesUpdate)
-                if updates.count == 1 { initial.fulfill() } else { replayed.fulfill() }
-            }
-        let update = ContentBlockerRulesManager.UpdateEvent(rules: Self.testRules(),
-                                                           changes: ["test": .unprotectedSites],
-                                                           completionTokens: ["real-update"])
-        rulesManager.updatesSubject.send(update)
-        await fulfillment(of: [initial], timeout: 3)
-        flagger.enabledFeatureFlags = []
-        flagger.triggerUpdate()
-        await fulfillment(of: [replayed], timeout: 0.1)
-        subscription.cancel()
-        XCTAssertEqual(updates.count, 1)
-        XCTAssertEqual(updates[0].changes["test"], .unprotectedSites)
-        XCTAssertEqual(updates[0].completionTokens, ["real-update"])
-    }
-
-    @MainActor
-    func testGeolocationUserScriptRegistrationFollowsLaunchSnapshot() async throws {
+    func testGeolocationUserScriptIsRegisteredOnlyWhenSitePermissionsIsSupported() async throws {
         let sourceProvider = makeScriptSourceProvider()
         let geolocationUserScript = GeolocationUserScript()
 
         let disabledScripts = UserScripts(
             with: sourceProvider,
-            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []),
+            featureFlagger: MockFeatureFlagger(),
             sitePermissionsEnabled: false,
-            geolocationUserScript: geolocationUserScript
+            geolocationUserScript: geolocationUserScript,
+            segmentSkipPreferences: segmentSkipPreferences
         )
         XCTAssertNil(disabledScripts.geolocationUserScript)
         XCTAssertFalse(disabledScripts.userScripts.contains { $0 is GeolocationUserScript })
@@ -948,9 +573,10 @@ final class ContentBlockingUpdatingTests: XCTestCase {
 
         let enabledScripts = UserScripts(
             with: sourceProvider,
-            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions]),
+            featureFlagger: MockFeatureFlagger(),
             sitePermissionsEnabled: true,
-            geolocationUserScript: geolocationUserScript
+            geolocationUserScript: geolocationUserScript,
+            segmentSkipPreferences: segmentSkipPreferences
         )
         XCTAssertTrue(enabledScripts.geolocationUserScript === geolocationUserScript)
         XCTAssertTrue(enabledScripts.userScripts.contains { ($0 as? GeolocationUserScript) === geolocationUserScript })
@@ -964,35 +590,20 @@ final class ContentBlockingUpdatingTests: XCTestCase {
         XCTAssertEqual(geolocationUserScript.policyScript.getContentWorld(), .defaultClient)
         XCTAssertEqual(geolocationUserScript.getContentWorld(), .page)
 
-        let tabEnabledWithDifferentGlobalFlag = UserScripts(
-            with: sourceProvider,
-            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []),
-            sitePermissionsEnabled: true,
-            geolocationUserScript: geolocationUserScript
-        )
-        XCTAssertTrue(tabEnabledWithDifferentGlobalFlag.geolocationUserScript === geolocationUserScript)
-        XCTAssertTrue(tabEnabledWithDifferentGlobalFlag.userScripts.contains { $0 === geolocationUserScript.policyScript })
-
-        let tabDisabledWithDifferentGlobalFlag = UserScripts(
-            with: sourceProvider,
-            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions]),
-            sitePermissionsEnabled: false,
-            geolocationUserScript: geolocationUserScript
-        )
-        XCTAssertNil(tabDisabledWithDifferentGlobalFlag.geolocationUserScript)
-        XCTAssertFalse(tabDisabledWithDifferentGlobalFlag.userScripts.contains { $0 is GeolocationPolicyUserScript })
-
         let nonTabScripts = UserScripts(
             with: sourceProvider,
-            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions])
+            featureFlagger: MockFeatureFlagger(),
+            segmentSkipPreferences: segmentSkipPreferences
         )
         XCTAssertNil(nonTabScripts.geolocationUserScript)
         XCTAssertFalse(nonTabScripts.userScripts.contains { $0 is GeolocationUserScript })
         XCTAssertFalse(nonTabScripts.userScripts.contains { $0 is GeolocationPolicyUserScript })
     }
 
+    /// The site permissions navigation wait has no deadline, so every bundle must carry the geolocation script
+    /// it waits for; otherwise a navigation could wait forever once assets have arrived.
     @MainActor
-    func testWhenContentUpdatesThenScriptsKeepLaunchAvailability() {
+    func testWhenContentUpdatesThenEveryBundleCarriesTheLaunchTimeScripts() {
         for enabledAtLaunch in [false, true] {
             let mediaCaptureUserScript = MediaCaptureUserScript()
             let geolocationUserScript = GeolocationUserScript()
@@ -1011,7 +622,8 @@ final class ContentBlockingUpdatingTests: XCTestCase {
             for _ in 0..<2 {
                 contentSubject.send(.init(rulesUpdate: Self.testUpdate(),
                                           sourceProvider: makeScriptSourceProvider(),
-                                          duckAiNativeStorageHandler: nil))
+                                          duckAiNativeStorageHandler: nil,
+                                          segmentSkipPreferences: segmentSkipPreferences))
             }
             XCTAssertEqual(receivedScripts.count, 2)
             for (media, geolocation) in receivedScripts {
@@ -1230,7 +842,8 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                                                          contentScopeExperimentsManager: MockContentScopeExperimentManager(),
                                                          internalUserDecider: MockInternalUserDecider(),
                                                          syncErrorHandler: CapturingAdapterErrorHandler(),
-                                                         webExtensionAvailability: nil))
+                                                         webExtensionAvailability: nil,
+                                                         aiChatBonusOffer: AIChatBonusOfferDependencies(handler: MockAIChatBonusHandling(), messageLog: AIChatBonusMessageLog())))
     }
 
     static let tracker = KnownTracker(domain: "tracker.com",
@@ -1329,18 +942,6 @@ private final class SuspendedGeolocationWebView: WKWebView {
             completionHandler?(String(repeating: "b", count: 32), nil)
         }
     }
-}
-
-private struct NonGeolocationContent: UserContentControllerNewContent {
-    let rulesUpdate = ContentBlockerRulesManager.UpdateEvent(rules: [], changes: [:], completionTokens: [])
-    let sourceProvider: Void = ()
-    var makeUserScripts: @MainActor (()) -> NonGeolocationScripts { { _ in NonGeolocationScripts() } }
-}
-
-@MainActor
-private final class NonGeolocationScripts: UserScriptsProvider {
-    var userScripts: [UserScript] { [] }
-    func loadWKUserScripts() async -> [WKUserScript] { [] }
 }
 
 extension UserContentControllerNewContent {

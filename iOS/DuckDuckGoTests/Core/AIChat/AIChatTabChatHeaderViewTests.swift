@@ -134,13 +134,14 @@ final class AIChatTabChatHeaderViewTests: XCTestCase {
         header.setContainerVisible(true)
         header.configure(isSubscriptionActive: false, allowsSubscriptionUpsell: false)
         let plate = try XCTUnwrap(header.titleHolder.subviews.compactMap { $0 as? UIControl }.first)
-        let titleStack = try XCTUnwrap(header.titleHolder.subviews.compactMap { $0 as? UIStackView }.first)
+        let titleLabel = try XCTUnwrap(header.titleHolder.subviews.compactMap { $0 as? UILabel }.first)
 
         XCTAssertTrue(plate.isHidden)
         XCTAssertTrue(plate.accessibilityElementsHidden)
-        XCTAssertFalse(titleStack.isHidden)
-        XCTAssertEqual(titleStack.arrangedSubviews.compactMap { $0 as? UILabel }.first?.text, UserText.aiChatHeaderPaidTitle)
-        XCTAssertNotNil(titleStack.arrangedSubviews.compactMap { $0 as? UIImageView }.first?.image)
+        XCTAssertFalse(titleLabel.isHidden)
+        XCTAssertEqual(titleLabel.text, UserText.aiChatHeaderPaidTitle)
+        // The title shows on its own; only the upgrade plate (chevron) may hold an image.
+        XCTAssertTrue(imageViews(in: header.titleHolder, excluding: plate).isEmpty)
         XCTAssertEqual(delegate.upgradePlateDidBecomeVisibleCount, 0)
 
         plate.sendActions(for: .touchUpInside)
@@ -175,25 +176,37 @@ final class AIChatTabChatHeaderViewTests: XCTestCase {
 
     func testNeutralHeaderPreservesVoiceAndOnboardingVisibility() throws {
         header.configure(isSubscriptionActive: false, allowsSubscriptionUpsell: false)
-        let titleStack = try XCTUnwrap(header.titleHolder.subviews.compactMap { $0 as? UIStackView }.first)
+        let titleLabel = try XCTUnwrap(header.titleHolder.subviews.compactMap { $0 as? UILabel }.first)
         header.setVoiceSessionActive(true)
         XCTAssertTrue(header.titleHolder.isHidden)
         header.setVoiceSessionActive(false)
         XCTAssertFalse(header.titleHolder.isHidden)
 
         header.setOnboardingLocked(true)
-        XCTAssertTrue(titleStack.isHidden)
+        XCTAssertTrue(titleLabel.isHidden)
         header.setOnboardingLocked(false)
-        XCTAssertFalse(titleStack.isHidden)
+        XCTAssertFalse(titleLabel.isHidden)
     }
 
     func testPaidHeaderRetainsTitleWhenPurchaseIsUnavailable() throws {
         let (header, delegate) = makeHeaderWithSpyDelegate()
         header.setContainerVisible(true)
         header.configure(isSubscriptionActive: true, allowsSubscriptionUpsell: false)
-        let titleStack = try XCTUnwrap(header.titleHolder.subviews.compactMap { $0 as? UIStackView }.first)
-        XCTAssertFalse(titleStack.isHidden)
+        let titleLabel = try XCTUnwrap(header.titleHolder.subviews.compactMap { $0 as? UILabel }.first)
+        XCTAssertFalse(titleLabel.isHidden)
         XCTAssertEqual(delegate.upgradePlateDidBecomeVisibleCount, 0)
+    }
+
+    func testPaidHeaderShowsTitleWithoutIcon() throws {
+        header.configure(isSubscriptionActive: true, allowsSubscriptionUpsell: false)
+        let plate = try XCTUnwrap(header.titleHolder.subviews.compactMap { $0 as? UIControl }.first)
+        XCTAssertTrue(imageViews(in: header.titleHolder, excluding: plate).isEmpty)
+    }
+
+    private func imageViews(in view: UIView, excluding excluded: UIView) -> [UIImageView] {
+        view.subviews.filter { $0 !== excluded }.flatMap { subview in
+            [subview as? UIImageView].compactMap { $0 } + imageViews(in: subview, excluding: excluded)
+        }
     }
 
     // MARK: - Upgrade plate impressions
@@ -351,4 +364,6 @@ private final class SpyAIChatTabChatHeaderViewDelegate: AIChatTabChatHeaderViewD
     func aiChatTabChatHeaderDidTapNewSearch() {}
     func aiChatTabChatHeaderDidTapNewFireTab() {}
     func aiChatTabChatHeaderDidTapTabSwitcher() {}
+    func aiChatTabChatHeaderPlusMenuWillOpen() {}
+    func aiChatTabChatHeaderPlusMenuWillCloseInPlace() {}
 }

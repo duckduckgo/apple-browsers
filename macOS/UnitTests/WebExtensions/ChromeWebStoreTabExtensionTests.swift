@@ -33,7 +33,7 @@ final class ChromeWebStoreTabExtensionTests: XCTestCase {
     func testRebuiltUserScriptsGetTheTabWebView() async {
         let scripts = PassthroughSubject<ScriptsProvider, Never>()
         let webViews = PassthroughSubject<WKWebView, Never>()
-        let tabExtension = ChromeWebStoreTabExtension(scriptsPublisher: scripts, webViewPublisher: webViews)
+        let tabExtension = ChromeWebStoreTabExtension(isFeatureEnabled: { true }, scriptsPublisher: scripts, webViewPublisher: webViews)
         let webView = WKWebView()
         let first = ChromeWebStoreUserScript(serviceProvider: { nil })
         let rebuilt = ChromeWebStoreUserScript(serviceProvider: { nil })
@@ -47,6 +47,33 @@ final class ChromeWebStoreTabExtensionTests: XCTestCase {
         scripts.send(ScriptsProvider(chromeWebStoreUserScript: rebuilt))
         await Task.yield()
         XCTAssertIdentical(rebuilt.webView, webView)
+
+        withExtendedLifetime(tabExtension) {}
+    }
+
+    func testUserScriptsReadTheCurrentFeatureFlagState() async {
+        let scripts = PassthroughSubject<ScriptsProvider, Never>()
+        var isFeatureEnabled = false
+        let tabExtension = ChromeWebStoreTabExtension(isFeatureEnabled: { isFeatureEnabled },
+                                                      scriptsPublisher: scripts,
+                                                      webViewPublisher: PassthroughSubject<WKWebView, Never>())
+        let first = ChromeWebStoreUserScript(serviceProvider: { nil })
+        let rebuilt = ChromeWebStoreUserScript(serviceProvider: { nil })
+
+        scripts.send(ScriptsProvider(chromeWebStoreUserScript: first))
+        await Task.yield()
+        XCTAssertFalse(first.isEnabled())
+
+        // A flag change while the app runs reaches the installed user script without a rebuild.
+        isFeatureEnabled = true
+        XCTAssertTrue(first.isEnabled())
+
+        // Rebuilt user scripts read the same flag.
+        scripts.send(ScriptsProvider(chromeWebStoreUserScript: rebuilt))
+        await Task.yield()
+        XCTAssertTrue(rebuilt.isEnabled())
+        isFeatureEnabled = false
+        XCTAssertFalse(rebuilt.isEnabled())
 
         withExtendedLifetime(tabExtension) {}
     }

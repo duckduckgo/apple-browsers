@@ -11,12 +11,14 @@
 		02025664298818B200E694E7 /* NetworkExtension.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 02025663298818B100E694E7 /* NetworkExtension.framework */; };
 		0238E44F29C0FAA100615E30 /* FindInPageIOSJSSupport in Frameworks */ = {isa = PBXBuildFile; productRef = 0238E44E29C0FAA100615E30 /* FindInPageIOSJSSupport */; };
 		0CEF7424DF47598D800EB920 /* WideEvent in Frameworks */ = {isa = PBXBuildFile; productRef = 3E0D167D2CFCE3C99849696D /* WideEvent */; };
+		1997D54770CA9237FEF0782A /* UITestingSupport in Frameworks */ = {isa = PBXBuildFile; productRef = 028550FF94FC586352ECCAB2 /* UITestingSupport */; };
 		1E1D8B632995143200C96994 /* OHHTTPStubs in Frameworks */ = {isa = PBXBuildFile; productRef = 1E1D8B622995143200C96994 /* OHHTTPStubs */; };
 		1E1D8B652995143200C96994 /* OHHTTPStubsSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 1E1D8B642995143200C96994 /* OHHTTPStubsSwift */; };
 		1EC8B18A2F29145C00F18679 /* WebExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = 1EC8B1892F29145C00F18679 /* WebExtensions */; };
 		29C82D9B675B47949D507434 /* SitePermissions in Frameworks */ = {isa = PBXBuildFile; productRef = EB524B1ECD7D46B5B31CBF8C /* SitePermissions */; };
 		315C77822CFA41A400699683 /* AIChat in Frameworks */ = {isa = PBXBuildFile; productRef = 315C77812CFA41A400699683 /* AIChat */; };
 		315E39652F86ABEE00D2289D /* DebugServer in Frameworks */ = {isa = PBXBuildFile; productRef = 315E39642F86ABEE00D2289D /* DebugServer */; };
+		E11208A4C3BD7469664DDCD4 /* LaunchProfile in Frameworks */ = {isa = PBXBuildFile; productRef = CB9AC65A869F4AE769FAFA86 /* LaunchProfile */; };
 		316AC7872DC28DD1003D9770 /* UIComponents in Frameworks */ = {isa = PBXBuildFile; productRef = 316AC7862DC28DD1003D9770 /* UIComponents */; };
 		31C71A782E6F4F5B004D503F /* RemoteMessagingTestsUtils in Frameworks */ = {isa = PBXBuildFile; productRef = 31C71A772E6F4F5B004D503F /* RemoteMessagingTestsUtils */; };
 		31E69A63280F4CB600478327 /* DuckUI in Frameworks */ = {isa = PBXBuildFile; productRef = 31E69A62280F4CB600478327 /* DuckUI */; };
@@ -130,8 +132,11 @@
 		98E564922DE8DE7500E6E75F /* Configuration in Frameworks */ = {isa = PBXBuildFile; productRef = 98E564912DE8DE7500E6E75F /* Configuration */; };
 		98E564942DE8DE7D00E6E75F /* SubscriptionTestingUtilities in Frameworks */ = {isa = PBXBuildFile; productRef = 98E564932DE8DE7D00E6E75F /* SubscriptionTestingUtilities */; };
 		98E564962DE8DE8100E6E75F /* Subscription in Frameworks */ = {isa = PBXBuildFile; productRef = 98E564952DE8DE8100E6E75F /* Subscription */; };
+		9C37B55E8694CE00EAC8DF25 /* Swifter in Frameworks */ = {isa = PBXBuildFile; productRef = 005EA9165C9636A4E0BD4261 /* Swifter */; };
 		9D6891E72DAD2DF800819662 /* DataBrokerProtection-iOS in Frameworks */ = {isa = PBXBuildFile; productRef = 9D6891E62DAD2DF800819662 /* DataBrokerProtection-iOS */; };
 		9F0727882E2F2967005894C8 /* SystemSettingsPiPTutorial in Frameworks */ = {isa = PBXBuildFile; productRef = 9F0727872E2F2967005894C8 /* SystemSettingsPiPTutorial */; };
+		9F1551FE3085C2D400DCA82E /* AIChatTestingUtilities in Frameworks */ = {isa = PBXBuildFile; productRef = 9F1551FD3085C2D400DCA82E /* AIChatTestingUtilities */; };
+		9F1552003085C2DA00DCA82E /* AIChatTestingUtilities in Frameworks */ = {isa = PBXBuildFile; productRef = 9F1551FF3085C2DA00DCA82E /* AIChatTestingUtilities */; };
 		9F254AF12CF8D5250063B308 /* MaliciousSiteProtection in Frameworks */ = {isa = PBXBuildFile; productRef = 9F254AF02CF8D5250063B308 /* MaliciousSiteProtection */; };
 		9F454D242E05489200B8CC5A /* SetDefaultBrowserCore in Frameworks */ = {isa = PBXBuildFile; productRef = 9F454D232E05489200B8CC5A /* SetDefaultBrowserCore */; };
 		9F5412772E3998B000DBF008 /* SetDefaultBrowserTestSupport in Frameworks */ = {isa = PBXBuildFile; productRef = 9F5412762E3998B000DBF008 /* SetDefaultBrowserTestSupport */; };
@@ -205,6 +210,7 @@
 		F486D33425069BBB002D07D7 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = F486D33325069BBB002D07D7 /* Kingfisher */; };
 		F486D3362506A037002D07D7 /* OHHTTPStubs in Frameworks */ = {isa = PBXBuildFile; productRef = F486D3352506A037002D07D7 /* OHHTTPStubs */; };
 		F486D3382506A225002D07D7 /* OHHTTPStubsSwift in Frameworks */ = {isa = PBXBuildFile; productRef = F486D3372506A225002D07D7 /* OHHTTPStubsSwift */; };
+		F4C6591E1F5742B1AD32F0F9 /* WebPageTranslation in Frameworks */ = {isa = PBXBuildFile; productRef = 035793DAC86B92641C063120 /* WebPageTranslation */; };
 		F4D7F634298C00C3006C3AE9 /* FindInPageIOSJSSupport in Frameworks */ = {isa = PBXBuildFile; productRef = F4D7F633298C00C3006C3AE9 /* FindInPageIOSJSSupport */; };
 		FA57C0DE000000000000000F /* HangMetrics in Frameworks */ = {isa = PBXBuildFile; productRef = FA57C0DE000000000000000E /* HangMetrics */; };
 		FCFC00031F00000000010001 /* DDGError in Frameworks */ = {isa = PBXBuildFile; productRef = FCFC00021F00000000010001 /* DDGError */; };
@@ -403,6 +409,7 @@
 		98424AA92CED4F430071C7DB /* WebViewUnitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = WebViewUnitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		98A54A8122AFCB2C00E541F4 /* Instruments.instrdst */ = {isa = PBXFileReference; explicitFileType = com.apple.instruments.instrdst; includeInIndex = 0; path = Instruments.instrdst; sourceTree = BUILT_PRODUCTS_DIR; };
 		98E5643E2DE8DDA200E6E75F /* SharedStateTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SharedStateTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		9C2F5F83DCD732162704F7FC /* WebPageTranslation */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = WebPageTranslation; sourceTree = "<group>"; };
 		9D6891E52DAD25B600819662 /* DataBrokerProtection-iOS */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = "DataBrokerProtection-iOS"; sourceTree = "<group>"; };
 		9D87088B2DAD5075007E22D4 /* DataBrokerProtectionCore */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = DataBrokerProtectionCore; path = ../../SharedPackages/DataBrokerProtectionCore; sourceTree = "<group>"; };
 		9F0727862E2F2439005894C8 /* SystemSettingsPiPTutorial */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = SystemSettingsPiPTutorial; sourceTree = "<group>"; };
@@ -540,7 +547,9 @@
 		96EB17F9308240E700712DCF /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				AGENTS.md,
 				Autoconsent/userscript.js,
+				CLAUDE.md,
 				DuckPlayer/NativeUI/README.md,
 				"Info-Experimental.plist",
 				Info.plist,
@@ -647,6 +656,7 @@
 		FF204FAADFC540C083B7C6C3 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				"iPad UI Tests.xctestplan",
 				"UI Tests.xctestplan",
 			);
 			target = 23215268B3D7426DA0FAC923 /* UI Tests */;
@@ -716,6 +726,7 @@
 				9F909E392EEA6BD00057F518 /* UIKitExtensions in Frameworks */,
 				9F0727882E2F2967005894C8 /* SystemSettingsPiPTutorial in Frameworks */,
 				7CEA1D29838948C9BA16CDD7 /* SitePermissions in Frameworks */,
+				F4C6591E1F5742B1AD32F0F9 /* WebPageTranslation in Frameworks */,
 				7B0752D92F21BFDB00ACA559 /* AutomationServer in Frameworks */,
 				7BC26CA02DFC0CAC00E52480 /* VPN in Frameworks */,
 				316AC7872DC28DD1003D9770 /* UIComponents in Frameworks */,
@@ -741,6 +752,7 @@
 				4BC95E7B2D7416AD002FAB32 /* DDGNavigation in Frameworks */,
 				4BC95E7F2D7416C1002FAB32 /* PrivacyDashboard in Frameworks */,
 				315E39652F86ABEE00D2289D /* DebugServer in Frameworks */,
+				E11208A4C3BD7469664DDCD4 /* LaunchProfile in Frameworks */,
 				31E69A63280F4CB600478327 /* DuckUI in Frameworks */,
 				1EC8B18A2F29145C00F18679 /* WebExtensions in Frameworks */,
 				9F454D242E05489200B8CC5A /* SetDefaultBrowserCore in Frameworks */,
@@ -817,6 +829,7 @@
 				0CEF7424DF47598D800EB920 /* WideEvent in Frameworks */,
 				A64F1A080000000000000008 /* FeatureFlags-iOS in Frameworks */,
 				4B69239F2F28720300A816B9 /* AIChat in Frameworks */,
+				9F1551FE3085C2D400DCA82E /* AIChatTestingUtilities in Frameworks */,
 				986CD5352DE8F4FA00AFA98A /* RemoteMessaging in Frameworks */,
 				1E1D8B632995143200C96994 /* OHHTTPStubs in Frameworks */,
 				9FA8A627300EF680000DF5DE /* WebExtensionsTestSupport in Frameworks */,
@@ -837,6 +850,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F486D31D2506980E002D07D7 /* Swifter in Frameworks */,
+				1997D54770CA9237FEF0782A /* UITestingSupport in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -862,6 +876,7 @@
 				986CD5372DE8F50100AFA98A /* RemoteMessaging in Frameworks */,
 				7BC26CB62DFC156A00E52480 /* VPNTestUtils in Frameworks */,
 				98424A962CED4F430071C7DB /* OHHTTPStubs in Frameworks */,
+				9F1552003085C2DA00DCA82E /* AIChatTestingUtilities in Frameworks */,
 				9FA8A62B300F026F000DF5DE /* WebExtensionsTestSupport in Frameworks */,
 				374E76102EF56FAE00F8AADE /* PrivacyConfigTestsUtils in Frameworks */,
 				98424A972CED4F430071C7DB /* OHHTTPStubsSwift in Frameworks */,
@@ -928,6 +943,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A91A00033031000100000003 /* UITestingSupport in Frameworks */,
+				9C37B55E8694CE00EAC8DF25 /* Swifter in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -998,6 +1014,7 @@
 				7BB9F8E82DFC1DDA00741690 /* VPN */,
 				7B10FF282D11AA0D00F36BF2 /* VPNiOS */,
 				1EC8B18B2F29147000F18679 /* WebExtensions */,
+				9C2F5F83DCD732162704F7FC /* WebPageTranslation */,
 			);
 			path = LocalPackages;
 			sourceTree = "<group>";
@@ -1134,6 +1151,7 @@
 			name = "UI Tests";
 			packageProductDependencies = (
 				A91A00023031000100000002 /* UITestingSupport */,
+				005EA9165C9636A4E0BD4261 /* Swifter */,
 			);
 			productName = "UI Tests";
 			productReference = 7F6EEC9D78144B7DA2E63C91 /* UI Tests.xctest */;
@@ -1171,6 +1189,7 @@
 				84E341901E2F7EFB00BDBA6F /* Resources */,
 				F143C2F01E4A4CD400CFDE3A /* Embed Frameworks */,
 				37B4F3D329D2C84400758752 /* Copy GRDB framework */,
+				183585AFB4F44A2AEAB6E492 /* Embed llama.cpp */,
 				F10307651E7D5B2C0059FEC7 /* Copy Frameworks */,
 				83E282AC20BC1840005FBE88 /* Embed App Extensions */,
 				EE9286812A812BD2002B7818 /* Embed PacketTunnelProvider */,
@@ -1221,6 +1240,7 @@
 				9FB6272D2E08251D00CBDEED /* SetDefaultBrowserUI */,
 				9F0727872E2F2967005894C8 /* SystemSettingsPiPTutorial */,
 				B23B8E31062743D0AD136A57 /* SitePermissions */,
+				035793DAC86B92641C063120 /* WebPageTranslation */,
 				9F5003262E8D1B61002F98D1 /* FoundationExtensions */,
 				F19B98662EAFA799000FF209 /* AttributedMetric */,
 				BBD9C3962E9D73610060A6E8 /* SERPSettings */,
@@ -1232,6 +1252,7 @@
 				9FADFC492F5FC56400CA16F7 /* DuckSansFont */,
 				854D67922F6DDFCA008707A3 /* ScreenTimeDataCleaner */,
 				315E39642F86ABEE00D2289D /* DebugServer */,
+				CB9AC65A869F4AE769FAFA86 /* LaunchProfile */,
 				3C12C8760D7AF6C888DAD36A /* AIChatDebugServer */,
 				5B7CA46A2FAE693000D69C83 /* ICSParser */,
 				EE7B00000000000000000002 /* EventHub */,
@@ -1372,6 +1393,7 @@
 				4B69239E2F28720300A816B9 /* AIChat */,
 				EE7B00000000000000000004 /* EventHub */,
 				9FA8A626300EF680000DF5DE /* WebExtensionsTestSupport */,
+				9F1551FD3085C2D400DCA82E /* AIChatTestingUtilities */,
 			);
 			productName = IntegrationTests;
 			productReference = 85D33FCB25C97B6E002B91A6 /* IntegrationTests.xctest */;
@@ -1396,6 +1418,7 @@
 			name = AtbUITests;
 			packageProductDependencies = (
 				F486D31C2506980E002D07D7 /* Swifter */,
+				028550FF94FC586352ECCAB2 /* UITestingSupport */,
 			);
 			productName = AtbIntegrationTests;
 			productReference = 85F21DAD210F5E32002631A6 /* AtbUITests.xctest */;
@@ -1466,6 +1489,7 @@
 				4B6923A02F28720800A816B9 /* AIChat */,
 				EE7B00000000000000000006 /* EventHub */,
 				9FA8A62A300F026F000DF5DE /* WebExtensionsTestSupport */,
+				9F1551FF3085C2DA00DCA82E /* AIChatTestingUtilities */,
 			);
 			productName = DuckDuckGoTests;
 			productReference = 98424AA92CED4F430071C7DB /* WebViewUnitTests.xctest */;
@@ -1737,6 +1761,7 @@
 				A91A00013031000100000001 /* XCLocalSwiftPackageReference "../SharedPackages/UITestingSupport" */,
 				4BABF9163022746600B46B44 /* XCLocalSwiftPackageReference "LocalPackages/AppRouting" */,
 				4BACF9163022746600B46B44 /* XCLocalSwiftPackageReference "LocalPackages/InstallStatistics" */,
+				00BE6117434BE2FEC5F71246 /* XCLocalSwiftPackageReference "LocalPackages/WebPageTranslation" */,
 			);
 			preferredProjectObjectVersion = 46;
 			productRefGroup = 84E341931E2F7EFB00BDBA6F /* Products */;
@@ -1904,6 +1929,25 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "\"$SOURCE_ROOT/scripts/check_version.sh\"\n";
+		};
+		183585AFB4F44A2AEAB6E492 /* Embed llama.cpp */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Embed llama.cpp";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/scripts/embed_llama_framework.sh\"\n";
 		};
 		37B4F3D329D2C84400758752 /* Copy GRDB framework */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -4840,6 +4884,10 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
+		00BE6117434BE2FEC5F71246 /* XCLocalSwiftPackageReference "LocalPackages/WebPageTranslation" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = LocalPackages/WebPageTranslation;
+		};
 		315E39632F86ABE100D2289D /* XCLocalSwiftPackageReference "../SharedPackages/DebugServer" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ../SharedPackages/DebugServer;
@@ -4974,7 +5022,7 @@
 			repositoryURL = "https://github.com/scinfu/SwiftSoup";
 			requirement = {
 				kind = exactVersion;
-				version = 2.14.3;
+				version = 2.14.4;
 			};
 		};
 		F1D43AF82B99C1D300BAB743 /* XCRemoteSwiftPackageReference "BareBonesBrowser" */ = {
@@ -5020,10 +5068,24 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		005EA9165C9636A4E0BD4261 /* Swifter */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F486D3022506975E002D07D7 /* XCRemoteSwiftPackageReference "swifter" */;
+			productName = Swifter;
+		};
 		0238E44E29C0FAA100615E30 /* FindInPageIOSJSSupport */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 0238E44D29C0FAA100615E30 /* XCRemoteSwiftPackageReference "ios-js-support" */;
 			productName = FindInPageIOSJSSupport;
+		};
+		028550FF94FC586352ECCAB2 /* UITestingSupport */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A91A00013031000100000001 /* XCLocalSwiftPackageReference "../SharedPackages/UITestingSupport" */;
+			productName = UITestingSupport;
+		};
+		035793DAC86B92641C063120 /* WebPageTranslation */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = WebPageTranslation;
 		};
 		07CAD3291BFA44269AD3CA0F /* SitePermissions */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -5058,6 +5120,10 @@
 		315E39642F86ABEE00D2289D /* DebugServer */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = DebugServer;
+		};
+		CB9AC65A869F4AE769FAFA86 /* LaunchProfile */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = LaunchProfile;
 		};
 		316AC7862DC28DD1003D9770 /* UIComponents */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -5450,6 +5516,14 @@
 		9F0727872E2F2967005894C8 /* SystemSettingsPiPTutorial */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = SystemSettingsPiPTutorial;
+		};
+		9F1551FD3085C2D400DCA82E /* AIChatTestingUtilities */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AIChatTestingUtilities;
+		};
+		9F1551FF3085C2DA00DCA82E /* AIChatTestingUtilities */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AIChatTestingUtilities;
 		};
 		9F254AF02CF8D5250063B308 /* MaliciousSiteProtection */ = {
 			isa = XCSwiftPackageProductDependency;

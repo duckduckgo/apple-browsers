@@ -127,9 +127,15 @@ final class MockBackground: BackgroundHandling {
     var onTransitionCalled: Bool { eventLog.contains("onTransition") }
     var willLeaveCalled: Bool { eventLog.contains("willLeave") }
     var didReturnCalled: Bool { eventLog.contains("didReturn") }
+    private(set) var willLeaveAction: AppAction?
+    var stateAfterWillLeave: (any BackgroundHandling)?
 
     func onTransition() { eventLog.append("onTransition") }
-    func willLeave() { eventLog.append("willLeave") }
+    func willLeave(actionToHandle: AppAction?) -> any BackgroundHandling {
+        eventLog.append("willLeave")
+        willLeaveAction = actionToHandle
+        return stateAfterWillLeave ?? self
+    }
     func didReturn() { eventLog.append("didReturn") }
 
     func makeForegroundState(actionToHandle: AppAction?) -> any ForegroundHandling {
@@ -210,6 +216,21 @@ final class LaunchingTests {
         if case .foreground(let foreground) = stateMachine.currentState,
            let mockForeground = foreground as? MockForeground {
             #expect(mockForeground.actionToHandle != nil)
+        } else {
+            Issue.record("Incorrect state")
+        }
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("An action handled before willConnectTo should be passed to Connected", .timeLimit(.minutes(1)))
+    func actionBeforeConnectReachesConnected() {
+        stateMachine.handle(.didFinishLaunching(isTesting: false))
+        stateMachine.handle(.openURL(URL("www.duckduckgo.com")!))
+        stateMachine.handle(.willConnectToWindow(window: UIWindow()))
+
+        if case .connected(let connected) = stateMachine.currentState,
+           let mockConnected = connected as? MockConnected {
+            #expect(mockConnected.actionToHandle != nil)
         } else {
             Issue.record("Incorrect state")
         }
@@ -447,6 +468,37 @@ final class BackgroundTests {
 
         stateMachine.handle(.willResignActive)
         #expect(stateMachine.currentState.name == "background")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("willEnterForeground keeps the Background that willLeave returns", .timeLimit(.minutes(1)))
+    func willLeaveReturnedStateIsKept() {
+        let returned = MockBackground()
+        let background = MockBackground()
+        background.stateAfterWillLeave = returned
+        let stateMachine = AppStateMachine(initialState: .background(background), launchBreadcrumb: .testing)
+
+        stateMachine.handle(.willEnterForeground)
+
+        guard case .background(let stored) = stateMachine.currentState else {
+            Issue.record("Incorrect state")
+            return
+        }
+        #expect(stored as? MockBackground === returned)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("willLeave receives an action buffered while in Background", .timeLimit(.minutes(1)))
+    func willLeaveReceivesBufferedAction() {
+        stateMachine.handle(.openURL(URL(string: "https://duckduckgo.com")!))
+        stateMachine.handle(.willEnterForeground)
+
+        guard case .background(let background) = stateMachine.currentState,
+              let mockBackground = background as? MockBackground else {
+            Issue.record("Incorrect state")
+            return
+        }
+        #expect(mockBackground.willLeaveAction != nil)
     }
 
 }

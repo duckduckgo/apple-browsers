@@ -41,13 +41,14 @@ final class NewTabPageNextStepsCardsActionHandler: NewTabPageNextStepsCardsActio
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let defaultBrowserProvider: DefaultBrowserProvider
     private let dockCustomizer: DockCustomization
+    private let featureFlagger: FeatureFlagger
     private let dataImportProvider: DataImportStatusProviding
     private let tabOpener: NewTabPageNextStepsCardsTabOpening
     private let pixelHandler: NewTabPageNextStepsCardsPixelHandling
     private let newTabPageNavigator: NewTabPageNavigator
     private let syncLauncher: SyncDeviceFlowLaunching?
     private let pixelFiring: (any PixelKitFiring)?
-    private let onboardingExperiment: OnboardingNonBlockingExperiment
+    private let videoPresenter: AddToDockVideoPresenting
 
     var duckPlayerURL: String {
         let duckPlayerSettings = privacyConfigurationManager.privacyConfig.settings(for: .duckPlayer)
@@ -65,10 +66,12 @@ final class NewTabPageNextStepsCardsActionHandler: NewTabPageNextStepsCardsActio
          newTabPageNavigator: NewTabPageNavigator,
          syncLauncher: SyncDeviceFlowLaunching? = nil,
          pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
-         featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger) {
+         featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
+         videoPresenter: AddToDockVideoPresenting) {
 
         self.defaultBrowserProvider = defaultBrowserProvider
         self.dockCustomizer = dockCustomizer
+        self.featureFlagger = featureFlagger
         self.dataImportProvider = dataImportProvider
         self.tabOpener = tabOpener
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -76,7 +79,7 @@ final class NewTabPageNextStepsCardsActionHandler: NewTabPageNextStepsCardsActio
         self.newTabPageNavigator = newTabPageNavigator
         self.syncLauncher = syncLauncher
         self.pixelFiring = pixelFiring
-        self.onboardingExperiment = OnboardingNonBlockingExperiment(featureFlagger: featureFlagger)
+        self.videoPresenter = videoPresenter
     }
 
     @MainActor func performAction(for card: NewTabPageDataModel.CardID, refreshCardsAction: (() -> Void)?) {
@@ -115,7 +118,6 @@ private extension NewTabPageNextStepsCardsActionHandler {
     }
 
     func performImportBookmarksAndPasswordsAction(completion: (() -> Void)?) {
-        onboardingExperiment.fireMetric(.importRequested)
         dataImportProvider.showImportWindow(completion: completion)
     }
 
@@ -133,11 +135,15 @@ private extension NewTabPageNextStepsCardsActionHandler {
         tabOpener.openTab(tab)
     }
 
+    @MainActor
     func performDockAction(completion: (() -> Void)?) {
-        onboardingExperiment.fireMetric(.addToDockRequested)
         pixelHandler.fireAddedToDockPixel()
-        if dockCustomizer.addToDock() {
-            completion?()
+        if dockCustomizer.supportsAddingToDock {
+            if dockCustomizer.addToDock() {
+                completion?()
+            }
+        } else if featureFlagger.isFeatureOn(.appStoreAddToDockOnlyCTA) {
+            videoPresenter.present(from: .newTabPageCard, primaryAction: .done) { _ in completion?() }
         }
     }
 

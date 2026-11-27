@@ -30,6 +30,8 @@ protocol UnifiedToggleInputDelegate: AnyObject {
     /// Nothing to deliver, only the moment — reported before the keyboard takes the surface with it.
     func unifiedToggleInputDidSubmitPromptToBoundChat()
     func unifiedToggleInputDidSubmitDuckAIPrompt(origin: AIChatEntryPointSource?)
+    /// Reported before the input hides, so the host can take over the screen first.
+    func unifiedToggleInputWillSubmitQuery(_ query: String)
     func unifiedToggleInputDidSubmitQuery(_ query: String)
     func unifiedToggleInputDidRequestVoiceSearch()
     func unifiedToggleInputDidRequestAIVoiceChat()
@@ -52,6 +54,7 @@ protocol UnifiedToggleInputDelegate: AnyObject {
 }
 
 extension UnifiedToggleInputDelegate {
+    func unifiedToggleInputWillSubmitQuery(_ query: String) {}
     func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, attachments: AIChatPromptAttachments, termsAccepted: Bool, tabAttachmentRequest: MultiTabAttachmentRequest?) {
         tabAttachmentRequest?.cancel()
         unifiedToggleInputDidSubmitPrompt(prompt, modelId: modelId, tools: tools, reasoningEffort: reasoningEffort,

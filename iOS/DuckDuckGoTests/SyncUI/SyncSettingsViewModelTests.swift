@@ -1513,7 +1513,7 @@ private final class MockSyncSettingsViewModelDelegate: SyncManagementViewModelDe
     func launchAutofillCreditCardsViewController() {}
     func showOtherPlatformLinks() {}
     func fireOtherPlatformLinksPixel(event: SyncSettingsViewModel.PlatformLinksPixelEvent, with source: SyncSettingsViewModel.PlatformLinksPixelSource) {}
-    func shareLink(for url: URL, with message: String, from rect: CGRect) {}
+    func shareLink(for url: URL, with message: String, from sourceView: UIView) {}
     func fireSyncSetupPixel(event: SyncSettingsViewModel.SyncSetupPixelEvent) {
         firedSyncSetupPixelEvents.append(event)
     }

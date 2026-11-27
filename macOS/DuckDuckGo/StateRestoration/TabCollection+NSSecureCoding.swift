@@ -45,7 +45,10 @@ extension TabCollection: NSSecureCoding {
             unarchiver.setClass(Tab.self, forClassName: NSStringFromClass(Tab.self))
         }
 
-        let tabs: [AnyTab] = restorationDataArray.map { .unloaded(UnloadedTab(from: $0, isFromSessionRestore: true)) }
+        let tabs: [AnyTab] = restorationDataArray
+            .filter(\.content.isRestorable)
+            .map { .unloaded(UnloadedTab(from: $0, isFromSessionRestore: true)) }
+
         self.init(tabs: tabs)
     }
 
@@ -73,7 +76,8 @@ extension TabCollection: NSSecureCoding {
                     interactionStateData: unloaded.interactionStateData,
                     lastSelectedAt: unloaded.lastSelectedAt,
                     localHistoryIDs: unloaded.localHistoryIDs,
-                    tabSnapshotIdentifier: unloaded.tabSnapshotIdentifier
+                    tabSnapshotIdentifier: unloaded.tabSnapshotIdentifier,
+                    linkedPageDomains: unloaded.linkedPageDomains
                 )
             }
         }

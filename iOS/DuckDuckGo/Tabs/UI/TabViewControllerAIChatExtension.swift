@@ -93,6 +93,11 @@ extension TabViewController: AITabController {
 
     /// Submits a toggle sidebar action to open/close the sidebar.
     func submitToggleSidebarAction() {
+        // On iPad the native chats sidebar stands in for the page's own.
+        if let chatListSidebarContainer {
+            chatListSidebarContainer.requestToggle()
+            return
+        }
         aiChatContentHandler.submitToggleSidebarAction()
     }
     
@@ -121,6 +126,11 @@ extension TabViewController: AITabController {
 
     func submitOpenChatProtectionAction() {
         aiChatContentHandler.submitOpenChatProtectionAction()
+    }
+
+    /// Asks the Duck.ai page to open a chat in place; `nil` when it can't take the request or doesn't answer in time.
+    func openChatInPage(chatId: String) async -> AIChatOpenChatOutcome? {
+        await aiChatContentHandler.openChat(chatId: chatId)
     }
 
     /// Reloads the full mode AI Chat tab if this is an AI tab.
@@ -171,5 +181,39 @@ extension TabViewController {
         }
         return AIChatEntryPointSource.forInPageNavigation(from: currentURL, to: targetURL,
                                                           isLinkActivation: navigationAction.navigationType == .linkActivated)
+    }
+}
+
+// MARK: - Pull up past the bottom to start a new chat
+
+extension TabViewController {
+
+    func duckAISwipeNewChatURLDidChange() {
+        installDuckAISwipeNewChatIfNeeded()
+        duckAISwipeNewChat?.webViewURLDidChange()
+    }
+
+    /// A pull only starts at the chat's end, so the chat is kept there as the input changes height.
+    var keepsDuckAIChatEndInView: Bool {
+        DuckAISwipeNewChatFeature(featureFlagger: featureFlagger).isAvailable
+    }
+
+    /// Also called as the tab appears, so the flag turning on reaches a chat that is already open.
+    func installDuckAISwipeNewChatIfNeeded() {
+        let feature = DuckAISwipeNewChatFeature(featureFlagger: featureFlagger)
+        guard isAITab, duckAISwipeNewChat == nil, feature.isAvailable else { return }
+        duckAISwipeNewChat = DuckAISwipeNewChatHandler(
+            webView: webView,
+            hostView: view,
+            isFireTab: tabModel.fireTab,
+            feature: feature,
+            chromeState: { [weak self] in
+                guard let self else { return nil }
+                return self.delegate?.duckAISwipeNewChatChromeState(for: self)
+            },
+            onStartNewChat: { [weak self] in
+                guard let self else { return }
+                self.delegate?.tabDidRequestNewChatBySwipe(self)
+            })
     }
 }

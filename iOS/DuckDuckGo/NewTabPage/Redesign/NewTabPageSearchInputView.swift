@@ -27,16 +27,22 @@ struct NewTabPageSearchInputView: View {
     @ObservedObject var model: NewTabPageSearchInputModel
     let onActivate: (TextEntryMode) -> Void
     let onVoiceSearch: (TextEntryMode) -> Void
+    var usesLiquidGlass = false
     /// When non-nil, the Duck.ai button shows this menu instead of opening Duck.ai.
     var aiChatMenu: () -> UIMenu? = { nil }
 
     var body: some View {
         VStack(spacing: 0) {
             if model.settings.isModeToggleShown {
-                NewTabPageModeToggle(textEntryMode: $model.textEntryMode)
-                    .frame(height: Metrics.toggleHeight)
-                    .padding(.top, Metrics.cardPadding)
-                    .padding(.horizontal, Metrics.cardPadding)
+                NewTabPageModeToggle(textEntryMode: model.textEntryMode) { mode in
+                    if model.select(mode) {
+                        // The handoff snapshots the resting field, so let SwiftUI apply the new mode first.
+                        DispatchQueue.main.async { onActivate(mode) }
+                    }
+                }
+                .frame(height: Metrics.toggleHeight)
+                .padding(.top, Metrics.cardPadding)
+                .padding(.horizontal, Metrics.cardPadding)
             }
             NewTabPageRestingSearchField(textEntryMode: model.textEntryMode,
                                         isAIChatButtonShown: model.isAIChatButtonShown,
@@ -44,16 +50,18 @@ struct NewTabPageSearchInputView: View {
                                         onActivate: onActivate,
                                         onVoiceSearch: onVoiceSearch,
                                         aiChatMenu: aiChatMenu)
-                .frame(height: Metrics.fieldHeight)
+                .padding(.horizontal, Metrics.fieldHorizontalInset)
+                .frame(height: model.settings.isModeToggleShown ? Metrics.fieldHeightWithToggle : Metrics.fieldHeightWithoutToggle)
         }
-        .background(RedesignedNewTabPageCardBackground())
+        .background(RedesignedNewTabPageCardBackground(usesLiquidGlass: usesLiquidGlass))
         .padding(.horizontal, Metrics.horizontalMargin)
     }
 }
 
 private struct NewTabPageModeToggle: UIViewRepresentable {
 
-    @Binding var textEntryMode: TextEntryMode
+    let textEntryMode: TextEntryMode
+    let onModeSelected: (TextEntryMode) -> Void
 
     func makeUIView(context: Context) -> UnifiedToggleInputToggleView {
         UnifiedToggleInputToggleView()
@@ -61,7 +69,7 @@ private struct NewTabPageModeToggle: UIViewRepresentable {
 
     func updateUIView(_ view: UnifiedToggleInputToggleView, context: Context) {
         view.setMode(textEntryMode, animated: false)
-        view.onModeChanged = { textEntryMode = $0 }
+        view.onModeChanged = onModeSelected
     }
 }
 
@@ -167,7 +175,9 @@ private struct NewTabPageRestingSearchField: UIViewRepresentable {
 private enum Metrics {
     static let horizontalMargin: CGFloat = 16
     static let cardPadding: CGFloat = 8
-    static let fieldHeight: CGFloat = 64
+    static let fieldHeightWithToggle: CGFloat = 64
+    static let fieldHeightWithoutToggle: CGFloat = 57
+    static let fieldHorizontalInset: CGFloat = 5
     static let toggleHeight: CGFloat = 40
 }
 

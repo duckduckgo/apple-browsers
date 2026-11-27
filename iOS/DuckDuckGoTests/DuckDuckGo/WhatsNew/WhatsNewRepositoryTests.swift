@@ -32,7 +32,7 @@ final class WhatsNewRepositoryFetchScheduledMessageTests {
         // GIVEN
         let message = RemoteMessageModel.makeCardsListMessage(id: "test-message")
         let mockStore = MockRemoteMessagingStore(scheduledRemoteMessage: message)
-        let keyValueStore = try MockKeyValueFileStore()
+        let keyValueStore = MockKeyValueFileStore()
         let sut = DefaultWhatsNewMessageRepository(
             remoteMessageStore: mockStore,
             keyValueStore: keyValueStore
@@ -51,7 +51,7 @@ final class WhatsNewRepositoryFetchScheduledMessageTests {
     func whenNoScheduledMessageInRMFThenReturnsNil() throws {
         // GIVEN
         let mockStore = MockRemoteMessagingStore(scheduledRemoteMessage: nil)
-        let keyValueStore = try MockKeyValueFileStore()
+        let keyValueStore = MockKeyValueFileStore()
         let sut = DefaultWhatsNewMessageRepository(
             remoteMessageStore: mockStore,
             keyValueStore: keyValueStore
@@ -71,7 +71,7 @@ final class WhatsNewRepositoryFetchScheduledMessageTests {
     func whenNoMessageStoredLocallyThenReturnsNil() throws {
         // GIVEN
         let mockStore = MockRemoteMessagingStore()
-        let keyValueStore = try MockKeyValueFileStore()
+        let keyValueStore = MockKeyValueFileStore()
         let sut = DefaultWhatsNewMessageRepository(
             remoteMessageStore: mockStore,
             keyValueStore: keyValueStore
@@ -89,7 +89,7 @@ final class WhatsNewRepositoryFetchScheduledMessageTests {
         // GIVEN
         let originalMessage = RemoteMessageModel.makeCardsListMessage(id: "stored-message")
         let encodedData = try JSONEncoder().encode(originalMessage)
-        let keyValueStore = try MockKeyValueFileStore(
+        let keyValueStore = MockKeyValueFileStore(
             underlyingDict: ["com.duckduckgo.whatsNew.lastShownMessage": encodedData]
         )
         let mockStore = MockRemoteMessagingStore()
@@ -109,7 +109,7 @@ final class WhatsNewRepositoryFetchScheduledMessageTests {
     func whenStoredDataIsCorruptedThenReturnsNil() throws {
         // GIVEN
         let corruptedData = Data("invalid json data".utf8)
-        let keyValueStore = try MockKeyValueFileStore(
+        let keyValueStore = MockKeyValueFileStore(
             underlyingDict: ["com.duckduckgo.whatsNew.lastShownMessage": corruptedData]
         )
         let mockStore = MockRemoteMessagingStore()
@@ -128,7 +128,7 @@ final class WhatsNewRepositoryFetchScheduledMessageTests {
     @Test("Check Fetch Last Shown Message Returns Nil When Local Storage Throws an Error")
     func whenKeyValueStoreThrowsThenReturnsNil() throws {
         // GIVEN
-        let keyValueStore = try MockKeyValueFileStore()
+        let keyValueStore = MockKeyValueFileStore()
         keyValueStore.throwOnRead = NSError(domain: "test", code: 1)
         let mockStore = MockRemoteMessagingStore()
         let sut = DefaultWhatsNewMessageRepository(
@@ -160,7 +160,7 @@ final class WhatsNewRepositoryFetchScheduledMessageTests {
             primaryAction: .dismiss
         )
         let encodedData = try JSONEncoder().encode(originalMessage)
-        let keyValueStore = try MockKeyValueFileStore(
+        let keyValueStore = MockKeyValueFileStore(
             underlyingDict: ["com.duckduckgo.whatsNew.lastShownMessage": encodedData]
         )
         let mockStore = MockRemoteMessagingStore()
@@ -183,7 +183,7 @@ final class WhatsNewRepositoryFetchScheduledMessageTests {
         // GIVEN
         let message = RemoteMessageModel.makeCardsListMessage(id: "message-to-mark")
         let mockStore = MockRemoteMessagingStore()
-        let keyValueStore = try MockKeyValueFileStore()
+        let keyValueStore = MockKeyValueFileStore()
         let sut = DefaultWhatsNewMessageRepository(
             remoteMessageStore: mockStore,
             keyValueStore: keyValueStore
@@ -202,7 +202,7 @@ final class WhatsNewRepositoryFetchScheduledMessageTests {
         // GIVEN
         let message = RemoteMessageModel.makeCardsListMessage(id: "message-to-dismiss")
         let mockStore = MockRemoteMessagingStore()
-        let keyValueStore = try MockKeyValueFileStore()
+        let keyValueStore = MockKeyValueFileStore()
         let sut = DefaultWhatsNewMessageRepository(
             remoteMessageStore: mockStore,
             keyValueStore: keyValueStore
@@ -220,7 +220,7 @@ final class WhatsNewRepositoryFetchScheduledMessageTests {
         // GIVEN
         let message = RemoteMessageModel.makeCardsListMessage(id: "message-to-persist")
         let mockStore = MockRemoteMessagingStore()
-        let keyValueStore = try MockKeyValueFileStore()
+        let keyValueStore = MockKeyValueFileStore()
         let sut = DefaultWhatsNewMessageRepository(
             remoteMessageStore: mockStore,
             keyValueStore: keyValueStore
@@ -242,7 +242,7 @@ final class WhatsNewRepositoryFetchScheduledMessageTests {
         // GIVEN
         let message = RemoteMessageModel.makeCardsListMessage(id: "retrievable-message")
         let mockStore = MockRemoteMessagingStore()
-        let keyValueStore = try MockKeyValueFileStore()
+        let keyValueStore = MockKeyValueFileStore()
         let sut = DefaultWhatsNewMessageRepository(
             remoteMessageStore: mockStore,
             keyValueStore: keyValueStore
@@ -261,7 +261,7 @@ final class WhatsNewRepositoryFetchScheduledMessageTests {
         // GIVEN
         let message = RemoteMessageModel.makeCardsListMessage(id: "message-with-error")
         let mockStore = MockRemoteMessagingStore()
-        let keyValueStore = try MockKeyValueFileStore()
+        let keyValueStore = MockKeyValueFileStore()
         keyValueStore.throwOnSet = NSError(domain: "test", code: 1)
         let sut = DefaultWhatsNewMessageRepository(
             remoteMessageStore: mockStore,
@@ -283,7 +283,7 @@ final class WhatsNewRepositoryFetchScheduledMessageTests {
         let firstMessage = RemoteMessageModel.makeCardsListMessage(id: "first-message")
         let secondMessage = RemoteMessageModel.makeCardsListMessage(id: "second-message")
         let mockStore = MockRemoteMessagingStore()
-        let keyValueStore = try MockKeyValueFileStore()
+        let keyValueStore = MockKeyValueFileStore()
         let sut = DefaultWhatsNewMessageRepository(
             remoteMessageStore: mockStore,
             keyValueStore: keyValueStore
@@ -304,7 +304,7 @@ final class WhatsNewRepositoryFetchScheduledMessageTests {
     func whenHasShownMessageThenDelegatesToRMFStore() throws {
         // GIVEN
         let mockStore = MockRemoteMessagingStore(shownRemoteMessagesIDs: ["shown-message"])
-        let keyValueStore = try MockKeyValueFileStore()
+        let keyValueStore = MockKeyValueFileStore()
         let sut = DefaultWhatsNewMessageRepository(
             remoteMessageStore: mockStore,
             keyValueStore: keyValueStore
@@ -322,7 +322,7 @@ final class WhatsNewRepositoryFetchScheduledMessageTests {
     func whenMessageNotShownThenReturnsFalse() throws {
         // GIVEN
         let mockStore = MockRemoteMessagingStore(shownRemoteMessagesIDs: [])
-        let keyValueStore = try MockKeyValueFileStore()
+        let keyValueStore = MockKeyValueFileStore()
         let sut = DefaultWhatsNewMessageRepository(
             remoteMessageStore: mockStore,
             keyValueStore: keyValueStore
@@ -340,7 +340,7 @@ final class WhatsNewRepositoryFetchScheduledMessageTests {
         // GIVEN
         let message = RemoteMessageModel.makeCardsListMessage(id: "shown-message")
         let mockStore = MockRemoteMessagingStore()
-        let keyValueStore = try MockKeyValueFileStore()
+        let keyValueStore = MockKeyValueFileStore()
         let sut = DefaultWhatsNewMessageRepository(
             remoteMessageStore: mockStore,
             keyValueStore: keyValueStore

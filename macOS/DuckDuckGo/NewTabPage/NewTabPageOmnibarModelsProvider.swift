@@ -37,6 +37,12 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
     /// Kept so usage warnings resolve without repeating the subscription lookup. Empty until first fetch.
     private(set) var lastResolvedUserTier: AIChatUserTier = .free
     private(set) var lastFetchedModels: [AIChatModel] = []
+    /// What New Tab Page chats start on, kept current with each fetch.
+    let newChatDefaults = AIChatNewChatDefaultSource()
+
+    var allowsSubscriptionUpsell: Bool {
+        lastResolvedUserTier.allowsSubscriptionUpsell(isPurchaseEligible: subscriptionManager.isSubscriptionPurchaseEligible)
+    }
     private let modelsService: AIChatModelsProviding
     private let subscriptionManager: any SubscriptionManager
     private let featureFlagger: FeatureFlagger
@@ -53,8 +59,11 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
     ]
 
     var modelsDidChangePublisher: AnyPublisher<Void, Never> {
-        Publishers.MergeMany(Self.modelsDidChangeNotifications.map { NotificationCenter.default.publisher(for: $0) })
-            .map { _ in () }
+        Publishers.Merge(
+            Publishers.MergeMany(Self.modelsDidChangeNotifications.map { NotificationCenter.default.publisher(for: $0) }).map { _ in () },
+            // Purchase eligibility is false until App Store products first load.
+            subscriptionManager.hasAppStoreProductsAvailablePublisher.map { _ in () }
+        )
             // Sign-out posts two of these back to back; one refetch is enough.
             .debounce(for: .milliseconds(300), scheduler: DispatchQueue.main)
             .eraseToAnyPublisher()
@@ -65,20 +74,24 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
         subscriptionManager: any SubscriptionManager = Application.appDelegate.subscriptionManager,
         featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger
     ) {
-        self.modelsService = modelsService ?? AIChatModelsService(accessTokenProvider: subscriptionManager)
+        self.modelsService = modelsService ?? AIChatModelsService(baseURL: AIChatModelsService.baseURL(forChatURL: AIChatRemoteSettings().aiChatURL),
+                                                                  accessTokenProvider: subscriptionManager)
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
     }
 
     func fetchAIModelSections() async -> [NewTabPageDataModel.AIModelSection] {
+        // Resolved before `/models` so new chats start on the tier's local default while it loads or if it fails.
+        let userTier = await resolveUserTier()
+        newChatDefaults.userTier = userTier
         do {
             let response = try await modelsService.fetchModels()
-            let userTier = await resolveUserTier()
             attachmentLimits = mapAttachmentLimits(response.attachmentLimits?.limits(for: userTier))
             isEligibleForFreeTrial = userTier == .free && subscriptionManager.isUserEligibleForFreeTrial()
             let models = response.models.map { AIChatModel(remoteModel: $0, userTier: userTier) }
             lastResolvedUserTier = userTier
             lastFetchedModels = models
+            newChatDefaults.update(models: models, serverDefault: response.newChatDefault)
 
             // Recommended = backend-labelled models, shown first with the label as a subtitle.
             let (accessible, gated) = AIChatModelSectionBuilder.groupByAccess(models: models)
@@ -95,7 +108,7 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
                 )
             }
 
-            if !gated.isEmpty {
+            if !gated.isEmpty, allowsSubscriptionUpsell {
                 let header = isSubscriptionUpsellEnabled
                     ? AIChatPickerSectionCopy.gatedModelsHeader(userTier: userTier, isEligibleForFreeTrial: isEligibleForFreeTrial)
                     : nil
@@ -146,6 +159,7 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
         return model.availableReasoningModes.compactMap { mode in
             guard let effort = model.reasoningEffort(for: mode) else { return nil }
             let isAvailable = model.isAccessible(effort)
+            if !isAvailable && !allowsSubscriptionUpsell { return nil }
             let requiredTier = isAvailable ? nil : model.lowestPublicAccessTier(for: effort)
             let upsell = upsellString(forRequiredTier: requiredTier, userTier: userTier)
             // Only the first gated effort heads the section.

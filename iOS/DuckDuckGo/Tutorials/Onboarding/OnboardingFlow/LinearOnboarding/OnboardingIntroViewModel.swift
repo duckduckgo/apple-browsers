@@ -95,10 +95,13 @@ final class OnboardingIntroViewModel: ObservableObject {
     @Published var isSkipped = false
 
     var onCompletingOnboardingIntro: (() -> Void)?
-    var onOpenAIChatFromOnboarding: ((String?, Bool) -> Void)?
+    /// Opens the onboarding Duck.ai chat with the prompt, the auto-send flag and the model picked on the AI model step (if any).
+    var onOpenAIChatFromOnboarding: ((String?, Bool, String?) -> Void)?
     var onSearchFromOnboarding: ((String) -> Void)?
     /// Invoked when the flow reaches an `OnboardingIntroStep.interlude(_)` step. The host is expected to dismiss the onboarding UI, run its own experience, and call `resumeOnboardingFromInterlude()` once finished.
     var onOnboardingInterlude: ((OnboardingIntroStep.Interlude) -> Void)?
+    /// Invoked when the user taps "Try for Free" on the Try VPN step. The host presents the subscription paywall and calls the closure once it's dismissed.
+    var onTryVPNFromOnboarding: ((_ onPaywallDismissed: @escaping () -> Void) -> Void)?
     private var introSteps: [OnboardingIntroStep]
     private var currentIntroStep: OnboardingIntroStep
 
@@ -121,6 +124,7 @@ final class OnboardingIntroViewModel: ObservableObject {
     /// Fetches the AI models ahead of the model-picker step. Kicked off when the `.privateAIChat`
     /// reason is chosen so the options are ready by the time that step appears.
     private let aiModelsPrefetcher: OnboardingAIModelsPrefetching
+    private let tryVPNFollowUpProvider: OnboardingTryVPNFollowUpProviding
 
     private var pendingOnboardingIntroActions: (() -> Void)?
 
@@ -130,6 +134,7 @@ final class OnboardingIntroViewModel: ObservableObject {
                      restorePromptHandler: OnboardingRestorePromptHandling,
                      onboardingManager: OnboardingManaging,
                      personalizationManager: OnboardingPersonalizationManaging,
+                     tryVPNFollowUpProvider: OnboardingTryVPNFollowUpProviding,
                      onboardingResumeStepStore: (any KeyedStoring<OnboardingStoringKeys>)? = nil) {
         let defaultBrowserInfoStore = DefaultBrowserInfoStore()
         let defaultBrowserEventMapper = DefaultBrowserPromptManagerDebugPixelHandler()
@@ -153,10 +158,12 @@ final class OnboardingIntroViewModel: ObservableObject {
             contentProvider: OnboardingIntroContentProvider(
                 flowType: onboardingManager.currentOnboardingFlow,
                 featureFlagger: featureFlagger,
-                downloadReasonProvider: { onboardingManager.currentDownloadReason }
+                downloadReasonProvider: { onboardingManager.currentDownloadReason },
+                isVPNDownloadReasonAvailable: { onboardingManager.isVPNDownloadReasonAvailable }
             ),
             personalizationManager: personalizationManager,
             aiModelsPrefetcher: OnboardingAIModelsPrefetcher(),
+            tryVPNFollowUpProvider: tryVPNFollowUpProvider,
             onboardingResumeStepStore: onboardingResumeStepStore
         )
     }
@@ -177,6 +184,7 @@ final class OnboardingIntroViewModel: ObservableObject {
         contentProvider: OnboardingIntroContentProviding,
         personalizationManager: OnboardingPersonalizationManaging,
         aiModelsPrefetcher: OnboardingAIModelsPrefetching,
+        tryVPNFollowUpProvider: OnboardingTryVPNFollowUpProviding,
         onboardingResumeStepStore: (any KeyedStoring<OnboardingStoringKeys>)? = nil
     ) {
         self.defaultBrowserManager = defaultBrowserManager
@@ -193,6 +201,7 @@ final class OnboardingIntroViewModel: ObservableObject {
         self.contentProvider = contentProvider
         self.personalizationManager = personalizationManager
         self.aiModelsPrefetcher = aiModelsPrefetcher
+        self.tryVPNFollowUpProvider = tryVPNFollowUpProvider
         self.onboardingResumeStepStore = if let onboardingResumeStepStore { onboardingResumeStepStore } else { UserDefaults.app.keyedStoring() }
 
         introSteps = onboardingManager.onboardingSteps
@@ -210,6 +219,7 @@ final class OnboardingIntroViewModel: ObservableObject {
             pixelReporter.measureResumeOnboardingCTAAction()
         } else {
             pixelReporter.measureStartOnboardingCTAAction()
+            enrollInDownloadReasonVPNExperimentIfNeeded()
         }
         makeNextViewState()
     }
@@ -301,14 +311,6 @@ final class OnboardingIntroViewModel: ObservableObject {
     }
 
     // NA Experiment: per-step actions for the reason-tailored screens.
-    func searchPrivacySettingsContinueAction() {
-        pixelReporter.measureSearchPrivacySettingsSelection(
-            recentlyVisitedSitesEnabled: personalizationManager.isRecentlyVisitedSitesEnabled,
-            safeSearchEnabled: personalizationManager.isSafeSearchEnabled
-        )
-        makeNextViewState()
-    }
-
     func aiSearchSettingsContinueAction() {
         pixelReporter.measureAISearchSettingsSelection(
             searchAssistEnabled: personalizationManager.isSearchAssistEnabled,
@@ -340,6 +342,55 @@ final class OnboardingIntroViewModel: ObservableObject {
         makeNextViewState()
     }
 
+    /// Presents the subscription paywall, then moves on to the follow-up step once it's dismissed.
+    /// - Parameter transition: Runs the step change, e.g. inside the view's content transition.
+    func tryVPNAction(transition: @escaping (_ advance: @escaping () -> Void) -> Void = { $0() }) {
+        guard currentIntroStep == .tryVPN else { return }
+        pixelReporter.measureTryVPNAction()
+        guard let onTryVPNFromOnboarding else {
+            makeNextViewState()
+            return
+        }
+        onTryVPNFromOnboarding { [weak self] in
+            Task { [weak self] in
+                await self?.tryVPNFollowUpProvider.refreshVPNAccess()
+                guard self?.currentIntroStep == .tryVPN else { return }
+                transition { [weak self] in
+                    guard let self, self.currentIntroStep == .tryVPN else { return }
+                    self.makeNextViewState()
+                }
+            }
+        }
+    }
+
+    func skipTryVPNAction() {
+        guard currentIntroStep == .tryVPN else { return }
+        pixelReporter.measureSkipTryVPNAction()
+        // They declined the offer, so don't wait on a pending subscription check.
+        tryVPNFollowUpProvider.cancelVPNAccessCheck()
+        makeNextViewState()
+    }
+
+    /// "Next" (the VPN is on) or "Skip" (it's off) on the Turn on VPN step after Try VPN.
+    func vpnActivationContinueAction(isVPNOn: Bool) {
+        guard currentIntroStep == .tryVPNFollowUp else { return }
+        pixelReporter.measureVPNActivationContinue(isVPNOn: isVPNOn)
+        makeNextViewState()
+    }
+
+    /// Turning on the VPN failed on the Turn on VPN step after Try VPN.
+    func vpnActivationFailedAction(reason: OnboardingSharedPixelEvent.VPNActivationEvent.FailureReason) {
+        guard currentIntroStep == .tryVPNFollowUp else { return }
+        pixelReporter.measureVPNActivationFailed(reason)
+    }
+
+    /// The button on the "If you change your mind" step after Try VPN.
+    func subscriptionReminderContinueAction() {
+        guard currentIntroStep == .tryVPNFollowUp else { return }
+        pixelReporter.measureSubscriptionReminderContinue()
+        makeNextViewState()
+    }
+
     func adBlockingContinueAction() {
         pixelReporter.measureAdBlockingSelection(
             youTubeAdBlockingEnabled: personalizationManager.isYouTubeAdBlockingEnabled,
@@ -367,7 +418,8 @@ final class OnboardingIntroViewModel: ObservableObject {
         // Record that the user took the AI route at the Search/Duck.ai junction, so the end-of-journey step
         // shows the standard completion instead of the "Try Duck.ai" nudge (they already tried AI).
         onboardingSearchExperienceProvider.storeDidStartAIChatDuringOnboarding(true)
-        onOpenAIChatFromOnboarding?(prompt, autoSend)
+        // The model picked on the AI model step applies to this onboarding chat only.
+        onOpenAIChatFromOnboarding?(prompt, autoSend, personalizationManager.selectedAIChatModelID)
     }
 
     func searchFromOnboarding(query: String) {
@@ -452,12 +504,6 @@ private extension OnboardingIntroViewModel {
                     )
                 )
             // NA Experiment: reason-tailored steps. View bodies/content are built in the UI task.
-            case .searchPrivacySettingsSelection:
-                return .onboarding(
-                    .init(
-                        type: .searchPrivacySettingsDialog(content: contentProvider.serpPersonalizationContent),
-                        step: stepInfo())
-                )
             case .aiSearchSettingsSelection:
                 return .onboarding(
                     .init(
@@ -497,6 +543,23 @@ private extension OnboardingIntroViewModel {
                 return .onboarding(
                     .init(
                         type: .adBlockingDialog(content: contentProvider.adBlockingPersonalizationContent),
+                        step: stepInfo()
+                    )
+                )
+            case .tryVPN:
+                return .onboarding(
+                    .init(
+                        type: .tryVPNDialog(content: contentProvider.tryVPNContent),
+                        step: stepInfo()
+                    )
+                )
+            case .tryVPNFollowUp:
+                let type: OnboardingIntroViewState.Intro.IntroType = tryVPNFollowUpProvider.hasVPNAccess == true
+                    ? .vpnActivationDialog(content: contentProvider.vpnActivationContent)
+                    : .subscriptionReminderDialog(content: contentProvider.subscriptionReminderContent)
+                return .onboarding(
+                    .init(
+                        type: type,
                         step: stepInfo()
                     )
                 )
@@ -559,9 +622,30 @@ private extension OnboardingIntroViewModel {
             // Interlude steps don't render a view state. They inform the delegate that an interlude is starting.
             // The delegate will resume the onboarding by calling `resumeOnboardingFromInterlude()` when finished.
             onOnboardingInterlude?(interlude)
+        case .renderable(.tryVPNFollowUp) where tryVPNFollowUpProvider.hasVPNAccess == nil:
+            resolveVPNAccessThenShowTryVPNFollowUp()
+        case .renderable(.tryVPN):
+            // Check ahead so the follow-up step knows which screen to show.
+            Task { [tryVPNFollowUpProvider] in await tryVPNFollowUpProvider.refreshVPNAccess() }
+            state = mapToViewState(renderableStep: .tryVPN)
         case let .renderable(renderable):
             state = mapToViewState(renderableStep: renderable)
         }
+    }
+
+    /// Used when resuming on the follow-up step, before the subscription has been checked.
+    func resolveVPNAccessThenShowTryVPNFollowUp() {
+        Task { [weak self] in
+            await self?.tryVPNFollowUpProvider.refreshVPNAccess()
+            guard let self, self.currentIntroStep == .tryVPNFollowUp else { return }
+            self.setViewState(introStep: .tryVPNFollowUp)
+        }
+    }
+
+    /// Enrolls the user in the VPN download-reason experiment when they start onboarding from the intro.
+    func enrollInDownloadReasonVPNExperimentIfNeeded() {
+        guard currentIntroStep == introSteps.first else { return }
+        onboardingManager.enrollInDownloadReasonVPNExperimentIfNeeded()
     }
 
     func makeNextViewState() {
@@ -627,8 +711,6 @@ private extension OnboardingIntroViewModel {
         case .searchExperienceSelection where introSteps.contains(.searchExperienceSelection):
             currentIntroStep = .searchExperienceSelection
         // NA Experiment: reason-tailored steps.
-        case .searchPrivacySettingsSelection where introSteps.contains(.searchPrivacySettingsSelection):
-            currentIntroStep = .searchPrivacySettingsSelection
         case .aiSearchSettingsSelection where introSteps.contains(.aiSearchSettingsSelection):
             currentIntroStep = .aiSearchSettingsSelection
         case .aiModelSelection where introSteps.contains(.aiModelSelection):
@@ -639,6 +721,10 @@ private extension OnboardingIntroViewModel {
             currentIntroStep = .keepDuckAISelection
         case .adBlockingPersonalization where introSteps.contains(.adBlockingPersonalization):
             currentIntroStep = .adBlockingPersonalization
+        case .tryVPN where introSteps.contains(.tryVPN):
+            currentIntroStep = .tryVPN
+        case .tryVPNFollowUp where introSteps.contains(.tryVPNFollowUp):
+            currentIntroStep = .tryVPNFollowUp
         case .duckAIAnswerStep:
             break // handled separately by restorePendingDuckAIAnswerStepIfNeeded in MainViewController
         case .interludeDuckAI where introSteps.contains(.interlude(.duckAI)):
@@ -653,6 +739,7 @@ private extension OnboardingIntroViewModel {
     func persistPendingOnboardingStep(for step: OnboardingIntroStep) {
         if step == .duckAIQuerySelection {
             onboardingResumeStepStore.resumeDuckAIQueryPrompt = nil
+            onboardingResumeStepStore.resumeDuckAIQueryModelID = nil
         }
         onboardingResumeStepStore.resumeStep = step.resumeStep
     }
@@ -679,8 +766,6 @@ private extension OnboardingIntroViewModel {
             pixelReporter.measureDuckAIQuerySelectionImpression()
         case .downloadReasonDialog:
             pixelReporter.measureDownloadReasonImpression()
-        case .searchPrivacySettingsDialog:
-            pixelReporter.measureSearchPrivacySettingsImpression()
         case .aiSearchSettingsDialog:
             pixelReporter.measureAISearchSettingsImpression()
         case .aiModelDialog:
@@ -691,6 +776,12 @@ private extension OnboardingIntroViewModel {
             pixelReporter.measureKeepDuckAIImpression()
         case .adBlockingDialog:
             pixelReporter.measureAdBlockingImpression()
+        case .tryVPNDialog:
+            pixelReporter.measureTryVPNImpression()
+        case .vpnActivationDialog:
+            pixelReporter.measureVPNActivationImpression()
+        case .subscriptionReminderDialog:
+            pixelReporter.measureSubscriptionReminderImpression()
         }
     }
 

@@ -96,7 +96,8 @@ public class DataBrokerProtectionAgentManagerProvider {
                                                     vault: vault,
                                                     authenticationManager: authenticationManager,
                                                     pixelHandler: sharedPixelsHandler,
-                                                    localBrokerProvider: localBrokerService)
+                                                    localBrokerProvider: localBrokerService,
+                                                    privacyConfigurationManager: privacyConfigurationManager)
 
         let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker, pixelHandler: sharedPixelsHandler, vault: vault, localBrokerService: brokerUpdater)
         let dataManager = DataBrokerProtectionDataManager(database: database)
@@ -462,6 +463,8 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentAppEvents {
                     case BrokerProfileJobQueueError.interrupted:
                         self.pixelHandler.fire(.ipcServerImmediateScansInterrupted)
                         Logger.dataBrokerProtection.error("Interrupted during DataBrokerProtectionAgentManager.profileSaved in queueManager.startImmediateOperationsIfPermitted(), error: \(oneTimeError.localizedDescription, privacy: .public)")
+                    case BrokerProfileJobQueueError.pausedForRevokedSigningKey:
+                        Logger.dataBrokerProtection.log("Paused during DataBrokerProtectionAgentManager.profileSaved because a broker bundle signing key was revoked")
                     default:
                         self.pixelHandler.fire(.ipcServerImmediateScansFinishedWithError(error: oneTimeError))
                         Logger.dataBrokerProtection.error("Error during DataBrokerProtectionAgentManager.profileSaved in queueManager.startImmediateOperationsIfPermitted, error: \(oneTimeError.localizedDescription, privacy: .public)")
@@ -505,6 +508,8 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentAppEvents {
                     case BrokerProfileJobQueueError.cannotInterrupt:
                         self.pixelHandler.fire(.ipcServerAppLaunchedScheduledScansBlocked)
                         Logger.dataBrokerProtection.log("Cannot interrupt during DataBrokerProtectionAgentManager.appLaunched in queueManager.startScheduledOperationsIfPermitted()")
+                    case BrokerProfileJobQueueError.pausedForRevokedSigningKey:
+                        Logger.dataBrokerProtection.log("Paused during DataBrokerProtectionAgentManager.appLaunched because a broker bundle signing key was revoked")
                     default:
                         self.pixelHandler.fire(.ipcServerAppLaunchedScheduledScansFinishedWithError(error: oneTimeError))
                         Logger.dataBrokerProtection.log("Error during DataBrokerProtectionAgentManager.appLaunched in queueManager.startScheduledOperationsIfPermitted, error: \(oneTimeError.localizedDescription, privacy: .public)")
@@ -597,8 +602,45 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentDebugComman
             self.debugServer = nil
         }
 
-        let server = DataBrokerProtectionDebugHTTPServer(provider: self, logReader: DataBrokerProtectionOSLogReader())
         do {
+            let debugModeRunner = try DebugModeRunner(authenticationManager: authenticationManager, featureFlagger: jobDependencies.featureFlagger)
+            let server = DataBrokerProtectionDebugHTTPServer(provider: self,
+                                                             logReader: DataBrokerProtectionOSLogReader(),
+                                                             runManager: DebugModeRunManager(runner: debugModeRunner))
+            #if DEBUG
+            let subscriptionManager = (authenticationManager as? DataBrokerProtectionAuthenticationManager)?.debugSubscriptionManager
+            let settings = debugSettings
+            server.prerequisiteReader = {
+                guard let subscriptionManager else {
+                    return DebugPrerequisiteResult(status: .unavailable, backend: "subscription", environment: "unknown")
+                }
+                return await DebugPrerequisiteResult.subscription(subscriptionManager, settings: settings)
+            }
+            let brokerUpdater = brokerUpdater
+            let jobDependencies = jobDependencies
+            server.brokerJSONRefresher = { resetDelivery in
+                BrokerUpdaterUserDefaults().resetLastCheckedVersion()
+                if resetDelivery { jobDependencies.dataBrokerProtectionSettings.resetBrokerDeliveryData() }
+                try await brokerUpdater.checkForUpdates(skipsLimiter: true)
+                return try jobDependencies.database.fetchAllDataBrokers().map(DebugBrokerState.init)
+            }
+            server.immediateScanStarter = { [weak self] brokerURLs in
+                guard let self else { throw CancellationError() }
+                let settings = jobDependencies.dataBrokerProtectionSettings
+                let isAuthenticated = await self.refreshIsAuthenticatedState()
+                // Free scans skip maintenance scans when they run, so they aren't planned either.
+                let jobs = try PIRDebugLaunchOptions.scanJobs(database: jobDependencies.database, isAuthenticatedUser: isAuthenticated,
+                                                              brokerURLs: brokerURLs, includesMaintenance: isAuthenticated)
+                try PIRDebugLaunchOptions.makeScansDue(jobs, database: jobDependencies.database)
+                let previousBrokerURLs = settings.debugTestBrokerURLs
+                settings.debugTestBrokerURLs = brokerURLs
+                self.queueManager.startImmediateScanOperationsIfPermitted(showWebView: false, isAuthenticatedUser: isAuthenticated,
+                                                                          jobDependencies: jobDependencies, errorHandler: nil) {
+                    settings.debugTestBrokerURLs = previousBrokerURLs
+                }
+                return DebugImmediateScans(queued: jobs, requested: brokerURLs)
+            }
+            #endif
             try server.start()
             debugServer = server
             return true

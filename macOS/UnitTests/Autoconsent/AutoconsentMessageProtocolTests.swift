@@ -19,12 +19,13 @@
 import BrowserServicesKit
 import BrowserServicesKitTestsUtils
 import Common
+import EventHub
 import FeatureFlags_macOS
 import FoundationExtensions
 import History
 import HistoryView
 @_spi(Testing) import Persistence
-import PixelKit
+@_spi(Testing) import PixelKit
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import PrivacyDashboard
@@ -131,6 +132,63 @@ class AutoconsentMessageProtocolTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenHeuristicHitTestFlagChangesThenInitConfigurationFollowsIt() {
+        let featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.heuristicHitTest.rawValue: false])
+        userScript = AutoconsentUserScript(
+            config: config,
+            management: AutoconsentManagement(),
+            preferences: preferences,
+            featureFlagger: featureFlagger
+        )
+
+        let disabledConfig = sendInit(url: "https://example.com")?["config"] as? [String: Any]
+        XCTAssertEqual(disabledConfig?["enableHeuristicHitTest"] as? Bool, false)
+
+        featureFlagger.featuresStub = [FeatureFlag.heuristicHitTest.rawValue: true]
+
+        let enabledConfig = sendInit(url: "https://example.com")?["config"] as? [String: Any]
+        XCTAssertEqual(enabledConfig?["enableHeuristicHitTest"] as? Bool, true)
+    }
+
+    @MainActor
+    func testWhenPopupMutationObserverFlagChangesThenInitConfigurationFollowsIt() {
+        let featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.popupMutationObserver.rawValue: false])
+        userScript = AutoconsentUserScript(
+            config: config,
+            management: AutoconsentManagement(),
+            preferences: preferences,
+            featureFlagger: featureFlagger
+        )
+
+        let disabledConfig = sendInit(url: "https://example.com")?["config"] as? [String: Any]
+        XCTAssertEqual(disabledConfig?["enablePopupMutationObserver"] as? Bool, false)
+
+        featureFlagger.featuresStub = [FeatureFlag.popupMutationObserver.rawValue: true]
+
+        let enabledConfig = sendInit(url: "https://example.com")?["config"] as? [String: Any]
+        XCTAssertEqual(enabledConfig?["enablePopupMutationObserver"] as? Bool, true)
+    }
+
+    @MainActor
+    func testWhenHeuristicPopupSearchTimeoutIsSetThenInitConfigurationPassesIt() {
+        config.featureSettings = ["heuristicPopupSearchTimeout": 250]
+
+        let initConfig = sendInit(url: "https://example.com")?["config"] as? [String: Any]
+        XCTAssertEqual(initConfig?["heuristicPopupSearchTimeout"] as? Int, 250)
+    }
+
+    @MainActor
+    func testWhenHeuristicPopupSearchTimeoutIsMissingOrInvalidThenInitConfigurationUsesTheDefault() {
+        let invalidSettings: [[String: Any]] = [[:], ["heuristicPopupSearchTimeout": 0], ["heuristicPopupSearchTimeout": "fast"]]
+        for settings in invalidSettings {
+            config.featureSettings = settings
+
+            let initConfig = sendInit(url: "https://example.com")?["config"] as? [String: Any]
+            XCTAssertEqual(initConfig?["heuristicPopupSearchTimeout"] as? Int, 100, "settings: \(settings)")
+        }
+    }
+
+    @MainActor
     func testWhenNativeAutoconsentPixelsFireThenTheyAreCountedPerSiteRank() {
         let management = AutoconsentManagement()
         userScript = AutoconsentUserScript(
@@ -144,6 +202,67 @@ class AutoconsentMessageProtocolTests: XCTestCase {
         _ = sendInit(url: "https://example.com/")
 
         XCTAssertEqual(management.pixelCounter, [CPMSiteRank.top10k: ["init": 1], CPMSiteRank.other: ["init": 1]])
+    }
+
+    @MainActor
+    func testWhenSummaryPixelsFireThenCPMCoverageIsReportedToEventHub() {
+        let eventHub = RecordingEventHub()
+        let management = AutoconsentManagement()
+        management.eventHub = eventHub
+        management.pixelCounter = [
+            CPMSiteRank.top10k: ["init": 2, "detected-by-patterns": 2, "detected-by-both": 1],
+            CPMSiteRank.other: ["init": 3, "detected-by-patterns": 1, "detected-by-both": 3],
+        ]
+
+        management.fireSummaryPixels(additionalParameters: [:])
+
+        XCTAssertEqual(eventHub.nativeEventCounts, [
+            "autoconsent_pages": 5, "autoconsent_pages_top10k": 2,
+            "autoconsent_unhandled": 1, "autoconsent_unhandled_top10k": 1,
+        ])
+        XCTAssertTrue(management.pixelCounter.isEmpty)
+    }
+
+    @MainActor
+    func testWhenSummaryPixelsFireThenOneSummaryPixelIsFiredPerSiteRank() {
+        let pixelFiring = PixelKitMock()
+        let management = AutoconsentManagement()
+        management.pixelFiring = pixelFiring
+        management.pixelCounter = [CPMSiteRank.top10k: ["init": 2], CPMSiteRank.other: ["init": 3]]
+
+        management.fireSummaryPixels(additionalParameters: ["source": "test"])
+
+        XCTAssertEqual(pixelFiring.actualFireCalls.map(\.pixel.name), ["autoconsent_summary", "autoconsent_summary"])
+        XCTAssertTrue(pixelFiring.actualFireCalls.allSatisfy { $0.frequency == .standard })
+        XCTAssertEqual(Set(pixelFiring.actualFireCalls.compactMap { $0.additionalParameters?["siteRank"] }),
+                       [CPMSiteRank.top10k.rawValue, CPMSiteRank.other.rawValue])
+        XCTAssertTrue(pixelFiring.actualFireCalls.allSatisfy { $0.additionalParameters?["source"] == "test" })
+    }
+
+    func testWhenEmbeddedExtensionReportsCoverageThenItIsCountedInEventHub() throws {
+        guard #available(macOS 15.4, *) else { throw XCTSkip("Embedded extension requires macOS 15.4") }
+        let eventHub = RecordingEventHub()
+        let delegate = MacOSAutoconsentMessageHandlerDelegate(eventHub: eventHub)
+
+        delegate.reportCPMCoverage(counts: CPMCoverageCounts(unhandled: 3, pages: 4), siteRank: .top10k)
+        delegate.reportCPMCoverage(counts: CPMCoverageCounts(unhandled: 1, pages: 1), siteRank: nil)
+
+        XCTAssertEqual(eventHub.nativeEventCounts, [
+            "autoconsent_pages": 5, "autoconsent_pages_top10k": 4,
+            "autoconsent_unhandled": 4, "autoconsent_unhandled_top10k": 3,
+        ])
+    }
+
+    func testWhenEmbeddedExtensionSendsSummaryPixelThenNothingIsCountedInEventHub() throws {
+        guard #available(macOS 15.4, *) else { throw XCTSkip("Embedded extension requires macOS 15.4") }
+        let eventHub = RecordingEventHub()
+        let delegate = MacOSAutoconsentMessageHandlerDelegate(eventHub: eventHub)
+
+        delegate.sendPixel(PixelInfo(name: "autoconsent_summary", type: "standard", params: [
+            "init": "4", "detected-by-patterns": 3, "detected-by-both": "1", "siteRank": "top10k",
+        ]))
+
+        XCTAssertTrue(eventHub.nativeEventCounts.isEmpty)
     }
 
     @MainActor
@@ -360,12 +479,11 @@ class AutoconsentMessageProtocolTests: XCTestCase {
         )
         preferences.cookiePopupPreference = preference
 
-        let cohort: FeatureFlag.HeuristicActionCohort = heuristicEnabled ? .treatment : .control
         userScript = AutoconsentUserScript(
             config: config,
             management: AutoconsentManagement(),
             preferences: preferences,
-            featureFlagger: MockFeatureFlagger(resolveCohortStub: cohort)
+            featureFlagger: MockFeatureFlagger(featuresStub: [FeatureFlag.heuristicAction.rawValue: heuristicEnabled])
         )
 
         var firedParameters: [String: String]?
@@ -393,6 +511,20 @@ class AutoconsentMessageProtocolTests: XCTestCase {
         let data = try JSONEncoder().encode(cookieConsentInfo)
         return try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
     }
+}
+
+final class RecordingEventHub: EventHubManaging {
+    private(set) var nativeEventCounts: [String: Int] = [:]
+
+    func handleWebEvent(_ webEventData: [String: Any], tabID: EventHubTabID) {}
+    func handleNativeEvent(_ type: String, data: Encodable?) {
+        nativeEventCounts[type, default: 0] += 1
+    }
+    func onNavigationStarted(tabID: EventHubTabID, url: String) {}
+    func onTabClosed(tabID: EventHubTabID) {}
+    func onConfigChanged() {}
+    func onAppForegrounded() {}
+    func onAppBackgrounded() {}
 }
 
 final class MockAutoconsentUserScriptDelegate: AutoconsentUserScriptDelegate {

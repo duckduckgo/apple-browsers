@@ -343,6 +343,12 @@
 /* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
 "aichat.attachment.unsupported.file.type.single" = "Αυτός ο τύπος αρχείου δεν υποστηρίζεται, επισυνάψτε %@.";
 
+/* accessibility label for closing the tab attachment picker without applying changes */
+"aichat.choose-tabs.close.accessibility-label" = "Κλείσιμο";
+
+/* accessibility label for applying the tab attachment selection */
+"aichat.choose-tabs.confirm.accessibility-label" = "Επισύναψη επιλεγμένων καρτελών";
+
 /* empty state shown when no tabs match the search query */
 "aichat.choose-tabs.no-matches" = "Δεν υπάρχουν αντίστοιχες καρτέλες";
 
@@ -367,8 +373,17 @@
 /* Caption shown below the input while editing a message, warning that submitting the edit replaces the existing response */
 "aichat.edit.replaceResponseDisclaimer" = "Η επεξεργασία θα αντικαταστήσει την απάντηση με μια νέα.";
 
+/* Accessibility label for the close-tab button in the Duck.ai tab header */
+"aichat.header.closeTab.a11y" = "Κλείσιμο καρτέλας";
+
 /* Title shown in the Duck.ai tab header while editing a previously sent message */
 "aichat.header.editMessage" = "Επεξεργασία μηνύματος";
+
+/* Label shown in the Duck.ai tab header for free plan users */
+"aichat.header.freePlan" = "Δωρεάν πρόγραμμα";
+
+/* Label shown in the Duck.ai tab header for paid subscribers */
+"aichat.header.paidTitle" = "Duck.ai";
 
 /* Accessibility label for the Plus (+) button in the Duck.ai tab header that opens a menu of new-chat and new-tab actions */
 "aichat.header.plusMenu.a11y" = "Νέα";
@@ -403,6 +418,12 @@
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "Νέα φωνητική συνομιλία";
 
+/* Accessibility label for the chat-list / recent-chats button in the Duck.ai tab header */
+"aichat.header.recentChats.a11y" = "Πρόσφατες συνομιλίες";
+
+/* Label shown in the Duck.ai tab header prompting free users to upgrade */
+"aichat.header.upgrade" = "Αναβάθμιση";
+
 /* Error toast shown when a Duck.ai chat download fails and nothing was saved. */
 "aiChat.history.download.failed.message" = "Δεν ήταν δυνατή η λήψη. Δοκιμάστε ξανά.";
 
@@ -411,6 +432,9 @@
 
 /* Title shown when the user has no Duck.ai chat history yet. */
 "aiChat.history.emptyState.title" = "Δεν υπάρχουν πρόσφατες συνομιλίες";
+
+/* Accessibility label for the fire button that deletes every Duck.ai chat from the chats list. */
+"aiChat.history.fireAll.a11y" = "Διαγραφή όλων των συνομιλιών";
 
 /* Message of the alert shown when Duck.ai chat history fails to load. */
 "aiChat.history.loadError.message" = "Κάτι πήγε στραβά κατά τη φόρτωση των συνομιλιών σου στο Duck.ai. Δοκίμασε ξανά αργότερα.";
@@ -459,6 +483,12 @@
 
 /* Multi-select toolbar button that deletes all chats when none are individually selected. */
 "aiChat.history.selection.deleteAll" = "Διαγραφή όλων";
+
+/* Accessibility label for the close button of the iPad Duck.ai chats sidebar. */
+"aiChat.history.sidebar.hide.a11y" = "Απόκρυψη συνομιλιών";
+
+/* Accessibility label for the iPad Duck.ai button that opens the chats sidebar. */
+"aiChat.history.sidebar.show.a11y" = "Εμφάνιση συνομιλιών";
 
 /* Accessibility label for the delete action revealed by swiping a Duck.ai chat row. */
 "aiChat.history.swipe.delete.a11y" = "Διαγραφή συνομιλίας";
@@ -567,6 +597,27 @@
 
 /* Link inside the Duck.ai Terms of Service disclaimer that opens the Duck.ai Privacy Policy and Terms of Service page */
 "aichat.termsOfService.disclaimer.link" = "Πολιτική απορρήτου και Όροι χρήσης υπηρεσιών";
+
+/* Accessibility label for the attachment button in the Duck.ai native input toolbar */
+"aichat.toolbar.attach.button.accessibility.label" = "Επισύναψη";
+
+/* Accessibility label for the reasoning mode button in the Duck.ai native input toolbar */
+"aichat.toolbar.reasoning.button.accessibility.label" = "Λειτουργία συλλογιστικής";
+
+/* Accessibility label for the return/new-line button in the Duck.ai native input toolbar */
+"aichat.toolbar.returnkey.button.accessibility.label" = "Εισαγωγή νέας γραμμής";
+
+/* Accessibility label for the stop generating button in the Duck.ai native input toolbar */
+"aichat.toolbar.stop.button.accessibility.label" = "Διακοπή δημιουργίας";
+
+/* Accessibility label for the submit button in the Duck.ai native input toolbar */
+"aichat.toolbar.submit.button.accessibility.label" = "Υποβολή";
+
+/* Accessibility label for the tools button in the unified input toolbar */
+"aichat.toolbar.tools.button.accessibility.label" = "Εργαλεία";
+
+/* Accessibility label for the button that clears the selected Duck.ai tool in unified input */
+"aichat.toolbar.tools.clear.button.accessibility.label" = "Διαγραφή επιλεγμένου εργαλείου";
 
 /* Subtitle for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.subtitle" = "Ορισμός τόνου, μήκους και συμπεριφοράς";
@@ -1579,6 +1630,21 @@
 /* Parameter is domain name (string) */
 "contextual.onboarding.browsing.one.tracker" = "Το *%1$@* προσπαθούσε να σας παρακολουθήσει εδώ. Τους εμπόδισα!\n\n☝️ Πατήστε την ασπίδα για περισσότερες πληροφορίες.";
 
+/* Body of the alternative onboarding end-of-journey dialog promoting Duck.ai. */
+"contextual.onboarding.eoj-try-ai.message" = "Οι συνομιλίες είναι ανωνυμοποιημένες, δεν απαιτείται λογαριασμός. Και είναι δωρεάν!";
+
+/* Primary button on the alternative onboarding end-of-journey dialog; opens Duck.ai. 'Duck.ai' is a brand name and should not be translated. */
+"contextual.onboarding.eoj-try-ai.primary-button" = "Δοκίμασε το Duck.ai";
+
+/* Secondary button on the alternative onboarding end-of-journey dialog; skips to the new tab page. */
+"contextual.onboarding.eoj-try-ai.secondary-button" = "Παράλειψη";
+
+/* Title of the alternative onboarding end-of-journey dialog promoting Duck.ai. 'Duck.ai' is a brand name and should not be translated. */
+"contextual.onboarding.eoj-try-ai.title" = "Ιδιωτική συνομιλία με δημοφιλή μοντέλα ΤΝ στο Duck.ai";
+
+/* Body of the onboarding end-of-journey dialog for users who chose the AI-chat download reason. 'Search' refers to the Search option of the address bar Search/Duck.ai toggle and should match its translation. 'Duck.ai' is a brand name and should not be translated. */
+"contextual.onboarding.eoj.private-ai-chat.message" = "Ξεκίνα μια ιδιωτική συνομιλία ΤΝ με το Duck.ai ή πέρνα σε Αναζήτηση για προστατευμένη περιήγηση.";
+
 /* Button on the last screen of the onboarding, it will dismiss the onboarding screen. */
 "contextual.onboarding.final-screen.button" = "Κόλλα πέντε!";
 
@@ -2080,6 +2146,18 @@
 /* Navigation bar title for Duck.ai Control Center education screen */
 "duckai.control.center.education.navBar.title" = "Προσθέστε τη φωνητική συντόμευση Duck.ai στο Κέντρο ελέγχου σας";
 
+/* Button that declines using the on-device model. Duck.ai uses its cloud model instead. */
+"duckai.local-model-access.no-thanks" = "Όχι, ευχαριστώ";
+
+/* Body of the pop-up asking whether Duck.ai may use the on-device model. %@ is the model's name, for example Apple Intelligence. */
+"duckai.local-model-access.prompt.message" = "Χρησιμοποιεί το %@ για ορισμένες εργασίες, όπως οι περιλήψεις περιεχομένου σελίδων. Η συνομιλία δεν φεύγει ποτέ από τη συσκευή σου και μειώνει την χρήση του προγράμματός σου στο Duck.ai.";
+
+/* Title of the pop-up asking whether Duck.ai may use the on-device model. */
+"duckai.local-model-access.prompt.title" = "Το Duck.ai θέλει να χρησιμοποιήσει μοντέλο στη συσκευή για περισσότερη ιδιωτικότητα";
+
+/* Button that lets Duck.ai use the on-device model. */
+"duckai.local-model-access.turn-on" = "Ενεργοποίηση";
+
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "Οι λειτουργίες τεχνητής νοημοσύνης του DuckDuckGo είναι ιδιωτικές και προαιρετικές. Τα δεδομένα σας δεν χρησιμοποιούνται για εκπαίδευση της τεχνητής νοημοσύνης.";
 
@@ -2145,6 +2223,24 @@
 
 /* Used in the link to learn more about the AI features. */
 "duckai.settings.learn.more" = "Μάθετε περισσότερα";
+
+/* Footer of the On-Device Model section in AI Features settings. It explains the toggle above it. */
+"duckai.settings.local-model-access.footer" = "Τα μοντέλα στη συσκευή βοηθούν να παραμένει το περιεχόμενο της σελίδας τοπικά και να μειώνεται η χρήση του προγράμματός σου. Το μοντέλο στη συσκευή θα χρησιμοποιείται για ενέργειες όπως η σύνοψη σελίδας.";
+
+/* Section title in AI Features settings for on-device models Duck.ai may use. */
+"duckai.settings.local-model-access.title" = "Μοντέλο στη συσκευή";
+
+/* Message of the alert shown before turning on Apple Intelligence for Duck.ai page summaries, on iPad. */
+"duckai.settings.local-model-access.turn-on-confirmation.message.ipad" = "Το Duck.ai θα χρησιμοποιεί το Apple Intelligence σε αυτό το iPad για περιλήψεις σελίδων. Οι σελίδες υποβάλλονται σε επεξεργασία στο iPad σου, δεν αποστέλλεται τίποτα σε μοντέλο cloud και μειώνεται η χρήση του προγράμματός σου στο Duck.ai.";
+
+/* Message of the alert shown before turning on Apple Intelligence for Duck.ai page summaries, on iPhone. */
+"duckai.settings.local-model-access.turn-on-confirmation.message.iphone" = "Το Duck.ai θα χρησιμοποιεί το Apple Intelligence σε αυτό το iPhone για περιλήψεις σελίδων. Οι σελίδες υποβάλλονται σε επεξεργασία στο iPhone σου, δεν αποστέλλεται τίποτα σε μοντέλο cloud και μειώνεται η χρήση του προγράμματός σου στο Duck.ai.";
+
+/* Title of the alert shown before turning on Apple Intelligence for Duck.ai page summaries. */
+"duckai.settings.local-model-access.turn-on-confirmation.title" = "Ενεργοποίηση του Apple Intelligence;";
+
+/* Title of the toggle in AI Features settings that lets Duck.ai use the on-device model. %@ is the model's name, for example Apple Intelligence. */
+"duckai.settings.local-model-access.use-model.title" = "Χρήση %@";
 
 /* Accessibility label for Duck.ai */
 "duckai.settings.title" = "Duck.ai";
@@ -2425,6 +2521,9 @@
 /* Suggested prompt submitted text: is a movie/show worth watching */
 "duckai.suggestion.worth-watching.prompt" = "Αξίζει να το παρακολουθήσω; Δώσε μου μια ιδέα χωρίς spoiler.";
 
+/* Caption under the compose button that appears when the user pulls up past the bottom of a Duck.ai chat; releasing opens a new chat. */
+"duckai.swipe.new-chat.label" = "Νέα συνομιλία";
+
 /* Generic title sent to Duck.ai for an attached text selection rather than a full web page */
 "duckai.text-selection.context-title" = "Επιλογή κειμένου";
 
@@ -2466,6 +2565,9 @@
 
 /* Text displayed when DuckPlayer is in 'Ask' mode. */
 "duckPlayer.ask.label" = "Να γίνεται ερώτηση κάθε φορά";
+
+/* Button text to play a video in Duck Player */
+"duckplayer.floating.pill.title" = "Αναπαραγωγή στο Duck Player";
 
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Ποτέ";
@@ -2742,6 +2844,9 @@
 
 /* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
 "escapeHatch.returnTo.withSubtitle.accessibility.label" = "Επιστροφή σε %1$@, %2$@";
+
+/* Button in the Return to module header that opens the tab switcher */
+"escapeHatch.showAllTabs.label" = "Προβολή όλων των καρτελών";
 
 /* Swipe action that closes the open tab referenced by the escape hatch card */
 "escapeHatch.swipeAction.closeTab" = "Κλείσιμο καρτέλας";
@@ -3024,6 +3129,9 @@
 
 /* No comment provided by engineer. */
 "feedback.websiteLoading.form.urlPlaceholder" = "Ποιος ιστότοπος παρουσιάζει προβλήματα;";
+
+/* Clear Find in Page query */
+"findInPage.clear" = "Εκκαθάριση αναζήτησης";
 
 /* Used to indicate number of entries found and position of the currently viewed one: e.g. 1 of 10 */
 "findinpage.count" = "%1$d από %2$d";
@@ -3320,13 +3428,31 @@
 "menuActualSize" = "Πραγματικό μέγεθος";
 
 /* iPad menu bar command */
+"menuAddToDock" = "Προσθήκη του DuckDuckGo στο Dock...";
+
+/* iPad menu bar command */
+"menuAddWidget" = "Προσθήκη μικροεφαρμογής στην Αρχική οθόνη...";
+
+/* iPad menu bar command */
 "menuBack" = "Πίσω";
+
+/* iPad menu bar title */
+"menuBookmarks" = "Σελιδοδείκτες";
 
 /* iPad menu bar command */
 "menuClearTabsAndData" = "Εκκαθάριση καρτελών και δεδομένων";
 
+/* iPad Duck.ai menu bar command */
+"menuDeleteAllChats" = "Διαγραφή όλων των συνομιλιών…";
+
 /* iPad menu bar command */
 "menuDuplicateTab" = "Αντιγραφή καρτέλας";
+
+/* iPad menu bar command */
+"menuExportBookmarks" = "Εξαγωγή σελιδοδεικτών…";
+
+/* iPad menu bar submenu */
+"menuFavorites" = "Αγαπημένα";
 
 /* iPad menu bar command */
 "menuFeedback" = "Κοινοποίηση σχολίου";
@@ -3335,7 +3461,13 @@
 "menuForward" = "Εμπρός";
 
 /* iPad menu bar command */
+"menuHideBookmarks" = "Απόκρυψη σελιδοδεικτών";
+
+/* iPad menu bar command */
 "menuHideDownloads" = "Απόκρυψη λήψεων";
+
+/* iPad menu bar command */
+"menuHideDuckAIButton" = "Απόκρυψη του κουμπιού Duck.ai";
 
 /* iPad menu bar command */
 "menuHidePasswords" = "Απόκρυψη κωδικών πρόσβασης";
@@ -3344,13 +3476,31 @@
 "menuHideTabs" = "Απόκρυψη καρτελών";
 
 /* iPad menu bar command */
+"menuImportBookmarks" = "Εισαγωγή σελιδοδεικτών…";
+
+/* iPad menu bar command */
+"menuImportBookmarksAndPasswords" = "Εισαγωγή σελιδοδεικτών και κωδικών πρόσβασης…";
+
+/* iPad menu bar command */
 "menuLastTab" = "Τελευταία καρτέλα";
+
+/* iPad Duck.ai menu bar command */
+"menuNewChat" = "Νέα συνομιλία";
+
+/* iPad Duck.ai menu bar command */
+"menuNewImageChat" = "Νέα συνομιλία με εικόνα";
 
 /* iPad menu bar command */
 "menuNewTabOnRight" = "Νέα καρτέλα στα δεξιά";
 
+/* iPad Duck.ai menu bar command */
+"menuNewVoiceChat" = "Νέα φωνητική συνομιλία";
+
 /* iPad menu bar command */
 "menuNextTab" = "Εμφάνιση επόμενης καρτέλας";
+
+/* iPad Duck.ai menu bar command */
+"menuOpenDuckAI" = "Άνοιγμα Duck.ai";
 
 /* iPad menu bar command */
 "menuOpenLocation" = "Άνοιγμα τοποθεσίας...";
@@ -3361,14 +3511,26 @@
 /* iPad menu bar command */
 "menuPrint" = "Εκτύπωση...";
 
+/* iPad Duck.ai menu bar section header */
+"menuRecentChats" = "Πρόσφατες συνομιλίες";
+
 /* iPad menu bar command selecting a numbered tab */
 "menuSelectTab" = "Επιλογή καρτέλας %d";
+
+/* iPad menu bar command */
+"menuSetDefaultBrowser" = "Ορισμός του DuckDuckGo ως προεπιλεγμένου προγράμματος περιήγησης…";
 
 /* iPad menu bar command */
 "menuSettings" = "Ρυθμίσεις DuckDuckGo...";
 
 /* iPad menu bar command */
+"menuShowBookmarks" = "Εμφάνιση σελιδοδεικτών";
+
+/* iPad menu bar command */
 "menuShowDownloads" = "Εμφάνιση λήψεων";
+
+/* iPad menu bar command */
+"menuShowDuckAIButton" = "Εμφάνιση του κουμπιού Duck.ai";
 
 /* iPad menu bar command */
 "menuShowPasswords" = "Εμφάνιση κωδικών πρόσβασης";
@@ -3706,6 +3868,90 @@
 /* Title for the Strict Routing setting item. */
 "network.protection.vpn.strict.routing.setting.title" = "Επιβολή Αυστηρής δρομολόγησης (συνιστάται)";
 
+/* Opens the app settings from the New Tab Page customization sheet */
+"new-tab-page.customization.all-settings" = "Όλες οι ρυθμίσεις";
+
+/* Setting to always show the keyboard when a new tab is opened */
+"new-tab-page.customization.always-show-keyboard" = "Να εμφανίζεται πάντα το πληκτρολόγιο";
+
+/* Name of the New Tab Page section showing messages, in the customization sheet */
+"new-tab-page.customization.messages" = "Μηνύματα";
+
+/* Title of the sheet for customizing the New Tab Page */
+"new-tab-page.customization.title" = "Προσαρμόστε την Έναρξή σας";
+
+/* Dax greeting on the New Tab page. Refers to private AI chat. */
+"new-tab-page.dax-greeting.askMe" = "Ρώτησέ με ό,τι θέλεις.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.duckDuckHello" = "Duck Duck, γεια.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.friday" = "Κοντεύει το Σαββατοκύριακο.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.goodbyeAds" = "Αντίο στις ανατριχιαστικές διαφημίσεις!";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.heyThere" = "Γεια σου.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.howCanIHelp" = "Πώς μπορώ να σε βοηθήσω σήμερα;";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.letsDoThis" = "Ας το κάνουμε!";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.letsExplore" = "Πάμε να εξερευνήσουμε.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.monday" = "Είναι Δευτέρα. Ας το κάνουμε.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.morning" = "Καλά ξυπνητούρια.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.newDayNewTabs" = "Νέα μέρα, νέες καρτέλες.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.niceToSeeYou" = "Χαίρομαι που σε βλέπω.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.nightOwl" = "Η αλήθεια είναι πως είμαι νυχτοπούλι.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.readyToSearchPrivately" = "Είσαι έτοιμος να κάνεις ιδιωτική αναζήτηση;";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.readyWhenYouAre" = "Έτοιμος όποτε είσαι κι εσύ.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.stillAwake" = "Δεν κοιμάμαι ποτέ.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.whatsOnYourMind" = "Τι έχεις στο μυαλό σου;";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.whereShouldWeStart" = "Από πού να ξεκινήσουμε;";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.whereToToday" = "Πού πάμε σήμερα;";
+
+/* Name field placeholder in the Add Favorite sheet */
+"new-tab-page.favorite.name" = "Όνομα";
+
+/* Error shown when saving a favorite fails */
+"new-tab-page.favorite.save-failed" = "Δεν ήταν δυνατή η αποθήκευση του αγαπημένου.";
+
+/* URL field placeholder in the Add Favorite sheet */
+"new-tab-page.favorite.url" = "Διεύθυνση URL";
+
+/* Button that expands the New Tab Page favorites grid to show all favorites */
+"new-tab-page.favorites.see-all" = "Προβολή όλων";
+
+/* Button that collapses the New Tab Page favorites grid to show fewer favorites */
+"new-tab-page.favorites.see-less" = "Προβολή λιγότερων";
+
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Επιβεβαίωση";
 
@@ -3784,8 +4030,41 @@
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Το κατάλαβα";
 
+/* The message of the onboarding dialog popup that promotes adding the DDG browser icon to the dock. */
+"onboarding.addToDock.promo.intro.message" = "Θα είμαι πρόχειρο για γρήγορη πρόσβαση.";
+
 /* Button to change the default browser */
 "onboarding.browsers.cta" = "Επιλέξτε το πρόγραμμα περιήγησής σας";
+
+/* Label for the option to set up the app to block ads and pop-ups. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.blockAds" = "Αποκλεισμός διαφημίσεων\nκαι αναδυόμενων παραθύρων";
+
+/* Label for the option to set up the app for private searching and browsing. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.browsePrivately" = "Αναζήτηση και\nιδιωτική περιήγηση";
+
+/* Label for the option to set up the app for private AI chat. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.chatWithAI" = "Ιδιωτική συνομιλία\nμε ΤΝ";
+
+/* Heading shown above the browser comparison chart during onboarding for users who chose to search and browse privately or to chat with AI privately. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.comparison.title-generic" = "Είσαι στο σωστό μέρος!\nΟι προστασίες ενεργοποιήθηκαν.";
+
+/* Heading shown above the browser comparison chart during onboarding for users who chose to block ads and pop-ups. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.comparison.title-no-ads" = "Είσαι στο σωστό μέρος!\nΟ αποκλεισμός διαφημίσεων ενεργοποιήθηκε.";
+
+/* Heading shown above the browser comparison chart during onboarding for users who chose to disable AI features. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.comparison.title-no-ai" = "Είσαι στο σωστό μέρος!\nΟι λειτουργίες ΤΝ είναι απενεργοποιημένες.";
+
+/* Button to continue to the next onboarding screen after choosing a reason. */
+"onboarding.downloadReason.cta" = "Επόμενο";
+
+/* Subtitle of the onboarding screen asking why the user downloaded the app. */
+"onboarding.downloadReason.message" = "Επίλεξε αυτό που σε ενδιαφέρει περισσότερο και θα ξεκινήσουμε από εκεί.";
+
+/* Label for the option to set up the app without AI features in search results. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.removeAI" = "Απενεργοποίηση\nλειτουργιών ΤΝ";
+
+/* Title of the onboarding screen asking why the user downloaded the app. */
+"onboarding.downloadReason.title" = "Προσάρμοσε τις ρυθμίσεις όπως θέλεις";
 
 /* Message in the onboarding dialog popup that promotes adding the DuckDuckGo browser icon to the iPhone dock, shown during the Duck.ai onboarding flow. */
 "onboarding.duckai.addToDock.promo.message" = "Θα είμαι πρόχειρο για όλες τις καθημερινές σου συνομιλίες και περιηγήσεις με τεχνητή νοημοσύνη.";
@@ -3814,8 +4093,8 @@
 /* Title of the dialog in the Duck.ai onboarding flow asking the user if they want to set DuckDuckGo as their default browser. */
 "onboarding.duckai.browser.title" = "Θέλεις να ορίσεις το DuckDuckGo ως το προεπιλεγμένο πρόγραμμα περιήγησής σου;";
 
-/* Message of the last screen of the onboarding to the browser app for the Duck.ai flow. 'Duck.ai' is a brand name and should not be translated. '[[chat_icon]]' is a placeholder and should not be translated. */
-"onboarding.duckai.contextual.end-of-journey.message" = "Ξεκίνα μια ιδιωτική συνομιλία με τεχνητή νοημοσύνη (AI) με το Duck.ai ή πέρνα σε Αναζήτηση για προστατευμένη περιήγηση.\n\nΜπορείς να χρησιμοποιήσεις το Duck.ai από οπουδήποτε βλέπεις το εικονίδιο συνομιλίας [[chat_icon]]";
+/* Message of the last screen of the onboarding to the browser app for the Duck.ai flow. */
+"onboarding.duckai.contextual.end-of-journey.message" = "Αρχίστε μια ιδιωτική συνομιλία με τεχνητή νοημοσύνη με το Duck.ai ή αλλάξτε στην Αναζήτηση για προστατευμένη περιήγηση.";
 
 /* Body text of the subscription promo shown at the end of the Duck.ai onboarding flow. Describes the paid Duck.ai subscription. 'GPT', 'Claude' are brand names and should not be translated. */
 "onboarding.duckai.contextual.subscription.message" = "Προσφέρουμε επίσης μια συνδρομή επί πληρωμή με προηγμένα μοντέλα τεχνητής νοημοσύνης με υψηλότερα όρια συνομιλίας από τα GPT και Claude, ένα ασφαλές VPN και πολλά άλλα.";
@@ -3940,6 +4219,84 @@
 /* Button to skip the onboarding process */
 "onboarding.intro.cta.skip" = "Έχω ξαναβρεθεί εδώ";
 
+/* Subtitle for the accept-other-cookies option on the onboarding ad-blocking personalization screen. */
+"onboarding.personalization.adBlocking.acceptOtherCookies.subtitle" = "Γίνεται απόκρυψη περισσότερων αναδυόμενων παραθύρων με αποδοχή cookie που δεν μπορούν να απορριφθούν";
+
+/* Title for the accept-other-cookies option on the onboarding ad-blocking personalization screen. */
+"onboarding.personalization.adBlocking.acceptOtherCookies.title" = "Αποδοχή ορισμένων cookie";
+
+/* Button to continue to the next onboarding screen from the ad-blocking personalization screen. */
+"onboarding.personalization.adBlocking.cta" = "Επόμενο";
+
+/* Footer text shown above the button on the ad-blocking personalization screen, reassuring the user the choices can be changed later. */
+"onboarding.personalization.adBlocking.footer" = "Μπορείς πάντα να το αλλάξεις αργότερα από τις Ρυθμίσεις.";
+
+/* Subtitle for the reject-optional-cookies option on the onboarding ad-blocking personalization screen. */
+"onboarding.personalization.adBlocking.rejectOptionalCookies.subtitle" = "Μεγιστοποιεί την ιδιωτικότητά σου και κλείνει τα αναδυόμενα παράθυρα για τα cookie";
+
+/* Title for the reject-optional-cookies option on the onboarding ad-blocking personalization screen. */
+"onboarding.personalization.adBlocking.rejectOptionalCookies.title" = "Απόρριψη προαιρετικών cookie";
+
+/* Title of the onboarding ad-blocking personalization screen. */
+"onboarding.personalization.adBlocking.title" = "Το διαδίκτυο, χωρίς τη βαβούρα.";
+
+/* Title for the YouTube ad blocking option on the onboarding ad-blocking personalization screen. 'YouTube' is a brand name and should not be translated. */
+"onboarding.personalization.adBlocking.youTubeAdBlocking.title" = "Απόκλεισε τις διαφημίσεις βίντεο στο YouTube";
+
+/* Primary button to open new tabs with AI chat on the onboarding address bar toggle mode personalization screen. */
+"onboarding.personalization.addressBarToggle.cta.primary" = "Άνοιγμα καρτελών με συνομιλία ΤΝ";
+
+/* Secondary button to dismiss the onboarding address bar toggle mode personalization screen. */
+"onboarding.personalization.addressBarToggle.cta.secondary" = "Όχι τώρα";
+
+/* Footer of the onboarding address bar toggle mode personalization screen. 'Search' refers to the Search option of the address bar Search/Duck.ai toggle and should match its translation. */
+"onboarding.personalization.addressBarToggle.footer" = "Μπορείς να μεταβείς στην Αναζήτηση με ένα πάτημα";
+
+/* Title of the onboarding address bar toggle mode personalization screen. */
+"onboarding.personalization.addressBarToggle.title" = "Θέλεις να ανοίγουν οι νέες καρτέλες με συνομιλία ΤΝ;";
+
+/* Button to continue to the next onboarding screen from the AI model personalization screen. */
+"onboarding.personalization.aiModel.cta" = "Επόμενο";
+
+/* Message of the onboarding AI model personalization screen. Duck.ai is a brand name and should not be translated */
+"onboarding.personalization.aiModel.message" = "Με το Duck.ai, μπορείς να αλλάζεις όποτε θέλεις.";
+
+/* Title of the onboarding AI model personalization screen. */
+"onboarding.personalization.aiModel.title" = "Διάλεξε ένα μοντέλο ΤΝ για να δοκιμάσεις πρώτο";
+
+/* Button to continue to the next onboarding screen from the AI search personalization screen. */
+"onboarding.personalization.aiSearch.cta" = "Επόμενο";
+
+/* Subtitle for the hide AI-generated images option on the onboarding AI search personalization screen. */
+"onboarding.personalization.aiSearch.hideAIGeneratedImages.subtitle" = "Απόκλεισε γνωστούς ιστότοπους με απατηλό περιεχόμενο ΤΝ από τα αποτελέσματα αναζήτησης εικόνων";
+
+/* Title for the hide AI-generated images option on the onboarding AI search personalization screen. */
+"onboarding.personalization.aiSearch.hideAIGeneratedImages.title" = "Απόκρυψη εικόνων που δημιουργήθηκαν με ΤΝ";
+
+/* Subtitle for the Search Assist option on the onboarding AI search personalization screen. */
+"onboarding.personalization.aiSearch.searchAssist.subtitle" = "Συμπερίλαβε απαντήσεις που δημιουργούνται με ΤΝ στα αποτελέσματα αναζήτησης";
+
+/* Title for the Search Assist option on the onboarding AI search personalization screen. 'Search Assist' is a DuckDuckGo product name and should not be translated. */
+"onboarding.personalization.aiSearch.searchAssist.title" = "Search Assist";
+
+/* Title of the onboarding AI search personalization screen. */
+"onboarding.personalization.aiSearch.title" = "Αναζήτηση χωρίς ΤΝ";
+
+/* Primary button to turn Duck.ai on from the onboarding Duck.ai enabled personalization screen. 'Duck.ai' is a brand name and should not be translated. */
+"onboarding.personalization.duckAIEnabled.cta.primary" = "Ενεργοποίηση Duck.ai";
+
+/* Secondary button to keep Duck.ai off from the onboarding Duck.ai enabled personalization screen. 'Duck.ai' is a brand name and should not be translated. */
+"onboarding.personalization.duckAIEnabled.cta.secondary" = "Κράτησε το Duck.ai απενεργοποιημένο";
+
+/* Message of the onboarding Duck.ai enabled personalization screen. 'Duck.ai' is a brand name and should not be translated. */
+"onboarding.personalization.duckAIEnabled.message" = "Στο Duck.ai, οι συνομιλίες σου ανωνυμοποιούνται από εμάς και δεν χρησιμοποιούνται ποτέ για την εκπαίδευση ΤΝ.";
+
+/* Title of the onboarding Duck.ai enabled personalization screen. */
+"onboarding.personalization.duckAIEnabled.title" = "Θέλεις να έχεις την επιλογή να συνομιλείς ιδιωτικά με δημοφιλή μοντέλα ΤΝ;";
+
+/* Title for the private search Duck.ai query onboarding screen. */
+"onboarding.personalization.duckAIQuery.privateSearch.title" = "Τώρα, δοκίμασε την ιδιωτική αναζήτηση!";
+
 /* Button on the Privacy Pro promotion onboarding step. Tapping the button navigates to the Privacy Pro paywall. */
 "onboarding.privacypro.promo.buttons.learnMore" = "Μάθετε περισσότερα";
 
@@ -3996,15 +4353,6 @@
 
 /* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
 "onboarding.subscription.promo.buttons.tryItForFree" = "Δοκιμάστε το δωρεάν!";
-
-/* Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold). */
-"onboarding.subscription.promo.message" = "Το DuckDuckGo έχει επίσης ένα ασφαλές %1$@, διαθέσιμο με μια %2$@.";
-
-/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
-"onboarding.subscription.promo.message.optional-subscription-bold" = "προαιρετική επί πληρωμή συνδρομή";
-
-/* Bold text 'VPN + 2 more premium protections'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag. */
-"onboarding.subscription.promo.message.vpn-two-more-bold" = "VPN + 2 επιπλέον προστασίες premium";
 
 /* No comment provided by engineer. */
 "onboarding.widgets.continueButton" = "Προσθήκη γραφικού στοιχείου";
@@ -4180,11 +4528,17 @@
 /* Description of too many requests error when syncing. */
 "prefrences.sync.too-many-requests.description" = "Το Sync & Backup είναι προσωρινά μη διαθέσιμο.";
 
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "Ζητήστε να γίνει Fireproof σε ιστότοπους κατά τη σύνδεση";
+
 /* No comment provided by engineer. */
 "preserveLogins.domain.list.footer" = "Οι ιστότοποι βασίζονται σε cookies για να σας διατηρούν συνδεδεμένους. Όταν ενεργοποιείτε τη διαγραφή δραστηριότητας για έναν ιστότοπο, τα cookies δεν διαγράφονται και παραμένετε συνδεδεμένοι, ακόμα και μετά τη χρήση του Κουμπιού διαγραφής δραστηριότητας. Εξακολουθούμε να αποκλείουμε εφαρμογές παρακολούθησης από τρίτους που υπάρχουν σε ιστότοπους με διαγραφή δραστηριότητας.";
 
 /* Section header above Fireproofed websites list */
 "preserveLogins.domain.list.title" = "Ασφαλείς ιστότοποι";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "Δεν υπάρχουν ακόμα Fireproof ιστότοποι";
 
 /* Alert message explaining to users that the benefit of fireproofing a site is that they will be kept signed in */
 "preserveLogins.fireproof.message" = "Ενεργοποιώντας τη διαγραφή δραστηριότητας για αυτόν τον ιστότοπο, θα παραμείνετε συνδεδεμένοι μετά τη χρήση του Κουμπιού διαγραφής δραστηριότητας.";
@@ -4215,6 +4569,9 @@
 
 /* Confirmation button in alert */
 "preserveLogins.remove.all.ok" = "Εντάξει";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Κατάργηση όλων των Fireproof ιστότοπων";
 
 /* No comment provided by engineer. */
 "Previews" = "Προεπισκοπήσεις";
@@ -4518,6 +4875,12 @@
 
 /* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
 "settings.aifeatures.hide.ai.generated.images.subtitle" = "Αποκλείει γνωστούς ιστότοπους με απατηλό περιεχόμενο τεχνητής νοημοσύνης από τα αποτελέσματα αναζήτησης εικόνων. [Μάθε περισσότερα](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
+
+/* Settings screen description for the Duck.ai keyboard animation toggle */
+"settings.aifeatures.keyboard.animation.subtitle" = "Εμφάνιση μιας κινούμενης εικόνας γύρω από το πληκτρολόγιο όταν αλλάζετε ή πληκτρολογείτε σε Duck.ai.";
+
+/* Settings screen toggle title for the Duck.ai keyboard animation */
+"settings.aifeatures.keyboard.animation.title" = "Κινούμενη εικόνα πληκτρολογίου Duck.ai";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Πάντα σε λειτουργία";
@@ -4907,12 +5270,6 @@
 "settings.subscription.DBP.title" = "Personal Information Removal";
 
 /* Privacy pro description subtitle in settings */
-"settings.subscription.description.no.duck.ai.row" = "Οι συνδρομητές λαμβάνουν το VPN μας και τo Identity Theft Restoration.";
-
-/* Privacy pro description subtitle in settings */
-"settings.subscription.description.no.duck.ai.us" = "Οι συνδρομητές αποκτούν το VPN, το Personal Information Removal και το Identity Theft Restoration.";
-
-/* Privacy pro description subtitle in settings */
 "settings.subscription.description.row" = "Οι συνδρομητές αποκτούν το VPN μας, προηγμένα μοντέλα τεχνητής νοημοσύνης στο Duck.ai και το Identity Theft Restoration.";
 
 /* Privacy pro description subtitle in settings */
@@ -4941,9 +5298,6 @@
 
 /* Call to action title for Privacy Pro settings */
 "settings.subscription.subscribe.title" = "Ασφαλίστε το Wi-Fi σας και συνομιλήστε ιδιωτικά με προηγμένα μοντέλα τεχνητής νοημοσύνης";
-
-/* Call to action title for Privacy Pro settings */
-"settings.subscription.subscribe.title.no.ai.chat" = "Ασφαλίστε το Wi-Fi σας και προστατέψτε την ταυτότητά σας";
 
 /* Try DuckDuckGo Subscription Free button text */
 "settings.subscription.try.free.button" = "Δοκιμάστε το δωρεάν";
@@ -5170,9 +5524,6 @@
 /* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
 "subscription.cancel.pending.downgrade.banner.caption" = "Το πρόγραμμά σας θα υποβαθμιστεί σε %1$@ στις %2$@.";
 
-/* Change plan or cancel title */
-"subscription.change.plan" = "Ενημέρωση προγράμματος ή ακύρωση";
-
 /* Navigation Button for closing subscription view */
 "subscription.close" = "Κλείσιμο";
 
@@ -5206,6 +5557,9 @@
 /* Alert content for not found subscription */
 "subscription.expired.alert.message" = "Η συνδρομή που συνδέεται με αυτόν τον Λογαριασμό Apple δεν είναι πλέον ενεργή.";
 
+/* Subtitle in header when the subscription has been cancelled but is still active until it expires */
+"subscription.expiring" = "Λήγει";
+
 /* FAQ Button */
 "subscription.faq" = "Συχνές ερωτήσεις και υποστήριξη";
 
@@ -5235,6 +5589,9 @@
 
 /* Header for the subscription section */
 "subscription.manage.title" = "Συνδρομή";
+
+/* Subscription status shown after the user withdrew from the subscription contract */
+"subscription.not.subscribed" = "Δεν έχει γίνει εγγραφή";
 
 /* Alert content for not found subscription */
 "subscription.notFound.alert.message" = "Δεν υπάρχει συνδρομή που να συνδέεται με αυτόν τον Λογαριασμό Apple.";
@@ -5277,6 +5634,9 @@
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Επαναφορά συνδρομής...";
+
+/* Progress view title while withdrawing from the subscription contract */
+"subscription.progress.view.withdraw.in.progress" = "Υπαναχώρηση σε εξέλιξη…";
 
 /* Dismiss button on the reinstaller subscription promo. */
 "subscription.promo.reinstaller.buttons.notNow" = "Όχι τώρα";
@@ -5383,6 +5743,45 @@
 /* View All Plans button to see available subscription tiers */
 "subscription.view.all.plans" = "Δείτε όλα τα προγράμματα";
 
+/* Button that confirms withdrawal from the subscription contract */
+"subscription.withdraw.confirm.button" = "Επιβεβαίωση υπαναχώρησης";
+
+/* Duck.ai item in the list of features that stop working after withdrawing from the subscription contract, e.g. VPN, Personal Information Removal and advanced Duck.ai models */
+"subscription.withdraw.confirm.feature.advanced.duckai" = "προηγμένα μοντέλα Duck.ai";
+
+/* Second paragraph of the alert confirming withdrawal from the subscription contract. Parameter is a localized list of features, e.g. VPN, Personal Information Removal and advanced Duck.ai models. */
+"subscription.withdraw.confirm.features.message" = "Η/Οι λειτουργία(-ες) «%@» σταματούν να λειτουργούν μόλις επιβεβαιώσετε.";
+
+/* Message of the alert confirming withdrawal from the subscription contract. Parameters are the tier name (e.g. Plus) and the refund amount with currency. */
+"subscription.withdraw.confirm.message" = "Η συνδρομή σας στο %1$@ θα λήξει αμέσως και θα σας επιστραφούν τα χρήματα %2$@ στην αρχική μέθοδο πληρωμής σας εντός 14 ημερών.";
+
+/* Message of the alert confirming withdrawal from the subscription contract, used when the refund amount is unknown. Parameter is the tier name (e.g. Plus). */
+"subscription.withdraw.confirm.message.no.amount" = "Η συνδρομή σας στο %@ θα λήξει αμέσως και θα λάβετε πλήρη επιστροφή χρημάτων στην αρχική μέθοδο πληρωμής σας εντός 14 ημερών.";
+
+/* Title of the alert confirming withdrawal from the subscription contract */
+"subscription.withdraw.confirm.title" = "Θέλετε να υπαναχωρήσετε από τη συνδρομή σας;";
+
+/* Button that opens the help page to complete a failed subscription withdrawal */
+"subscription.withdraw.error.button" = "Επισκεφθείτε τη σελίδα βοήθειας";
+
+/* Message of the alert shown when withdrawing from the subscription contract fails */
+"subscription.withdraw.error.message" = "Δεν μπορέσαμε να επεξεργαστούμε αυτόματα την υπαναχώρησή σας. Επισκεφθείτε τη σελίδα βοήθειάς μας για να ολοκληρώσετε την υπαναχώρησή σας.";
+
+/* Action title that starts withdrawing from the subscription contract with a full refund */
+"subscription.withdraw.from.contract" = "Υπαναχώρηση από τη σύμβαση";
+
+/* Subtitle of the Withdraw from Contract action. Parameter is the last date the user can withdraw. */
+"subscription.withdraw.from.contract.subtitle" = "Μπορείτε να υπαναχωρήσετε και να λάβετε πλήρη επιστροφή χρημάτων έως %@";
+
+/* Button that dismisses the withdrawal confirmation and keeps the subscription */
+"subscription.withdraw.keep.button" = "Διατήρηση συνδρομής";
+
+/* Confirmation shown after withdrawing from the subscription contract. Parameter is the withdrawal date. */
+"subscription.withdrawn.info" = "Υπαναχωρήσατε %@.";
+
+/* Shown below the withdrawal confirmation. Parameter is the refunded amount with currency. */
+"subscription.withdrawn.refund.info" = "Η επιστροφή χρημάτων σας ύψους %@ διεκπεραιώνεται.";
+
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "Ειδοποίηση SwiftUI";
 
@@ -5404,11 +5803,29 @@
 /* Fallback device name for confirmation dialogs */
 "sync.pairing-v2.unknown-peer-name" = "η άλλη συσκευή";
 
+/* Title for a button in the Sync Promotion banner on the Bookmarks or Passwords screen that opens Sync settings to connect another device */
+"sync.promo.another-device.connect.action" = "Σύνδεση";
+
+/* Message for the Sync Promotion banner on the Bookmarks or Passwords screen, shown when Sync is on but only this device is connected */
+"sync.promo.another-device.message" = "Το Sync & Backup είναι ενεργοποιημένο σε αυτή τη συσκευή.";
+
+/* Title for a button in the Sync Promotion banner on the Bookmarks or Passwords screen that opens a screen with links to get DuckDuckGo on other platforms */
+"sync.promo.bookmarks.another-device.get-desktop-app.action" = "Λήψη εφαρμογής";
+
+/* Title for the Sync Promotion banner on the Bookmarks screen, shown when Sync is on but only this device is connected */
+"sync.promo.bookmarks.another-device.title" = "Να συγχρονιστούν και οι σελιδοδείκτες με την εφαρμογή για υπολογιστή;";
+
 /* Message for the Sync Promotion banner when user has bookmarks that can be synced */
 "sync.promo.bookmarks.message" = "Δεν απαιτείται λογαριασμός. Η κρυπτογράφηση από άκρο σε άκρο σημαίνει ότι κανείς άλλος εκτός από εσάς δεν θα μπορεί να βλέπει τους σελιδοδείκτες σας, ούτε καν εμείς.";
 
+/* Message for the redesigned Sync Promotion banner on the Bookmarks screen */
+"sync.promo.bookmarks.redesign.message" = "Κρυπτογράφηση από άκρο σε άκρο. Κανείς δεν μπορεί να δει τους σελιδοδείκτες σου, ούτε καν εμείς.";
+
 /* Title for the Sync Promotion banner */
 "sync.promo.bookmarks.title" = "Συγχρονισμός και δημιουργία αντιγράφων ασφαλείας των σελιδοδεικτών σας";
+
+/* Accessibility label for the close button on the Sync Promotion banner */
+"sync.promo.close.accessibility.label" = "Απόρριψη προώθησης συγχρονισμού";
 
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Ρύθμιση συγχρονισμού";
@@ -5422,11 +5839,20 @@
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Όχι, ευχαριστώ";
 
+/* Title for the Sync Promotion banner on the Passwords screen, shown when Sync is on but only this device is connected */
+"sync.promo.passwords.another-device.title" = "Να συγχρονιστούν και οι κωδικοί πρόσβασης με την εφαρμογή για υπολογιστή;";
+
 /* Message for the Sync Promotion banner when user has passwords that can be synced */
 "sync.promo.passwords.message" = "Δεν απαιτείται λογαριασμός. Η κρυπτογράφηση από άκρο σε άκρο σημαίνει ότι κανείς άλλος εκτός από εσάς δεν θα μπορεί να βλέπει τους κωδικούς πρόσβασής σας, ούτε καν εμείς.";
 
+/* Message for the redesigned Sync Promotion banner on the Passwords screen */
+"sync.promo.passwords.redesign.message" = "Κρυπτογράφηση από άκρο σε άκρο. Κανείς δεν μπορεί να δει τους κωδικούς πρόσβασής σας, ούτε καν εμείς.";
+
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Συγχρονισμός και δημιουργία αντιγράφων ασφαλείας των κωδικών πρόσβασής σας";
+
+/* Title for the button in the redesigned Sync Promotion banner and the Data Import summary Sync card that opens Sync settings and starts setting up Sync */
+"sync.promo.redesign.confirm.action" = "Έναρξη συγχρονισμού";
 
 /* Button title to start backup */
 "sync.recovery.alternative.prompt.backup.button" = "Συγχρονισμός και δημιουργία αντιγράφων ασφαλείας σε αυτήν τη συσκευή";
@@ -5547,6 +5973,12 @@
 
 /* Bookmark all tabs menu item */
 "tab.switcher.bookmarkAll" = "Προσθήκη σελιδοδείκτη σε όλες τις καρτέλες";
+
+/* Menu item that switches the tab switcher to a grid layout */
+"tab.switcher.grid.view.menu.title" = "Πλέγμα";
+
+/* Menu item that switches the tab switcher to a list layout */
+"tab.switcher.list.view.menu.title" = "Λίστα";
 
 /* Action button to hide tracker count banner */
 "tab.switcher.tracker.count.hide.action" = "Απόκρυψη";

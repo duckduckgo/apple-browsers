@@ -343,6 +343,12 @@
 /* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
 "aichat.attachment.unsupported.file.type.single" = "Šis failo tipas nepalaikomas. Pridėkite %@.";
 
+/* accessibility label for closing the tab attachment picker without applying changes */
+"aichat.choose-tabs.close.accessibility-label" = "Uždaryti";
+
+/* accessibility label for applying the tab attachment selection */
+"aichat.choose-tabs.confirm.accessibility-label" = "Pridėti pasirinktas korteles";
+
 /* empty state shown when no tabs match the search query */
 "aichat.choose-tabs.no-matches" = "Nėra atitinkančių kortelių";
 
@@ -367,8 +373,17 @@
 /* Caption shown below the input while editing a message, warning that submitting the edit replaces the existing response */
 "aichat.edit.replaceResponseDisclaimer" = "Redaguojant atsakymas bus pakeistas nauju.";
 
+/* Accessibility label for the close-tab button in the Duck.ai tab header */
+"aichat.header.closeTab.a11y" = "Uždaryti kortelę";
+
 /* Title shown in the Duck.ai tab header while editing a previously sent message */
 "aichat.header.editMessage" = "Redaguoti žinutę";
+
+/* Label shown in the Duck.ai tab header for free plan users */
+"aichat.header.freePlan" = "Nemokamas planas";
+
+/* Label shown in the Duck.ai tab header for paid subscribers */
+"aichat.header.paidTitle" = "Duck.ai";
 
 /* Accessibility label for the Plus (+) button in the Duck.ai tab header that opens a menu of new-chat and new-tab actions */
 "aichat.header.plusMenu.a11y" = "Naujas";
@@ -403,6 +418,12 @@
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "Naujas balso pokalbis";
 
+/* Accessibility label for the chat-list / recent-chats button in the Duck.ai tab header */
+"aichat.header.recentChats.a11y" = "Pastarieji pokalbiai";
+
+/* Label shown in the Duck.ai tab header prompting free users to upgrade */
+"aichat.header.upgrade" = "Atnaujinti";
+
 /* Error toast shown when a Duck.ai chat download fails and nothing was saved. */
 "aiChat.history.download.failed.message" = "Nepavyko atsisiųsti. Bandyk dar kartą.";
 
@@ -411,6 +432,9 @@
 
 /* Title shown when the user has no Duck.ai chat history yet. */
 "aiChat.history.emptyState.title" = "Nėra naujausių pokalbių";
+
+/* Accessibility label for the fire button that deletes every Duck.ai chat from the chats list. */
+"aiChat.history.fireAll.a11y" = "Ištrinti visus pokalbius";
 
 /* Message of the alert shown when Duck.ai chat history fails to load. */
 "aiChat.history.loadError.message" = "Įkeliant „Duck.ai“ pokalbius įvyko klaida. Bandykite dar kartą vėliau.";
@@ -459,6 +483,12 @@
 
 /* Multi-select toolbar button that deletes all chats when none are individually selected. */
 "aiChat.history.selection.deleteAll" = "Ištrinti viską";
+
+/* Accessibility label for the close button of the iPad Duck.ai chats sidebar. */
+"aiChat.history.sidebar.hide.a11y" = "Slėpti pokalbius";
+
+/* Accessibility label for the iPad Duck.ai button that opens the chats sidebar. */
+"aiChat.history.sidebar.show.a11y" = "Rodyti pokalbius";
 
 /* Accessibility label for the delete action revealed by swiping a Duck.ai chat row. */
 "aiChat.history.swipe.delete.a11y" = "Trinti pokalbį";
@@ -567,6 +597,27 @@
 
 /* Link inside the Duck.ai Terms of Service disclaimer that opens the Duck.ai Privacy Policy and Terms of Service page */
 "aichat.termsOfService.disclaimer.link" = "Privatumo politika ir paslaugų teikimo sąlygos";
+
+/* Accessibility label for the attachment button in the Duck.ai native input toolbar */
+"aichat.toolbar.attach.button.accessibility.label" = "Prisegti";
+
+/* Accessibility label for the reasoning mode button in the Duck.ai native input toolbar */
+"aichat.toolbar.reasoning.button.accessibility.label" = "Samprotavimo režimas";
+
+/* Accessibility label for the return/new-line button in the Duck.ai native input toolbar */
+"aichat.toolbar.returnkey.button.accessibility.label" = "Įterpti naują eilutę";
+
+/* Accessibility label for the stop generating button in the Duck.ai native input toolbar */
+"aichat.toolbar.stop.button.accessibility.label" = "Stabdyti generavimą";
+
+/* Accessibility label for the submit button in the Duck.ai native input toolbar */
+"aichat.toolbar.submit.button.accessibility.label" = "Pateikti";
+
+/* Accessibility label for the tools button in the unified input toolbar */
+"aichat.toolbar.tools.button.accessibility.label" = "Priemonės";
+
+/* Accessibility label for the button that clears the selected Duck.ai tool in unified input */
+"aichat.toolbar.tools.clear.button.accessibility.label" = "Išvalyti pasirinktą priemonę";
 
 /* Subtitle for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.subtitle" = "Nustatykite toną, ilgį ir elgseną";
@@ -1579,6 +1630,21 @@
 /* Parameter is domain name (string) */
 "contextual.onboarding.browsing.one.tracker" = "*%1$@* bandė jus sekti čia. Aš juos užblokavau!\n\n☝️ Norėdami gauti daugiau informacijos, bakstelėkite skydą.";
 
+/* Body of the alternative onboarding end-of-journey dialog promoting Duck.ai. */
+"contextual.onboarding.eoj-try-ai.message" = "Pokalbiai nuasmeninami, paskyros nereikia. Be to, tai nemokama!";
+
+/* Primary button on the alternative onboarding end-of-journey dialog; opens Duck.ai. 'Duck.ai' is a brand name and should not be translated. */
+"contextual.onboarding.eoj-try-ai.primary-button" = "Išbandyk „Duck.ai“";
+
+/* Secondary button on the alternative onboarding end-of-journey dialog; skips to the new tab page. */
+"contextual.onboarding.eoj-try-ai.secondary-button" = "Praleisk";
+
+/* Title of the alternative onboarding end-of-journey dialog promoting Duck.ai. 'Duck.ai' is a brand name and should not be translated. */
+"contextual.onboarding.eoj-try-ai.title" = "Bendrauk privačiai su populiariais DI modeliais per „Duck.ai“";
+
+/* Body of the onboarding end-of-journey dialog for users who chose the AI-chat download reason. 'Search' refers to the Search option of the address bar Search/Duck.ai toggle and should match its translation. 'Duck.ai' is a brand name and should not be translated. */
+"contextual.onboarding.eoj.private-ai-chat.message" = "Pradėk privatų DI pokalbį su „Duck.ai“ arba perjunk į Paiešką, kad naršytum saugiai.";
+
 /* Button on the last screen of the onboarding, it will dismiss the onboarding screen. */
 "contextual.onboarding.final-screen.button" = "Duok penkis!";
 
@@ -2080,6 +2146,18 @@
 /* Navigation bar title for Duck.ai Control Center education screen */
 "duckai.control.center.education.navBar.title" = "Pridėkite „Duck.ai“ balso sparčiuosius klavišus į savo valdymo centrą";
 
+/* Button that declines using the on-device model. Duck.ai uses its cloud model instead. */
+"duckai.local-model-access.no-thanks" = "Ne, ačiū";
+
+/* Body of the pop-up asking whether Duck.ai may use the on-device model. %@ is the model's name, for example Apple Intelligence. */
+"duckai.local-model-access.prompt.message" = "Naudoja modelį „%@“ tam tikroms užduotims, pvz., puslapio turinio santraukoms. Pokalbis lieka tik jūsų įrenginyje ir sunaudoja mažiau jūsų „ Duck.ai“ plano išteklių.";
+
+/* Title of the pop-up asking whether Duck.ai may use the on-device model. */
+"duckai.local-model-access.prompt.title" = "„Duck.ai“ nori naudoti įrenginyje veikiantį modelį, kad užtikrintų didesnį privatumą";
+
+/* Button that lets Duck.ai use the on-device model. */
+"duckai.local-model-access.turn-on" = "Įjungti";
+
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "„DuckDuckGo“ DI funkcijos yra privačios ir neprivalomos. Tavo duomenys nenaudojami dirbtinio intelekto mokymui.";
 
@@ -2145,6 +2223,24 @@
 
 /* Used in the link to learn more about the AI features. */
 "duckai.settings.learn.more" = "Sužinoti daugiau";
+
+/* Footer of the On-Device Model section in AI Features settings. It explains the toggle above it. */
+"duckai.settings.local-model-access.footer" = "Įrenginyje veikiantys modeliai padeda jame išlaikyti puslapio turinį ir sunaudoti mažiau jūsų plano išteklių. Įrenginyje veikiantis modelis bus naudojamas tokiems veiksmams kaip „Apibendrinti puslapį“.";
+
+/* Section title in AI Features settings for on-device models Duck.ai may use. */
+"duckai.settings.local-model-access.title" = "Įrenginyje veikiantis modelis";
+
+/* Message of the alert shown before turning on Apple Intelligence for Duck.ai page summaries, on iPad. */
+"duckai.settings.local-model-access.turn-on-confirmation.message.ipad" = "„Duck.ai“ naudos „Apple Intelligence“ šiame „iPad“, kad kurtų puslapių santraukas. Puslapiai apdorojami jūsų „iPad“; į debesies modelį nieko nesiunčiama, be to, sunaudojama mažiau jūsų „Duck.ai“ plano išteklių.";
+
+/* Message of the alert shown before turning on Apple Intelligence for Duck.ai page summaries, on iPhone. */
+"duckai.settings.local-model-access.turn-on-confirmation.message.iphone" = "„Duck.ai“ naudos „Apple Intelligence“ šiame „iPhone“, kad kurtų puslapių santraukas. Puslapiai apdorojami jūsų telefone „iPhone“; į debesies modelį nieko nesiunčiama, be to, sunaudojama mažiau jūsų „Duck.ai“ plano išteklių.";
+
+/* Title of the alert shown before turning on Apple Intelligence for Duck.ai page summaries. */
+"duckai.settings.local-model-access.turn-on-confirmation.title" = "Ar įjungti „Apple Intelligence“?";
+
+/* Title of the toggle in AI Features settings that lets Duck.ai use the on-device model. %@ is the model's name, for example Apple Intelligence. */
+"duckai.settings.local-model-access.use-model.title" = "Naudoti „%@“";
 
 /* Accessibility label for Duck.ai */
 "duckai.settings.title" = "Duck.ai";
@@ -2425,6 +2521,9 @@
 /* Suggested prompt submitted text: is a movie/show worth watching */
 "duckai.suggestion.worth-watching.prompt" = "Ar verta žiūrėti? Aprašyk neatskleisdamas siužeto.";
 
+/* Caption under the compose button that appears when the user pulls up past the bottom of a Duck.ai chat; releasing opens a new chat. */
+"duckai.swipe.new-chat.label" = "Naujas pokalbis";
+
 /* Generic title sent to Duck.ai for an attached text selection rather than a full web page */
 "duckai.text-selection.context-title" = "Pasirinktas tekstas";
 
@@ -2466,6 +2565,9 @@
 
 /* Text displayed when DuckPlayer is in 'Ask' mode. */
 "duckPlayer.ask.label" = "Klausti kiekvieną kartą";
+
+/* Button text to play a video in Duck Player */
+"duckplayer.floating.pill.title" = "Paleisk per „Duck Player“";
 
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Niekada";
@@ -2742,6 +2844,9 @@
 
 /* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
 "escapeHatch.returnTo.withSubtitle.accessibility.label" = "Grįžti į %1$@, %2$@";
+
+/* Button in the Return to module header that opens the tab switcher */
+"escapeHatch.showAllTabs.label" = "Rodyti visas korteles";
 
 /* Swipe action that closes the open tab referenced by the escape hatch card */
 "escapeHatch.swipeAction.closeTab" = "Uždaryti kortelę";
@@ -3024,6 +3129,9 @@
 
 /* No comment provided by engineer. */
 "feedback.websiteLoading.form.urlPlaceholder" = "Kokioje svetainėje susidūrėte su problema?";
+
+/* Clear Find in Page query */
+"findInPage.clear" = "Valyti paiešką";
 
 /* Used to indicate number of entries found and position of the currently viewed one: e.g. 1 of 10 */
 "findinpage.count" = "%1$d iš %2$d";
@@ -3320,13 +3428,31 @@
 "menuActualSize" = "Tikrasis dydis";
 
 /* iPad menu bar command */
+"menuAddToDock" = "Pridėti „DuckDuckGo“ į juostą…";
+
+/* iPad menu bar command */
+"menuAddWidget" = "Pridėti valdiklį į pagrindinį ekraną…";
+
+/* iPad menu bar command */
 "menuBack" = "Atgal";
+
+/* iPad menu bar title */
+"menuBookmarks" = "Žymės";
 
 /* iPad menu bar command */
 "menuClearTabsAndData" = "Valyti skirtukus ir duomenis";
 
+/* iPad Duck.ai menu bar command */
+"menuDeleteAllChats" = "Trinti visus pokalbius…";
+
 /* iPad menu bar command */
 "menuDuplicateTab" = "Kopijuoti skirtuką";
+
+/* iPad menu bar command */
+"menuExportBookmarks" = "Eksportuoti žymes…";
+
+/* iPad menu bar submenu */
+"menuFavorites" = "Mėgstami";
 
 /* iPad menu bar command */
 "menuFeedback" = "Bendrinti atsiliepimą";
@@ -3335,7 +3461,13 @@
 "menuForward" = "Pirmyn";
 
 /* iPad menu bar command */
+"menuHideBookmarks" = "Slėpti žymes";
+
+/* iPad menu bar command */
 "menuHideDownloads" = "Slėpti atsisiuntimus";
+
+/* iPad menu bar command */
+"menuHideDuckAIButton" = "Slėpti mygtuką „Duck.ai“";
 
 /* iPad menu bar command */
 "menuHidePasswords" = "Slėpti slaptažodžius";
@@ -3344,13 +3476,31 @@
 "menuHideTabs" = "Slėpti skirtukus";
 
 /* iPad menu bar command */
+"menuImportBookmarks" = "Importuoti žymes…";
+
+/* iPad menu bar command */
+"menuImportBookmarksAndPasswords" = "Importuoti žymes ir slaptažodžius…";
+
+/* iPad menu bar command */
 "menuLastTab" = "Paskutinis skirtukas";
+
+/* iPad Duck.ai menu bar command */
+"menuNewChat" = "Naujas pokalbis";
+
+/* iPad Duck.ai menu bar command */
+"menuNewImageChat" = "Naujas pokalbis su vaizdu";
 
 /* iPad menu bar command */
 "menuNewTabOnRight" = "Naujas skirtukas dešinėje";
 
+/* iPad Duck.ai menu bar command */
+"menuNewVoiceChat" = "Naujas balso pokalbis";
+
 /* iPad menu bar command */
 "menuNextTab" = "Rodyti paskesnį skirtuką";
+
+/* iPad Duck.ai menu bar command */
+"menuOpenDuckAI" = "Atidaryti „Duck.ai“";
 
 /* iPad menu bar command */
 "menuOpenLocation" = "Atidaryti vietą…";
@@ -3361,14 +3511,26 @@
 /* iPad menu bar command */
 "menuPrint" = "Spausdinti…";
 
+/* iPad Duck.ai menu bar section header */
+"menuRecentChats" = "Pastarieji pokalbiai";
+
 /* iPad menu bar command selecting a numbered tab */
 "menuSelectTab" = "Pasirinkti %d skirtuką";
+
+/* iPad menu bar command */
+"menuSetDefaultBrowser" = "Nustatyti „DuckDuckGo“ kaip numatytąją naršyklę…";
 
 /* iPad menu bar command */
 "menuSettings" = "„DuckDuckGo“ nustatymai…";
 
 /* iPad menu bar command */
+"menuShowBookmarks" = "Rodyti žymes";
+
+/* iPad menu bar command */
 "menuShowDownloads" = "Rodyti atsisiuntimus";
+
+/* iPad menu bar command */
+"menuShowDuckAIButton" = "Rodyti mygtuką „Duck.ai“";
 
 /* iPad menu bar command */
 "menuShowPasswords" = "Rodyti slaptažodžius";
@@ -3706,6 +3868,90 @@
 /* Title for the Strict Routing setting item. */
 "network.protection.vpn.strict.routing.setting.title" = "Taikyti griežtą maršruto parinkimą (rekomenduojama)";
 
+/* Opens the app settings from the New Tab Page customization sheet */
+"new-tab-page.customization.all-settings" = "Visos nuostatos";
+
+/* Setting to always show the keyboard when a new tab is opened */
+"new-tab-page.customization.always-show-keyboard" = "Visada rodyti klaviatūrą";
+
+/* Name of the New Tab Page section showing messages, in the customization sheet */
+"new-tab-page.customization.messages" = "Pranešimai";
+
+/* Title of the sheet for customizing the New Tab Page */
+"new-tab-page.customization.title" = "Prisitaikyk pradžios puslapį";
+
+/* Dax greeting on the New Tab page. Refers to private AI chat. */
+"new-tab-page.dax-greeting.askMe" = "Klausk bet ko.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.duckDuckHello" = "„DuckDuckGo“ sako labas.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.friday" = "Jau beveik savaitgalis.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.goodbyeAds" = "Sudie, įkyrios reklamos!";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.heyThere" = "Labas.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.howCanIHelp" = "Kuo šiandien galiu padėti?";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.letsDoThis" = "Pirmyn!";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.letsExplore" = "Patyrinėkime.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.monday" = "Šiandien pirmadienis. Pirmyn.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.morning" = "Labas rytas, saulute.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.newDayNewTabs" = "Nauja diena, naujos kortelės.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.niceToSeeYou" = "Smagu tave matyti.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.nightOwl" = "Iš tikrųjų esu pelėda.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.readyToSearchPrivately" = "Metas ieškoti privačiai?";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.readyWhenYouAre" = "Viskas paruošta – laukiu tik tavęs.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.stillAwake" = "Aš niekada nemiegu.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.whatsOnYourMind" = "Apie ką galvoji?";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.whereShouldWeStart" = "Nuo ko pradėsime?";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.whereToToday" = "Kur pasuksime šiandien?";
+
+/* Name field placeholder in the Add Favorite sheet */
+"new-tab-page.favorite.name" = "Pavadinimas";
+
+/* Error shown when saving a favorite fails */
+"new-tab-page.favorite.save-failed" = "Nepavyko išsaugoti parankinio.";
+
+/* URL field placeholder in the Add Favorite sheet */
+"new-tab-page.favorite.url" = "URL";
+
+/* Button that expands the New Tab Page favorites grid to show all favorites */
+"new-tab-page.favorites.see-all" = "Rodyti viską";
+
+/* Button that collapses the New Tab Page favorites grid to show fewer favorites */
+"new-tab-page.favorites.see-less" = "Rodyti mažiau";
+
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Patvirtinti";
 
@@ -3784,8 +4030,41 @@
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Supratau";
 
+/* The message of the onboarding dialog popup that promotes adding the DDG browser icon to the dock. */
+"onboarding.addToDock.promo.intro.message" = "Įsikursiu po ranka, kad greitai mane pasiektum.";
+
 /* Button to change the default browser */
 "onboarding.browsers.cta" = "Pasirinkite naršyklę";
+
+/* Label for the option to set up the app to block ads and pop-ups. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.blockAds" = "Blokuok reklamas\nir iškylančiuosius langus";
+
+/* Label for the option to set up the app for private searching and browsing. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.browsePrivately" = "Ieškok ir\nnaršyk privačiai";
+
+/* Label for the option to set up the app for private AI chat. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.chatWithAI" = "Bendrauk su DI\nprivačiai";
+
+/* Heading shown above the browser comparison chart during onboarding for users who chose to search and browse privately or to chat with AI privately. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.comparison.title-generic" = "Pataikei ten, kur reikia!\nApsauga aktyvuota.";
+
+/* Heading shown above the browser comparison chart during onboarding for users who chose to block ads and pop-ups. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.comparison.title-no-ads" = "Pataikei ten, kur reikia!\nReklamų blokavimas aktyvuotas.";
+
+/* Heading shown above the browser comparison chart during onboarding for users who chose to disable AI features. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.comparison.title-no-ai" = "Pataikei ten, kur reikia!\nDI funkcijos išjungtos.";
+
+/* Button to continue to the next onboarding screen after choosing a reason. */
+"onboarding.downloadReason.cta" = "Toliau";
+
+/* Subtitle of the onboarding screen asking why the user downloaded the app. */
+"onboarding.downloadReason.message" = "Pasirink, kas tave labiausiai domina, ir nuo to pradėsime.";
+
+/* Label for the option to set up the app without AI features in search results. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.removeAI" = "Išjunk\nDI funkcijas";
+
+/* Title of the onboarding screen asking why the user downloaded the app. */
+"onboarding.downloadReason.title" = "Nusistatyk viską pagal save";
 
 /* Message in the onboarding dialog popup that promotes adding the DuckDuckGo browser icon to the iPhone dock, shown during the Duck.ai onboarding flow. */
 "onboarding.duckai.addToDock.promo.message" = "Įsikursiu lengvai pasiekiamoje vietoje, kad galėtum kasdien bendrauti su dirbtiniu intelektu ir naršyti.";
@@ -3814,8 +4093,8 @@
 /* Title of the dialog in the Duck.ai onboarding flow asking the user if they want to set DuckDuckGo as their default browser. */
 "onboarding.duckai.browser.title" = "Ar norite nustatyti „DuckDuckGo“ kaip savo numatytąją naršyklę?";
 
-/* Message of the last screen of the onboarding to the browser app for the Duck.ai flow. 'Duck.ai' is a brand name and should not be translated. '[[chat_icon]]' is a placeholder and should not be translated. */
-"onboarding.duckai.contextual.end-of-journey.message" = "Pradėkite privatų pokalbį su DI naudodami „Duck.ai“ arba perjunkite į apsaugotą naršymą su paieška.\n\n„Duck.ai“ galite naudoti visur, kur matote pokalbių piktogramą [[chat_icon]]";
+/* Message of the last screen of the onboarding to the browser app for the Duck.ai flow. */
+"onboarding.duckai.contextual.end-of-journey.message" = "Pradėkite privatų pokalbį su dirbtiniu intelektu per „Duck.ai“ arba perjunkite į paieškos režimą, kad galėtumėte saugiai naršyti internete.";
 
 /* Body text of the subscription promo shown at the end of the Duck.ai onboarding flow. Describes the paid Duck.ai subscription. 'GPT', 'Claude' are brand names and should not be translated. */
 "onboarding.duckai.contextual.subscription.message" = "Taip pat siūlome mokamą prenumeratą, į kurią įeina pažangūs DI modeliai su didesniais GPT ir „Claude“ pokalbių limitais, saugus VPN ir dar daugiau.";
@@ -3940,6 +4219,84 @@
 /* Button to skip the onboarding process */
 "onboarding.intro.cta.skip" = "Jau buvau čia anksčiau";
 
+/* Subtitle for the accept-other-cookies option on the onboarding ad-blocking personalization screen. */
+"onboarding.personalization.adBlocking.acceptOtherCookies.subtitle" = "Paslepia daugiau iškylančiųjų langų, nes priima neatmetamus slapukus";
+
+/* Title for the accept-other-cookies option on the onboarding ad-blocking personalization screen. */
+"onboarding.personalization.adBlocking.acceptOtherCookies.title" = "Priimk kai kuriuos slapukus";
+
+/* Button to continue to the next onboarding screen from the ad-blocking personalization screen. */
+"onboarding.personalization.adBlocking.cta" = "Toliau";
+
+/* Footer text shown above the button on the ad-blocking personalization screen, reassuring the user the choices can be changed later. */
+"onboarding.personalization.adBlocking.footer" = "Vėliau visada galėsi tai pakeisti nuostatose.";
+
+/* Subtitle for the reject-optional-cookies option on the onboarding ad-blocking personalization screen. */
+"onboarding.personalization.adBlocking.rejectOptionalCookies.subtitle" = "Užtikrina didžiausią privatumą ir uždaro slapukų iškylančiuosius langus";
+
+/* Title for the reject-optional-cookies option on the onboarding ad-blocking personalization screen. */
+"onboarding.personalization.adBlocking.rejectOptionalCookies.title" = "Atmesk nebūtinus slapukus";
+
+/* Title of the onboarding ad-blocking personalization screen. */
+"onboarding.personalization.adBlocking.title" = "Internetas – be jokio triukšmo.";
+
+/* Title for the YouTube ad blocking option on the onboarding ad-blocking personalization screen. 'YouTube' is a brand name and should not be translated. */
+"onboarding.personalization.adBlocking.youTubeAdBlocking.title" = "Blokuok „YouTube“ vaizdo reklamas";
+
+/* Primary button to open new tabs with AI chat on the onboarding address bar toggle mode personalization screen. */
+"onboarding.personalization.addressBarToggle.cta.primary" = "Atidaryk korteles su DI pokalbiu";
+
+/* Secondary button to dismiss the onboarding address bar toggle mode personalization screen. */
+"onboarding.personalization.addressBarToggle.cta.secondary" = "Ne dabar";
+
+/* Footer of the onboarding address bar toggle mode personalization screen. 'Search' refers to the Search option of the address bar Search/Duck.ai toggle and should match its translation. */
+"onboarding.personalization.addressBarToggle.footer" = "Gali perjungti į paiešką vienu bakstelėjimu";
+
+/* Title of the onboarding address bar toggle mode personalization screen. */
+"onboarding.personalization.addressBarToggle.title" = "Nori, kad naujos kortelės atsidarytų su DI pokalbiu?";
+
+/* Button to continue to the next onboarding screen from the AI model personalization screen. */
+"onboarding.personalization.aiModel.cta" = "Toliau";
+
+/* Message of the onboarding AI model personalization screen. Duck.ai is a brand name and should not be translated */
+"onboarding.personalization.aiModel.message" = "Su „Duck.ai“ modelį gali pakeisti bet kada.";
+
+/* Title of the onboarding AI model personalization screen. */
+"onboarding.personalization.aiModel.title" = "Pasirink, kurį DI išbandysi pirmiausia";
+
+/* Button to continue to the next onboarding screen from the AI search personalization screen. */
+"onboarding.personalization.aiSearch.cta" = "Toliau";
+
+/* Subtitle for the hide AI-generated images option on the onboarding AI search personalization screen. */
+"onboarding.personalization.aiSearch.hideAIGeneratedImages.subtitle" = "Atfiltruok žinomas DI brukalų svetaines iš vaizdų paieškos rezultatų";
+
+/* Title for the hide AI-generated images option on the onboarding AI search personalization screen. */
+"onboarding.personalization.aiSearch.hideAIGeneratedImages.title" = "Paslėpk DI sugeneruotus vaizdus";
+
+/* Subtitle for the Search Assist option on the onboarding AI search personalization screen. */
+"onboarding.personalization.aiSearch.searchAssist.subtitle" = "Įtrauk DI sugeneruotus atsakymus į paieškos rezultatus";
+
+/* Title for the Search Assist option on the onboarding AI search personalization screen. 'Search Assist' is a DuckDuckGo product name and should not be translated. */
+"onboarding.personalization.aiSearch.searchAssist.title" = "Search Assist";
+
+/* Title of the onboarding AI search personalization screen. */
+"onboarding.personalization.aiSearch.title" = "Paieška be DI";
+
+/* Primary button to turn Duck.ai on from the onboarding Duck.ai enabled personalization screen. 'Duck.ai' is a brand name and should not be translated. */
+"onboarding.personalization.duckAIEnabled.cta.primary" = "Įjunk „Duck.ai“";
+
+/* Secondary button to keep Duck.ai off from the onboarding Duck.ai enabled personalization screen. 'Duck.ai' is a brand name and should not be translated. */
+"onboarding.personalization.duckAIEnabled.cta.secondary" = "Palik „Duck.ai“ išjungtą";
+
+/* Message of the onboarding Duck.ai enabled personalization screen. 'Duck.ai' is a brand name and should not be translated. */
+"onboarding.personalization.duckAIEnabled.message" = "„Duck.ai“ platformoje nuasmeniname tavo pokalbius ir niekada nenaudojame jų DI mokyti.";
+
+/* Title of the onboarding Duck.ai enabled personalization screen. */
+"onboarding.personalization.duckAIEnabled.title" = "Nori galimybės privačiai bendrauti su populiariais DI modeliais?";
+
+/* Title for the private search Duck.ai query onboarding screen. */
+"onboarding.personalization.duckAIQuery.privateSearch.title" = "O dabar išbandyk privačią paiešką!";
+
 /* Button on the Privacy Pro promotion onboarding step. Tapping the button navigates to the Privacy Pro paywall. */
 "onboarding.privacypro.promo.buttons.learnMore" = "Sužinoti daugiau";
 
@@ -3996,15 +4353,6 @@
 
 /* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
 "onboarding.subscription.promo.buttons.tryItForFree" = "Išbandyk nemokamai!";
-
-/* Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold). */
-"onboarding.subscription.promo.message" = "„DuckDuckGo“ taip pat turi saugų %1$@, kurį galima naudoti su %2$@.";
-
-/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
-"onboarding.subscription.promo.message.optional-subscription-bold" = "pasirenkama mokama prenumerata";
-
-/* Bold text 'VPN + 2 more premium protections'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag. */
-"onboarding.subscription.promo.message.vpn-two-more-bold" = "VPN + 2 papildomos aukščiausios kokybės apsaugos priemonės";
 
 /* No comment provided by engineer. */
 "onboarding.widgets.continueButton" = "Pridėti valdiklį";
@@ -4180,11 +4528,17 @@
 /* Description of too many requests error when syncing. */
 "prefrences.sync.too-many-requests.description" = "Sinchronizavimas ir atsarginės kopijos kūrimas laikinai nepasiekiami.";
 
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "Prisijungiant klausti, ar apsaugoti svetainės duomenis nuo išvalymo (funkcija „Fireproof“)";
+
 /* No comment provided by engineer. */
 "preserveLogins.domain.list.footer" = "Svetainės pagrįstos slapukais, kad liktumėte prisijungę. Apsaugojus svetainę, slapukai nėra ištrinami ir liksite prisijungę net paspaudę apsaugojimo mygtuką. Vis tiek blokuosime trečiųjų šalių stebėjimo priemones, randamas svetainėse, kuriose pasinaudosite parinktimi „Fireproof“.";
 
 /* Section header above Fireproofed websites list */
 "preserveLogins.domain.list.title" = "Apsaugoti svetaines";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "Apsaugotų nuo duomenų valymo (funkcija „Fireproof“) svetainių dar nėra";
 
 /* Alert message explaining to users that the benefit of fireproofing a site is that they will be kept signed in */
 "preserveLogins.fireproof.message" = "Pasirinkę parinktį „Fireproof“ šioje svetainėje, liksite prisijungę net panaudoję mygtuką „Fire“.";
@@ -4215,6 +4569,9 @@
 
 /* Confirmation button in alert */
 "preserveLogins.remove.all.ok" = "GERAI";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Pašalinti visas nuo duomenų valymo apsaugotas (funkcija „Fireproof“) svetaines";
 
 /* No comment provided by engineer. */
 "Previews" = "Peržiūros";
@@ -4518,6 +4875,12 @@
 
 /* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
 "settings.aifeatures.hide.ai.generated.images.subtitle" = "Iš vaizdų paieškos rezultatų pašalina žinomas DI brukalų svetaines. [Sužinok daugiau](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
+
+/* Settings screen description for the Duck.ai keyboard animation toggle */
+"settings.aifeatures.keyboard.animation.subtitle" = "Rodyti animaciją aplink klaviatūrą, kai pereini į „Duck.ai“ arba ten rašai.";
+
+/* Settings screen toggle title for the Duck.ai keyboard animation */
+"settings.aifeatures.keyboard.animation.title" = "„Duck.ai“ klaviatūros animacija";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Visada įjungta";
@@ -4907,12 +5270,6 @@
 "settings.subscription.DBP.title" = "Personal Information Removal";
 
 /* Privacy pro description subtitle in settings */
-"settings.subscription.description.no.duck.ai.row" = "Prenumeratoriai gauna mūsų VPN ir tapatybės vagystės atkūrimą.";
-
-/* Privacy pro description subtitle in settings */
-"settings.subscription.description.no.duck.ai.us" = "Prenumeratoriai gauna mūsų VPN, asmeninės informacijos pašalinimo ir tapatybės vagystės atkūrimo paslaugas.";
-
-/* Privacy pro description subtitle in settings */
 "settings.subscription.description.row" = "Prenumeratoriai gauna mūsų VPN, pažangius dirbtinio intelekto modelius „Duck.ai“ platformoje ir tapatybės vagystės atkūrimo paslaugą.";
 
 /* Privacy pro description subtitle in settings */
@@ -4941,9 +5298,6 @@
 
 /* Call to action title for Privacy Pro settings */
 "settings.subscription.subscribe.title" = "Apsaugok savo Wi-Fi ir kalbėkis privačiai su pažangiais DI modeliais";
-
-/* Call to action title for Privacy Pro settings */
-"settings.subscription.subscribe.title.no.ai.chat" = "Apsaugok savo Wi-Fi ir tapatybę";
 
 /* Try DuckDuckGo Subscription Free button text */
 "settings.subscription.try.free.button" = "Išbandyk nemokamai";
@@ -5170,9 +5524,6 @@
 /* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
 "subscription.cancel.pending.downgrade.banner.caption" = "Jūsų planas bus sumažintas iki %1$@ nuo %2$@.";
 
-/* Change plan or cancel title */
-"subscription.change.plan" = "Atnaujinkite planą arba atšaukite";
-
 /* Navigation Button for closing subscription view */
 "subscription.close" = "Uždaryti";
 
@@ -5206,6 +5557,9 @@
 /* Alert content for not found subscription */
 "subscription.expired.alert.message" = "Su šia „Apple“ paskyra susijusi prenumerata nebėra aktyvi.";
 
+/* Subtitle in header when the subscription has been cancelled but is still active until it expires */
+"subscription.expiring" = "Baigia galioti";
+
 /* FAQ Button */
 "subscription.faq" = "DUK ir pagalba";
 
@@ -5235,6 +5589,9 @@
 
 /* Header for the subscription section */
 "subscription.manage.title" = "Prenumerata";
+
+/* Subscription status shown after the user withdrew from the subscription contract */
+"subscription.not.subscribed" = "Neprenumeruota";
 
 /* Alert content for not found subscription */
 "subscription.notFound.alert.message" = "Su šia „Apple“ paskyra nėra susijusios prenumeratos.";
@@ -5277,6 +5634,9 @@
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Atkuriama prenumerata...";
+
+/* Progress view title while withdrawing from the subscription contract */
+"subscription.progress.view.withdraw.in.progress" = "Vykdomas atsisakymas…";
 
 /* Dismiss button on the reinstaller subscription promo. */
 "subscription.promo.reinstaller.buttons.notNow" = "Ne dabar";
@@ -5383,6 +5743,45 @@
 /* View All Plans button to see available subscription tiers */
 "subscription.view.all.plans" = "Peržiūrėti visus planus";
 
+/* Button that confirms withdrawal from the subscription contract */
+"subscription.withdraw.confirm.button" = "Patvirtink atsisakymą";
+
+/* Duck.ai item in the list of features that stop working after withdrawing from the subscription contract, e.g. VPN, Personal Information Removal and advanced Duck.ai models */
+"subscription.withdraw.confirm.feature.advanced.duckai" = "pažangūs „Duck.ai“ modeliai";
+
+/* Second paragraph of the alert confirming withdrawal from the subscription contract. Parameter is a localized list of features, e.g. VPN, Personal Information Removal and advanced Duck.ai models. */
+"subscription.withdraw.confirm.features.message" = "%@ nustos veikti, kai patvirtinsi.";
+
+/* Message of the alert confirming withdrawal from the subscription contract. Parameters are the tier name (e.g. Plus) and the refund amount with currency. */
+"subscription.withdraw.confirm.message" = "%1$@ prenumerata baigsis iš karto, o %2$@ per 14 dienų grąžinsime pradiniu mokėjimo būdu.";
+
+/* Message of the alert confirming withdrawal from the subscription contract, used when the refund amount is unknown. Parameter is the tier name (e.g. Plus). */
+"subscription.withdraw.confirm.message.no.amount" = "Tavo „%@“ prenumerata baigsis iš karto, o per 14 dienų pradiniu mokėjimo būdu atgausi visą sumą.";
+
+/* Title of the alert confirming withdrawal from the subscription contract */
+"subscription.withdraw.confirm.title" = "Atsisakyti prenumeratos?";
+
+/* Button that opens the help page to complete a failed subscription withdrawal */
+"subscription.withdraw.error.button" = "Apsilankyk pagalbos puslapyje";
+
+/* Message of the alert shown when withdrawing from the subscription contract fails */
+"subscription.withdraw.error.message" = "Nepavyko automatiškai apdoroti prenumeratos atsisakymo. Apsilankyk mūsų pagalbos puslapyje, kad užbaigtum atsisakymą.";
+
+/* Action title that starts withdrawing from the subscription contract with a full refund */
+"subscription.withdraw.from.contract" = "Atsisakyti sutarties";
+
+/* Subtitle of the Withdraw from Contract action. Parameter is the last date the user can withdraw. */
+"subscription.withdraw.from.contract.subtitle" = "Atsisakyti ir susigrąžinti visą sumą gali iki %@";
+
+/* Button that dismisses the withdrawal confirmation and keeps the subscription */
+"subscription.withdraw.keep.button" = "Palik prenumeratą";
+
+/* Confirmation shown after withdrawing from the subscription contract. Parameter is the withdrawal date. */
+"subscription.withdrawn.info" = "Atsisakei %@.";
+
+/* Shown below the withdrawal confirmation. Parameter is the refunded amount with currency. */
+"subscription.withdrawn.refund.info" = "Vykdomas %@ grąžinimas.";
+
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "SwiftUI įspėjimas";
 
@@ -5404,11 +5803,29 @@
 /* Fallback device name for confirmation dialogs */
 "sync.pairing-v2.unknown-peer-name" = "kitas įrenginys";
 
+/* Title for a button in the Sync Promotion banner on the Bookmarks or Passwords screen that opens Sync settings to connect another device */
+"sync.promo.another-device.connect.action" = "Prijungti";
+
+/* Message for the Sync Promotion banner on the Bookmarks or Passwords screen, shown when Sync is on but only this device is connected */
+"sync.promo.another-device.message" = "Šiame įrenginyje įjungta funkcija „Sync & Backup“.";
+
+/* Title for a button in the Sync Promotion banner on the Bookmarks or Passwords screen that opens a screen with links to get DuckDuckGo on other platforms */
+"sync.promo.bookmarks.another-device.get-desktop-app.action" = "Gauti programą";
+
+/* Title for the Sync Promotion banner on the Bookmarks screen, shown when Sync is on but only this device is connected */
+"sync.promo.bookmarks.another-device.title" = "Sinchronizuoti žymes ir su kompiuterio programa?";
+
 /* Message for the Sync Promotion banner when user has bookmarks that can be synced */
 "sync.promo.bookmarks.message" = "Paskyros nereikia. Galutinis šifravimas (angl. „end-to-end encryption“) reiškia, kad niekas, išskyrus jus, negali pamatyti jūsų žymių, net mes.";
 
+/* Message for the redesigned Sync Promotion banner on the Bookmarks screen */
+"sync.promo.bookmarks.redesign.message" = "Naudojamas ištisinis šifravimas. Niekas negali matyti jūsų žymių, net mes.";
+
 /* Title for the Sync Promotion banner */
 "sync.promo.bookmarks.title" = "Sinchronizuokite žymes ir kurkite jų atsargines kopijas";
+
+/* Accessibility label for the close button on the Sync Promotion banner */
+"sync.promo.close.accessibility.label" = "Uždaryti sinchronizavimo pasiūlymą";
 
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Nustatykite sinchronizavimą";
@@ -5422,11 +5839,20 @@
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Ne, dėkoju";
 
+/* Title for the Sync Promotion banner on the Passwords screen, shown when Sync is on but only this device is connected */
+"sync.promo.passwords.another-device.title" = "Sinchronizuoti slaptažodžius ir su kompiuterio programa?";
+
 /* Message for the Sync Promotion banner when user has passwords that can be synced */
 "sync.promo.passwords.message" = "Paskyros nereikia. Galutinis šifravimas (angl. „end-to-end encryption“) reiškia, kad niekas, išskyrus jus, negali pamatyti jūsų slaptažodžių, net mes.";
 
+/* Message for the redesigned Sync Promotion banner on the Passwords screen */
+"sync.promo.passwords.redesign.message" = "Apsaugota ištisiniu šifravimu. Tavo slaptažodžių negali matyti niekas – net ir mes.";
+
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Sinchronizuokite slaptažodžius ir sukurkite atsargines jų kopijas";
+
+/* Title for the button in the redesigned Sync Promotion banner and the Data Import summary Sync card that opens Sync settings and starts setting up Sync */
+"sync.promo.redesign.confirm.action" = "Pradėti sinchronizavimą";
 
 /* Button title to start backup */
 "sync.recovery.alternative.prompt.backup.button" = "Šio įrenginio „Sync & Backup“";
@@ -5547,6 +5973,12 @@
 
 /* Bookmark all tabs menu item */
 "tab.switcher.bookmarkAll" = "Pažymėti visus skirtukus";
+
+/* Menu item that switches the tab switcher to a grid layout */
+"tab.switcher.grid.view.menu.title" = "Tinklelis";
+
+/* Menu item that switches the tab switcher to a list layout */
+"tab.switcher.list.view.menu.title" = "Sąrašas";
 
 /* Action button to hide tracker count banner */
 "tab.switcher.tracker.count.hide.action" = "Slėpti";

@@ -331,15 +331,11 @@ extension TabCollectionViewModelTests {
         tabCollectionViewModel.select(at: .pinned(0))
         let selectedTab = tabCollectionViewModel.selectedTabViewModel?.tab
 
-        var closes = 0
-        selectedTab?.onClose = { closes += 1 }
         tabCollectionViewModel.changesEnabled = false
         _ = tabCollectionViewModel.closeSelected(forceChange: true)
-        XCTAssertEqual(closes, 0)
         XCTAssertTrue(tabCollectionViewModel.pinnedTabsCollection!.contains(tab: selectedTab!))
         tabCollectionViewModel.changesEnabled = true
         _ = tabCollectionViewModel.closeSelected()
-        XCTAssertEqual(closes, 1)
 
         XCTAssertFalse(tabCollectionViewModel.pinnedTabsCollection!.contains(tab: selectedTab!))
     }

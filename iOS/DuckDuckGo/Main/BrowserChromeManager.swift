@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import WebKit
 
 protocol BrowserChromeDelegate: AnyObject {
     
@@ -37,6 +38,9 @@ protocol BrowserChromeDelegate: AnyObject {
     var isToolbarHidden: Bool { get }
     var currentBarsVisibility: CGFloat { get }
     var toolbarHeight: CGFloat { get }
+    /// True when the toolbar stays put while the rest of the chrome slides, as on iPad and in the minimal
+    /// layout. Hiding the chrome then gives the page none of the toolbar's height.
+    var isToolbarParked: Bool { get }
     var barsMaxHeight: CGFloat { get }
     var isInMinimalChromeLayout: Bool { get }
 
@@ -55,15 +59,28 @@ protocol BrowserChromeDelegate: AnyObject {
     /// visibility, used to drive `WKWebView.obscuredContentInsets` on iOS 26.
     func floatingWebViewObscuredInsets(for barsVisibilityPercent: CGFloat) -> UIEdgeInsets
 
+    func findInPageObscuredInsets(in webView: WKWebView) -> UIEdgeInsets?
+
+    var floatingAIChatHeaderObscuredHeight: CGFloat { get }
+
     /// Height obscured at the top of the new tab page by the focused unified toggle input card, for page
     /// content that must sit below it (the contextual onboarding dialogs).
     var floatingNewTabPageTopObscuredHeight: CGFloat { get }
 
     var omniBar: any OmniBar { get }
+
+    /// The view the address bar is drawn in: the floating toolbar's glass when the bar is embedded in it.
+    var addressBarChromeView: UIView { get }
     var tabBarContainer: UIView { get }
 }
 
 extension BrowserChromeDelegate {
+
+    var addressBarChromeView: UIView { omniBar.barView }
+
+    func findInPageObscuredInsets(in webView: WKWebView) -> UIEdgeInsets? { nil }
+
+    var floatingAIChatHeaderObscuredHeight: CGFloat { 0 }
 
     var isFloatingChromeEnabled: Bool { false }
 
@@ -76,6 +93,9 @@ class BrowserChromeManager: NSObject, UIScrollViewDelegate {
 
     struct Constants {
         static let zoomThreshold: CGFloat = 0.1
+
+        /// Pages that would scroll less than this with the chrome hidden keep their chrome.
+        static let minimumScrollableHeight: CGFloat = 1
         
         static let contentSizeKVOKey = "contentSize"
     }
@@ -101,6 +121,8 @@ class BrowserChromeManager: NSObject, UIScrollViewDelegate {
     /// Tracks an in-flight user drag/deceleration so passive WebKit scroll settling during page load
     /// does not drive floating chrome morph updates.
     private var isFloatingUserScrollActive = false
+    /// The offset `followFloatingChromeBottom` last pinned the page to, while it follows a hiding bar.
+    private var followedFloatingChromeBottomY: CGFloat?
 
     func attach(to scrollView: UIScrollView) {
         detach()
@@ -123,6 +145,7 @@ class BrowserChromeManager: NSObject, UIScrollViewDelegate {
         observation = nil
         pendingFloatingScrollEndVelocity = 0
         isFloatingUserScrollActive = false
+        followedFloatingChromeBottomY = nil
     }
     
     private func scrollViewDidResizeContent(_ scrollView: UIScrollView) {
@@ -158,6 +181,13 @@ class BrowserChromeManager: NSObject, UIScrollViewDelegate {
             return
         }
 
+        if let delegate, delegate.isFloatingChromeEnabled {
+            // A drag past the bottom mid-hide would otherwise show for a frame before the bar pulls it back.
+            let visibility = delegate.currentBarsVisibility
+            if visibility > 0, visibility < 1 {
+                followFloatingChromeBottom { delegate.floatingWebViewObscuredInsets(for: visibility).bottom }
+            }
+        }
         animator.didScroll(in: scrollView)
     }
     
@@ -268,14 +298,91 @@ class BrowserChromeManager: NSObject, UIScrollViewDelegate {
         scrollToTop = false
     }
 
-    /// Bars should not be hidden in case ScrollView content is smaller than full (with bars hidden) viewport.
+    /// Bars hide only on a page taller than the viewport they leave behind, so the page still scrolls
+    /// with them gone. A page that would fit once they hide keeps them: no collapse even starts.
     private func canHideBars(for scrollView: UIScrollView) -> Bool {
-        let heightAllowsHide = scrollView.bounds.height + (delegate?.barsMaxHeight ?? 0) < scrollView.contentSize.height
-        return heightAllowsHide && (delegate?.canHideBars ?? true)
+        guard delegate?.canHideBars ?? true else { return false }
+        // Chrome can't hold more than the scroll view's insets, so a page that scrolls past them is long
+        // enough without asking the delegate, whose inset lookup is too slow for every scroll event.
+        let scrollableHeightWithoutInsets = scrollView.contentSize.height - scrollView.bounds.height
+        if delegate?.isFloatingChromeEnabled == true, scrollableHeightWithoutInsets >= Constants.minimumScrollableHeight {
+            return true
+        }
+        return hiddenChromeScrollableHeight(for: scrollView) >= Constants.minimumScrollableHeight
+    }
+
+    /// How far the page would scroll with the chrome fully hidden. Hiding hands the chrome's space to the
+    /// page, so the space the chrome still holds comes off the current range.
+    private func hiddenChromeScrollableHeight(for scrollView: UIScrollView) -> CGFloat {
+        let insets = scrollView.adjustedContentInset
+        let currentScrollableHeight = scrollView.contentSize.height + insets.top + insets.bottom - scrollView.bounds.height
+        guard let delegate else { return currentScrollableHeight }
+
+        let heldChromeHeight: CGFloat
+        if delegate.isFloatingChromeEnabled {
+            // Floating chrome changes the scroll view's insets only once a transition ends, so measure
+            // what the insets on the scroll view hold, not what the visibility says they will.
+            let hiddenInsets = delegate.floatingWebViewObscuredInsets(for: 0)
+            heldChromeHeight = max(0, (insets.top + insets.bottom) - (hiddenInsets.top + hiddenInsets.bottom))
+        } else {
+            let visibility = delegate.currentBarsVisibility.clamped(to: 0...1)
+            heldChromeHeight = legacySlidingChromeHeight(for: delegate) * visibility
+        }
+        return currentScrollableHeight - heldChromeHeight
+    }
+
+    /// Classic chrome slides the toolbar, the omnibar and any tabs bar out together, and the page gets
+    /// all of that space back. `barsMaxHeight` counts only the taller bar. A parked toolbar doesn't
+    /// slide, so its height stays out.
+    private func legacySlidingChromeHeight(for delegate: BrowserChromeDelegate) -> CGFloat {
+        let tabsBarHeight = delegate.tabBarContainer.isHidden ? 0 : delegate.tabBarContainer.frame.height
+        let toolbarHeight = delegate.isToolbarParked ? 0 : delegate.toolbarHeight
+        let slidingHeight = toolbarHeight + delegate.omniBar.barView.expectedHeight + tabsBarHeight
+        return max(delegate.barsMaxHeight, slidingHeight)
     }
 
     func reset(animated: Bool = true) {
         animator.revealBars(animated: animated)
+    }
+
+    /// Floating chrome holds the scroll view's insets until a hide ends, and WebKit then clamps the
+    /// offset into the smaller range in a single frame. At the page bottom, keep the offset inside the
+    /// range the hiding bar leaves, so the page follows the bar down instead of jumping once it settles.
+    /// If the collapse reverses, the page follows the bar back up so it doesn't cover the last line.
+    /// `obscuredBottom` is only read at the page end or while following, as the inset lookup is slow.
+    func followFloatingChromeBottom(obscuredBottom: () -> CGFloat) {
+        guard delegate?.isFloatingChromeEnabled == true,
+              let scrollView = attachedScrollView,
+              !scrollView.isZooming else { return }
+        let contentEndY = scrollView.contentSize.height - scrollView.bounds.height
+        guard followedFloatingChromeBottomY != nil || scrollView.contentOffset.y > contentEndY else { return }
+
+        let obscuredBottom = min(obscuredBottom(), scrollView.contentInset.bottom)
+        let pageTopY = -scrollView.adjustedContentInset.top
+        let bottomY = max(pageTopY, contentEndY + obscuredBottom)
+        let shift = bottomY - scrollView.contentOffset.y
+
+        if let followedY = followedFloatingChromeBottomY, abs(scrollView.contentOffset.y - followedY) < 0.5 {
+            // The page is still where following left it, so it tracks the bar in either direction.
+            if obscuredBottom >= scrollView.contentInset.bottom {
+                followedFloatingChromeBottomY = nil
+            }
+        } else if shift < 0, obscuredBottom < scrollView.contentInset.bottom {
+            // Past the bottom the hiding bar leaves.
+        } else {
+            // Above that bottom, or the chrome is revealed: the user's offset stands.
+            followedFloatingChromeBottomY = nil
+            return
+        }
+        if obscuredBottom < scrollView.contentInset.bottom {
+            followedFloatingChromeBottomY = bottomY
+        }
+        guard shift != 0 else { return }
+
+        // The page moves under the finger, so the drag's reference moves with it and the bars keep
+        // their progress.
+        animator.contentOffsetWillShift(by: shift)
+        scrollView.contentOffset.y = bottomY
     }
 }
 

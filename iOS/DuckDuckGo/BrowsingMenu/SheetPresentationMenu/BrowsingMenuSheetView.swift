@@ -84,9 +84,11 @@ struct BrowsingMenuSheetView: View {
 
     private let model: BrowsingMenuModel
     private let onDismiss: (_ wasActionSelected: Bool) -> Void
+    private let dismissInstantly: (() -> Void)?
 
     @State private var highlightTag: BrowsingMenuModel.Entry.Tag?
     @State private var actionToPerform: (() -> Void)?
+    @State private var wasActionSelected = false
     @State private var isScrolledBelowHeader: Bool = false
     @State private var headerBottomY: CGFloat = 0
 
@@ -99,9 +101,11 @@ struct BrowsingMenuSheetView: View {
     init(model: BrowsingMenuModel,
          headerDataSource: BrowsingMenuHeaderDataSource,
          highlightRowWithTag: BrowsingMenuModel.Entry.Tag? = nil,
+         dismissInstantly: (() -> Void)? = nil,
          onDismiss: @escaping (_ wasActionSelected: Bool) -> Void) {
         self.model = model
         self.headerDataSource = headerDataSource
+        self.dismissInstantly = dismissInstantly
         self.onDismiss = onDismiss
         _highlightTag = State(initialValue: highlightRowWithTag)
     }
@@ -112,6 +116,7 @@ struct BrowsingMenuSheetView: View {
             menuSections
         }
         .compactSectionSpacingIfAvailable()
+        .accessibilityIdentifier("Browser.Menu.List")
         .hideScrollContentBackground()
         .listStyle(.insetGrouped)
         .bounceBasedOnSizeIfAvailable()
@@ -120,7 +125,7 @@ struct BrowsingMenuSheetView: View {
         .background(Color(designSystemColor: .background).opacity(0.1))
         .onDisappear(perform: {
             actionToPerform?()
-            onDismiss(actionToPerform != nil)
+            onDismiss(wasActionSelected)
         })
         .safeAreaInset(edge: .top, spacing: isHeaderVisible ? -Metrics.listTopPadding : 0, content: {
             if isHeaderVisible {
@@ -179,6 +184,19 @@ struct BrowsingMenuSheetView: View {
             )
     }
 
+    /// The action runs once the menu has disappeared, or straight away when the menu hides instantly.
+    /// An instant action runs before the menu hides, so a transition it starts keeps the menu's backdrop.
+    private func select(_ entry: BrowsingMenuModel.Entry) {
+        wasActionSelected = true
+        if entry.dismissesMenuInstantly, let dismissInstantly {
+            entry.action()
+            dismissInstantly()
+        } else {
+            actionToPerform = { entry.action() }
+            dismiss()
+        }
+    }
+
     @ViewBuilder
     private var headerSection: some View {
         Section {
@@ -186,8 +204,7 @@ struct BrowsingMenuSheetView: View {
                 HStack(spacing: Metrics.headerHorizontalSpacing) {
                     ForEach(model.headerItems) { headerItem in
                         MenuHeaderButton(entryData: headerItem) {
-                            actionToPerform = { headerItem.action() }
-                            dismiss()
+                            select(headerItem)
                         }
                         .frame(maxWidth: .infinity)
                     }
@@ -212,8 +229,7 @@ struct BrowsingMenuSheetView: View {
                     let isHighlighted = highlightTag != nil && item.tag == highlightTag
 
                     MenuRowButton(entryData: item, isHighlighted: isHighlighted) {
-                        actionToPerform = { item.action() }
-                        dismiss()
+                        select(item)
                     }
                     .listRowBackground(Color.rowBackgroundColor)
                 }
@@ -239,6 +255,7 @@ extension BrowsingMenuModel {
         let detail: Detail?
         let action: () -> Void
         let tag: Tag?
+        let accessibilityIdentifier: String?
 
         func hash(into hasher: inout Hasher) {
             hasher.combine(id)
@@ -253,12 +270,16 @@ extension BrowsingMenuModel {
             case fire
             case openBookmarks
             case sitePermissions
+            case newTab
         }
 
         enum Detail {
             case text(String)
             case badge(String)
         }
+
+        /// New tabs bring their own transition, so the menu gets out of the way at once.
+        var dismissesMenuInstantly: Bool { tag == .newTab }
 
         var hasDetails: Bool {
             showNotificationDot || detail != nil
@@ -276,7 +297,17 @@ extension BrowsingMenuModel.Entry {
 
             return nil
 
-        case .regular(let name, let accessibilityLabel, let image, let showNotificationDot, let customDotColor, let detailText, let detailBadge, let entryTag, let action):
+        case let .regular(
+            name,
+            accessibilityLabel,
+            image,
+            showNotificationDot,
+            customDotColor,
+            detailText,
+            detailBadge,
+            entryTag,
+            identifier,
+            action):
             let detail: Detail? = if let detailBadge {
                 .badge(detailBadge)
             } else if let detailText {
@@ -293,6 +324,7 @@ extension BrowsingMenuModel.Entry {
                 detail: detail,
                 action: action,
                 tag: tag ?? entryTag,
+                accessibilityIdentifier: identifier,
             )
         }
     }
@@ -333,6 +365,7 @@ private struct MenuRowButton: View {
         .if(entryData.tag == .sitePermissions) { view in
             view.accessibilityIdentifier("BrowsingMenu.SitePermissions")
         }
+        .accessibilityIdentifier(ifPresent: entryData.accessibilityIdentifier)
     }
 
     struct DetailView: View {
@@ -394,6 +427,7 @@ private struct MenuHeaderButton: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(entryData.accessibilityLabel ?? entryData.name)
+        .accessibilityIdentifier(ifPresent: entryData.accessibilityIdentifier)
     }
 }
 

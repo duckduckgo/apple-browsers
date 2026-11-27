@@ -37,19 +37,6 @@ public struct OnboardingAIModel: Equatable, Identifiable {
 
 // MARK: - Per-screen slices
 
-/// The `.browserPrivately` setup step.
-public protocol OnboardingSearchPersonalizing: AnyObject {
-    /// Whether the browser records and shows recently visited sites.
-    var isRecentlyVisitedSitesEnabled: Bool { get }
-    /// Whether Safe Search filtering is on.
-    var isSafeSearchEnabled: Bool { get }
-
-    /// Enables or disables recently visited sites.
-    func setRecentlyVisitedSites(_ enabled: Bool)
-    /// Turns Safe Search filtering on or off.
-    func setSafeSearch(_ enabled: Bool)
-}
-
 /// The first `.privateAIChat` setup step to select an AI model.
 public protocol OnboardingAIChatModelPersonalizing: AnyObject {
     /// The id of the already-persisted AI chat model, or `nil` when none has been chosen.
@@ -115,8 +102,7 @@ public protocol OnboardingPersonalizationDefaultsApplying: AnyObject {
 /// A single facade over the several unrelated stores that back the tailored onboarding steps.
 ///
 /// The interface is segregated per screen so each screen's view model is injected with only the slice it needs.
-public protocol OnboardingPersonalizationManaging: OnboardingSearchPersonalizing,
-                                                   OnboardingAIChatModelPersonalizing,
+public protocol OnboardingPersonalizationManaging: OnboardingAIChatModelPersonalizing,
                                                    OnboardingAIChatNewTabPersonalizing,
                                                    OnboardingSearchAIFeaturesPersonalizing,
                                                    OnboardingDuckAIPersonalizing,

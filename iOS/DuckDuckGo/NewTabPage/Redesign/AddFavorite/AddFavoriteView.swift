@@ -31,6 +31,7 @@ struct AddFavoriteView: View {
         ScrollView(showsIndicators: false) {
             form
         }
+        .ignoresSafeArea(.keyboard)
         .onAppear { isURLFocused = true }
         .alert(UserText.newTabPageFavoriteSaveFailed, isPresented: $saveFailed) {
             Button(UserText.actionOK, role: .cancel) { }

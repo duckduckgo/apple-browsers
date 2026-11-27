@@ -40,18 +40,26 @@ let package = Package(
         .package(url: "https://github.com/pointfreeco/swift-snapshot-testing", exact: "1.19.7"),
     ],
     targets: [
-        .target(name: "PreviewSnapshots"),
+        .target(
+            name: "PreviewSnapshots",
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
+        ),
         .target(
             name: "SnapshotTestingSupport",
             dependencies: [
                 "PreviewSnapshots",
                 .product(name: "InlineSnapshotTesting", package: "swift-snapshot-testing"),
                 .product(name: "SnapshotTesting", package: "swift-snapshot-testing"),
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
         .testTarget(
             name: "SnapshotTestingSupportTests",
-            dependencies: ["SnapshotTestingSupport"]
+            dependencies: [
+                "SnapshotTestingSupport",
+                .product(name: "SnapshotTesting", package: "swift-snapshot-testing"),
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
     ],
     swiftLanguageVersions: [.v5]

@@ -22,7 +22,7 @@ import Combine
 import Bookmarks
 import CoreData
 import Common
-import Persistence
+@_spi(Testing) import Persistence
 @testable import Core
 @testable import DuckDuckGo
 @_spi(Testing) import PixelKit
@@ -224,12 +224,87 @@ struct NewTabPageFavoritesExpansionPixelTests {
         #expect(pixelKitMock.actualFireCalls.isEmpty)
     }
 
+    @available(iOS 16, macOS 13, *)
+    @MainActor
+    @Test("Redesigned page favorites report autocomplete only while the input is focused", .timeLimit(.minutes(1)))
+    func redesignedPageFavoritesReportFocusedState() {
+        let sut = makeSUT(isFocussedState: false)
+        let page = RedesignedNewTabPageViewController(blocks: [], favoritesModel: sut, returnSettings: .makeForTests())
+
+        page.setFocusedPose(NewTabPageFocusedPose(inputOffset: -300, modulesOffset: -280, showsModules: true))
+        sut.changeExpansion(to: true)
+        page.setFocusedPose(nil)
+        sut.changeExpansion(to: false)
+
+        #expect(pixelKitMock.actualFireCalls.map(\.pixel.parameters) == [["expanded": "true", "is_autocomplete": "true"],
+                                                                          ["expanded": "false", "is_autocomplete": "false"]])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @MainActor
+    @Test("A favorite opened from the focused redesigned page fires the website launch pixel", .timeLimit(.minutes(1)))
+    func redesignedPageFocusedFavoriteFiresWebsiteLaunch() {
+        let sut = makeSUT(isFocussedState: false)
+        let page = RedesignedNewTabPageViewController(blocks: [], favoritesModel: sut, returnSettings: .makeForTests())
+
+        page.setFocusedPose(NewTabPageFocusedPose(inputOffset: -300, modulesOffset: -280, showsModules: true))
+        sut.favoriteSelected(Favorite(id: "", title: "", domain: "", urlObject: URL(string: "https://foo.bar")))
+
+        #expect(pixelKitMock.actualFireCalls.map(\.pixel.name) == [Pixel.Event.favoriteLaunchedWebsite.name])
+    }
+
     private func makeSUT(isFocussedState: Bool) -> FavoritesViewModel {
         FavoritesViewModel(isFocussedState: isFocussedState,
                            favoriteDataSource: MockNewTabPageFavoriteDataSource(),
                            faviconLoader: MockFavoritesFaviconLoading(),
                            faviconsCache: MockFavoritesFaviconCaching(),
                            pixelFiring: pixelKitMock)
+    }
+}
+
+@Suite("Favorites expansion persistence")
+struct FavoritesExpansionPersistenceTests {
+
+    private let keyValueStore = InMemoryKeyValueStore()
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Favorites start collapsed when nothing is stored", .timeLimit(.minutes(1)))
+    func startsCollapsedByDefault() {
+        let state = FavoritesExpansionState(store: FavoritesExpansionStore(keyValueStore: keyValueStore))
+
+        #expect(!state.isExpanded)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Expanding is written to the store", .timeLimit(.minutes(1)))
+    func expandingWritesToStore() {
+        let store = FavoritesExpansionStore(keyValueStore: keyValueStore)
+        let state = FavoritesExpansionState(store: store)
+
+        state.isExpanded = true
+
+        #expect(store.isExpanded)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A new state restores the stored expansion", .timeLimit(.minutes(1)), arguments: [false, true])
+    func newStateRestoresStoredValue(isExpanded: Bool) {
+        FavoritesExpansionStore(keyValueStore: keyValueStore).isExpanded = isExpanded
+
+        let restoredState = FavoritesExpansionState(store: FavoritesExpansionStore(keyValueStore: keyValueStore))
+
+        #expect(restoredState.isExpanded == isExpanded)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A state without a store stays in memory", .timeLimit(.minutes(1)))
+    func stateWithoutStoreIsInMemoryOnly() {
+        let state = FavoritesExpansionState()
+
+        state.isExpanded = true
+
+        #expect(state.isExpanded)
+        #expect(!FavoritesExpansionState().isExpanded)
     }
 }
 

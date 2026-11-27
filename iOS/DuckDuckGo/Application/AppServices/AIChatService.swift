@@ -42,6 +42,7 @@ final class AIChatService: NSObject {
     @MainActor
     func resume() {
         try? aiChatBonusService.endBoostIfExpired()
+        termsOfServiceChatsObserver?.refreshWebAcceptance()
     }
 
     // MARK: - Suspend

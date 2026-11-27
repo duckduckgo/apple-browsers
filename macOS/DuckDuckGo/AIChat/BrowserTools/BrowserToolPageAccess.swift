@@ -57,10 +57,55 @@ enum BrowserToolTargetTab {
                                                                            in: windowControllersManager) else {
             return .failure(.unavailable)
         }
-        guard collection.indexInAllTabs(where: { $0.uuid == tabID }) != nil else {
+        guard let tab = tab(withID: tabID, in: collection) else {
             return .failure(.notFound)
         }
+        // The chat's own tab too: the sidebar can sit beside Settings or another browser page.
+        guard isListed(tab) else {
+            return .failure(.unavailable)
+        }
         return .resolved(tabID: tabID, collection: collection)
+    }
+
+    /// The tabs every tool may act on: web pages other than Duck.ai. Browser pages such as
+    /// Settings are not the tools' to touch, and a file URL names a local path that can include
+    /// the user's name.
+    static func isListed(_ tab: AnyTab) -> Bool {
+        guard case .url(let url, _, _) = tab.content, url.isHttpOrHttps else { return false }
+        return !url.isDuckAIURL
+    }
+
+    static func actionableTab(withID tabID: TabIdentifier, in collection: TabCollectionViewModel) -> AnyTab? {
+        guard let tab = tab(withID: tabID, in: collection), isListed(tab) else { return nil }
+        return tab
+    }
+
+    private static func tab(withID tabID: TabIdentifier, in collection: TabCollectionViewModel) -> AnyTab? {
+        switch collection.indexInAllTabs(where: { $0.uuid == tabID }) {
+        case .pinned(let index): collection.pinnedTabsCollection?.tabs[safe: index]
+        case .unpinned(let index): collection.tabCollection.tabs[safe: index]
+        case .none: nil
+        }
+    }
+
+    static func actionableTabs(withIDs tabIDs: [TabIdentifier]?, ownerTabID: TabIdentifier, in collection: TabCollectionViewModel) -> [AnyTab]? {
+        var unique: [TabIdentifier] = []
+        for tabID in tabIDs ?? [ownerTabID] where !unique.contains(tabID) { unique.append(tabID) }
+        let tabs = unique.compactMap { actionableTab(withID: $0, in: collection) }
+        return tabs.count == unique.count ? tabs : nil
+    }
+
+    static func tabIDs(from arguments: JSONValue?, maxCount: Int = 50) -> TabIDsArgument {
+        guard let value = arguments?["tabIds"], value != .null else { return .absent }
+        guard let values = value.arrayValue, (1...maxCount).contains(values.count) else { return .invalid }
+        let tabIDs = values.compactMap { $0.stringValue?.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+        return tabIDs.count == values.count ? .ids(tabIDs) : .invalid
+    }
+
+    enum TabIDsArgument: Equatable {
+        case absent
+        case ids([TabIdentifier])
+        case invalid
     }
 
     /// The loaded tab, or nil when it is not a page the tab picker would offer.
@@ -125,8 +170,14 @@ final class WebViewPageHighlighter: BrowserToolPageHighlighting {
         // Each await yields the main actor, so the user can open Cmd+F mid-sequence; from then on the
         // overlay is theirs and we stop touching it.
         let webView = tab.webView
-        guard !isFindBarVisible(in: tab) else { return .cancelled }
+        guard !Task.isCancelled, !isFindBarVisible(in: tab) else { return .cancelled }
         let result = await webView.find(quote, with: [.showFindIndicator, .wrapAround], maxCount: Self.maxMatches)
+        guard !Task.isCancelled else {
+            if !isFindBarVisible(in: tab) {
+                webView.clearFindInPageState()
+            }
+            return .cancelled
+        }
         guard !isFindBarVisible(in: tab) else { return .cancelled }
         let firstMatches: UInt?
         switch result {
@@ -141,6 +192,12 @@ final class WebViewPageHighlighter: BrowserToolPageHighlighting {
 
         webView.clearFindInPageState()
         let overlay = await webView.find(quote, with: [.noIndexChange, .showOverlay, .showFindIndicator, .wrapAround], maxCount: Self.maxMatches)
+        guard !Task.isCancelled else {
+            if !isFindBarVisible(in: tab) {
+                webView.clearFindInPageState()
+            }
+            return .cancelled
+        }
         guard !isFindBarVisible(in: tab) else { return .cancelled }
         switch overlay {
         case .found(let total):

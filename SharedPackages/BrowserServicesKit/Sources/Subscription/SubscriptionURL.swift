@@ -28,6 +28,7 @@ public enum SubscriptionURL: Equatable {
     case faq
     case privacyPolicy
     case helpPagesAddingEmail
+    case helpPagesCancelOrChangeSubscription
     case activationFlow
     case activationFlowThisDeviceEmailStep
     case activationFlowThisDeviceActivateEmailStep
@@ -51,6 +52,7 @@ public enum SubscriptionURL: Equatable {
         static let helpPagesURL = URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/")!
         static let privacyPolicyURL = URL(string: "https://duckduckgo.com/pro/privacy-terms/")!
         static let helpPagesAddingEmailURL = URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email")!
+        static let helpPagesCancelOrChangeSubscriptionURL = URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/cancel-or-change-subscription")!
     }
 
     public func subscriptionURL(withCustomBaseURL baseURL: URL = StaticURLs.defaultBaseSubscriptionURL, environment: SubscriptionEnvironment.ServiceEnvironment) -> URL {
@@ -68,6 +70,8 @@ public enum SubscriptionURL: Equatable {
                 StaticURLs.privacyPolicyURL
             case .helpPagesAddingEmail:
                 StaticURLs.helpPagesAddingEmailURL
+            case .helpPagesCancelOrChangeSubscription:
+                StaticURLs.helpPagesCancelOrChangeSubscriptionURL
             case .activationFlow:
                 baseURL.appendingPathComponent("activation-flow")
             case .activationFlowThisDeviceEmailStep:
@@ -114,7 +118,7 @@ public enum SubscriptionURL: Equatable {
 
     private var hasStagingVariant: Bool {
         switch self {
-        case .faq, .privacyPolicy, .helpPagesAddingEmail, .manageSubscriptionsInAppStore:
+        case .faq, .privacyPolicy, .helpPagesAddingEmail, .helpPagesCancelOrChangeSubscription, .manageSubscriptionsInAppStore:
             false
         default:
             true

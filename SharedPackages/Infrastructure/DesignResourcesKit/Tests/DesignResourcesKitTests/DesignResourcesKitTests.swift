@@ -16,14 +16,14 @@
 //  limitations under the License.
 //
 
+import SwiftUI
 import XCTest
 @testable import DesignResourcesKit
 
 final class DesignResourcesKitTests: XCTestCase {
-    func testExample() throws {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct
-        // results.
-        XCTAssertEqual(DesignResourcesKit().text, "Hello, World!")
+
+    @MainActor
+    func testHexColor() {
+        XCTAssertEqual(Color(0xFF0000), Color(.sRGB, red: 1, green: 0, blue: 0, opacity: 1))
     }
 }

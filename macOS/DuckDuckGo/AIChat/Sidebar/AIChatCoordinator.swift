@@ -59,6 +59,9 @@ protocol AIChatCoordinating {
     /// Returns the date when the AI Chat sidebar was last hidden for the active tab.
     func sidebarHiddenAtForCurrentTab() -> Date?
 
+    /// Returns whether a tab has a hidden chat that reopening would resume, rather than one that has expired.
+    func hasHiddenChat(for tabID: TabIdentifier) -> Bool
+
     /// Emits events whenever sidebar visibility changed for a tab.
     var sidebarPresenceDidChangePublisher: AnyPublisher<AIChatPresenceChange, Never> { get }
 
@@ -272,6 +275,11 @@ final class AIChatCoordinator: AIChatCoordinating {
     func sidebarHiddenAtForCurrentTab() -> Date? {
         guard let currentTabID = sidebarHost.currentTabID else { return nil }
         return sidebarHiddenAt(for: currentTabID)
+    }
+
+    func hasHiddenChat(for tabID: TabIdentifier) -> Bool {
+        guard let state = sessionStore.sessions[tabID]?.state else { return false }
+        return state.presentationMode == .hidden && state.hiddenAt != nil && !state.isSessionExpired
     }
 
     private func presentSidebar(for prompt: AIChatNativePrompt) {

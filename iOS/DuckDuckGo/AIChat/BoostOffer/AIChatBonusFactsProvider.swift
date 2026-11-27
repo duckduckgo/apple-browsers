@@ -24,6 +24,9 @@ import Foundation
 
 /// The install facts Duck.ai uses to decide whether to show the bonus limit extension offer.
 struct AIChatBonusFactsProvider: AIChatBonusFactsProviding {
+    /// How long after install the offer can be claimed, in full days.
+    static let defaultInstallWindowDays = 7
+
     private let statisticsStore: StatisticsStore
     private let aiChatSettings: AIChatSettingsProvider
     private let installWindowDays: Int
@@ -34,7 +37,7 @@ struct AIChatBonusFactsProvider: AIChatBonusFactsProviding {
     ///   - aiChatSettings: The Duck.ai settings.
     ///   - installWindowsDays: How long after install the offer can be claimed, in full days.
     ///   - now: A date provider, injectable for tests.
-    init(statisticsStore: StatisticsStore, aiChatSettings: AIChatSettingsProvider, installWindowDays: Int = 7, now: @escaping () -> Date = Date.init) {
+    init(statisticsStore: StatisticsStore, aiChatSettings: AIChatSettingsProvider, installWindowDays: Int = Self.defaultInstallWindowDays, now: @escaping () -> Date = Date.init) {
         self.statisticsStore = statisticsStore
         self.aiChatSettings = aiChatSettings
         self.installWindowDays = installWindowDays

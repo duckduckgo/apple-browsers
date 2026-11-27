@@ -25,6 +25,10 @@ protocol TabSwitcherDelegate: AnyObject {
     func tabSwitcherDidRequestNewFireTab(tabSwitcher: TabSwitcherViewController, source: FireModeSwitchSource)
     func tabSwitcherDidRequestNewNormalTab(tabSwitcher: TabSwitcherViewController)
 
+    /// Lets the delegate capture the screen for its new-tab transition. Returns true when one began,
+    /// so the tab switcher steps out of the way without its own dismissal animation.
+    func tabSwitcherBeginsNewTabTransition(_ tabSwitcher: TabSwitcherViewController) -> Bool
+
     /// Called when the tab switcher is dismissed. Carries the final browsing mode
     /// and selected tab index so MainViewController can apply the transition atomically.
     func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, didFinishWithSelectedTab tab: Tab?)
@@ -50,6 +54,9 @@ protocol TabSwitcherDelegate: AnyObject {
     func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, didRequestAIChat chatID: String)
 
     func tabSwitcherDidRequestAIChatHistory(_ tabSwitcher: TabSwitcherViewController)
+
+    /// Opens Data Clearing settings from the Fire Button's confirmation sheet.
+    func tabSwitcherDidRequestDataClearingSettings(_ tabSwitcher: TabSwitcherViewController)
 
     /// The overlay has finished dismissing and the selected browser surface is exposed.
     func tabSwitcherDidDismiss(_ tabSwitcher: TabSwitcherViewController)

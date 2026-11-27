@@ -31,8 +31,6 @@ struct OnboardingPersonalizationToggleBindingTests {
 
     // Each toggle row's binding must read and write exactly this manager property
     static let wiring: [(item: ItemType, keyPath: ReferenceWritableKeyPath<MockManager, Bool>)] = [
-        (.recentlyVisitedSites, \.isRecentlyVisitedSitesEnabled),
-        (.safeSearch, \.isSafeSearchEnabled),
         (.searchAssist, \.isSearchAssistEnabled),
         (.aiGeneratedImages, \.areAIGeneratedImagesHidden),
         (.youTubeAdBlocking, \.isYouTubeAdBlockingEnabled),

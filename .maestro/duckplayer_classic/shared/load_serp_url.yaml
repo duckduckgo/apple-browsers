@@ -16,4 +16,6 @@ appId: com.duckduckgo.mobile.ios
 
 - inputText: ${output.videoSearchUrl}
 - pressKey: Enter
+- assertVisible:
+    text: ${output.videoTitle}.*
 - waitForAnimationToEnd

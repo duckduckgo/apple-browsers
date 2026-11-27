@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Foundation
 import Combine
 import Common
@@ -50,6 +51,7 @@ protocol ScriptSourceProviding {
     var duckPlayer: DuckPlayer { get }
     var syncServiceProvider: () -> DDGSyncing? { get }
     var syncErrorHandler: SyncErrorHandling { get }
+    var aiChatBonusOffer: AIChatBonusOfferDependencies { get }
     var webExtensionAvailability: WebExtensionAvailabilityProviding? { get }
     var trackerProtectionDataSource: TrackerProtectionDataSource? { get }
     func buildAutofillSource() -> AutofillUserScriptSourceProvider
@@ -71,6 +73,7 @@ protocol ScriptSourceProviding {
         tld: Application.appDelegate.tld,
         featureFlagger: Application.appDelegate.featureFlagger,
         onboardingNavigationDelegate: Application.appDelegate.windowControllersManager,
+        onboardingPathStarter: { Application.appDelegate.onboardingContextualDialogsManager },
         appearancePreferences: Application.appDelegate.appearancePreferences,
         themeManager: Application.appDelegate.themeManager,
         startupPreferences: Application.appDelegate.startupPreferences,
@@ -85,6 +88,7 @@ protocol ScriptSourceProviding {
             return appDelegate?.syncService
         },
         syncErrorHandler: Application.appDelegate.syncErrorHandler,
+        aiChatBonusOffer: Application.appDelegate.aiChatBonusOffer,
         webExtensionAvailability: Application.appDelegate.webExtensionAvailability,
         dockCustomization: Application.appDelegate.dockCustomization,
         reinstallUserDetection: DefaultReinstallUserDetection(keyValueStore: Application.appDelegate.keyValueStore),
@@ -117,6 +121,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
     let autoconsentManagement: AutoconsentManagement
     let syncServiceProvider: () -> DDGSyncing?
     let syncErrorHandler: SyncErrorHandling
+    let aiChatBonusOffer: AIChatBonusOfferDependencies
     let webExtensionAvailability: WebExtensionAvailabilityProviding?
     let trackerProtectionDataSource: TrackerProtectionDataSource?
     let appearancePreferences: AppearancePreferences
@@ -133,6 +138,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
          tld: TLD,
          featureFlagger: FeatureFlagger,
          onboardingNavigationDelegate: OnboardingNavigating,
+         onboardingPathStarter: @escaping () -> ContextualOnboardingPathStarting,
          appearancePreferences: AppearancePreferences,
          themeManager: ThemeManaging,
          startupPreferences: StartupPreferences,
@@ -145,6 +151,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
          autoconsentManagement: AutoconsentManagement,
          syncServiceProvider: @escaping () -> DDGSyncing?,
          syncErrorHandler: SyncErrorHandling,
+         aiChatBonusOffer: AIChatBonusOfferDependencies,
          webExtensionAvailability: WebExtensionAvailabilityProviding?,
          dockCustomization: DockCustomization,
          reinstallUserDetection: ReinstallingUserDetecting,
@@ -168,6 +175,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         self.autoconsentManagement = autoconsentManagement
         self.syncServiceProvider = syncServiceProvider
         self.syncErrorHandler = syncErrorHandler
+        self.aiChatBonusOffer = aiChatBonusOffer
         self.webExtensionAvailability = webExtensionAvailability
         self.trackerProtectionDataSource = DefaultTrackerProtectionDataSource(
             contentBlockingManager: contentBlockingManager
@@ -181,6 +189,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         self.autofillSourceProvider = buildAutofillSource()
         self.onboardingActionsManager = buildOnboardingActionsManager(
             onboardingNavigationDelegate,
+            onboardingPathStarter,
             appearancePreferences,
             startupPreferences,
             reinstallUserDetection,
@@ -225,6 +234,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
 
     private func buildOnboardingActionsManager(
         _ navigationDelegate: OnboardingNavigating,
+        _ pathStarter: @escaping () -> ContextualOnboardingPathStarting,
         _ appearancePreferences: AppearancePreferences,
         _ startupPreferences: StartupPreferences,
         _ reinstallUserDetection: ReinstallingUserDetecting,
@@ -232,6 +242,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
     ) -> OnboardingActionsManaging {
         return OnboardingActionsManager(
             navigationDelegate: navigationDelegate,
+            pathStarter: pathStarter,
             dockCustomization: dockCustomization,
             defaultBrowserProvider: SystemDefaultBrowserProvider(),
             appearancePreferences: appearancePreferences,
@@ -240,8 +251,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
             pinningManager: pinningManager,
             featureFlagger: featureFlagger,
             reinstallUserDetection: reinstallUserDetection,
-            installDateProvider: installDateProvider,
-            contextualOnboardingStateUpdater: Application.appDelegate.onboardingContextualDialogsManager
+            installDateProvider: installDateProvider
         )
     }
 

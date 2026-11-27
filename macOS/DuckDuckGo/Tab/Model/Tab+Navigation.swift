@@ -41,7 +41,7 @@ extension Tab: NavigationResponder {
 
             // Pop-ups and Navigation Key Modifiers handling
             .weak(nullable: self.popupHandling),
-            .strong(NavigationPixelNavigationResponder(featureFlagger: featureFlagger)),
+            .strong(NavigationPixelNavigationResponder()),
             .weak(nullable: self.brokenSiteInfo),
             .weak(nullable: self.pageSignals),
 
@@ -88,6 +88,9 @@ extension Tab: NavigationResponder {
 
             // Find In Page
             .weak(nullable: self.findInPage),
+
+            // Hovered link: forget it when a new document is committed
+            .weak(nullable: self.hoveredLinks),
 
             // Tab Snapshots
             .weak(nullable: self.tabSnapshots),

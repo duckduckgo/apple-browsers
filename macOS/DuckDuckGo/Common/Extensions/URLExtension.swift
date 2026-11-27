@@ -245,11 +245,7 @@ extension URL {
     // MARK: ATB
 
     static var devMode: String {
-#if DEBUG
-        return "?test=1"
-#else
-        return ""
-#endif
+        BuildFlags.isProductionBuild ? "" : "?test=1"
     }
 
     static let atb = "\(Self.duckDuckGo)atb.js\(devMode)"

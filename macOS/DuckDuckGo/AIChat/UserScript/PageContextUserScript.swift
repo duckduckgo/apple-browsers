@@ -32,8 +32,16 @@ struct PageContextCollectionPayload: Codable {
     let error: String?
 }
 
-struct PageContextResponse: Codable {
+/// With `pageContextError` set, `pageContext` is nil and Duck.ai shows its "No page content available" error.
+struct PageContextResponse: Codable, Equatable {
+    enum PageContextError: String, Codable {
+        case unavailable
+    }
+
     let pageContext: AIChatPageContextData?
+    var pageContextError: PageContextError?
+
+    static let unavailable = PageContextResponse(pageContext: nil, pageContextError: .unavailable)
 }
 
 struct SelectionContextResponse: Codable {
@@ -49,6 +57,8 @@ final class PageContextUserScript: NSObject, Subfeature {
     weak var broker: UserScriptMessageBroker?
     weak var webView: WKWebView?
     let messageOriginPolicy: MessageOriginPolicy = .all
+    /// Page context describes the tab's document, so an iframe must not be able to supply it.
+    let messageFramePolicy: MessageFramePolicy = .mainFrame
 
     private let collectionResultSubject = PassthroughSubject<PageContextCollectionResult, Never>()
     private var cancellables: Set<AnyCancellable> = []

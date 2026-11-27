@@ -27,7 +27,6 @@ extension PromoServiceFactory {
     static func autofillToolbarPinning(dependencies: PromoDependencies) -> Promo {
         let windowControllersManager = dependencies.windowControllersManager
         let delegate = AutofillToolbarPinningPromoDelegate(
-            featureFlagger: dependencies.featureFlagger,
             pinningManager: dependencies.pinningManager,
             presenterProvider: {
                 windowControllersManager.lastKeyMainWindowController?

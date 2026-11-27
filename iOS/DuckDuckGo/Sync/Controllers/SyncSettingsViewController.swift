@@ -29,6 +29,7 @@ import PrivacyConfig
 import AttributedMetric
 import FeatureFlags_iOS
 import PixelKit
+import Persistence
 
 @MainActor
 class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView> {
@@ -41,6 +42,8 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
         static let bookmarksPromotion = "promotion_bookmarks"
         static let passwordsPromotion = "promotion_passwords"
         static let aiChatPromotion = "promotion_ai_chat"
+        static let bookmarksAnotherDevicePromotion = "promotion_bookmarks_multi_device"
+        static let passwordsAnotherDevicePromotion = "promotion_passwords_multi_device"
     }
 
     enum AutoRestorePromptSource: String {
@@ -68,6 +71,7 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
     let syncAutoRestoreHandler: SyncAutoRestoreHandling
     let pixelFiring: (any PixelKitFiring)?
     let cameraAuthorization: SyncCameraAuthorizing
+    let syncPromoStorage: any KeyedStoring<SyncPromoStorageKeys>
 
     var isSyncEnabled: Bool {
         syncService.account != nil
@@ -108,6 +112,7 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
     var pairingV2ConfirmationWasDismissedByController = false
     var needsPreservedAccountCleanupBeforeServerOperation = false
     var autoRestorePromptSource: AutoRestorePromptSource?
+    private var hasHandledFirstAppearance = false
 
     var onConfirmAndDeleteAllData: (() -> Void)?
 
@@ -136,7 +141,8 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
         syncAutoRestoreHandler: SyncAutoRestoreHandling,
         pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
-        cameraAuthorization: SyncCameraAuthorizing = SyncCameraAuthorization()
+        cameraAuthorization: SyncCameraAuthorizing = SyncCameraAuthorization(),
+        syncPromoStorage: any KeyedStoring<SyncPromoStorageKeys> = UserDefaults.app.keyedStoring()
     ) {
         self.syncService = syncService
         self.syncBookmarksAdapter = syncBookmarksAdapter
@@ -149,6 +155,7 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
         self.syncAutoRestoreHandler = syncAutoRestoreHandler
         self.pixelFiring = pixelFiring
         self.cameraAuthorization = cameraAuthorization
+        self.syncPromoStorage = syncPromoStorage
 
         let viewModel = SyncSettingsViewModel(
             isOnDevEnvironment: { syncService.serverEnvironment == .development },
@@ -347,6 +354,11 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
         ]))
 
         startPairingIfNecessary()
+
+        if !hasHandledFirstAppearance {
+            hasHandledFirstAppearance = true
+            startSyncWithAnotherDeviceFromPromoIfNecessary()
+        }
     }
 
     func updateOptions() {
@@ -424,6 +436,7 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
         }.sorted(by: { lhs, _ in
             lhs.isThisDevice
         })
+        syncPromoStorage.syncedDevicesCount = devices.count
         NotificationCenter.default.post(name: .syncDevicesUpdate, object: self, userInfo: [AttributedMetricNotificationParameter.syncCount.rawValue: devices.count])
     }
 
@@ -452,13 +465,25 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
         guard let source, syncService.authState == .inactive else {
             return
         }
-        let autoStartPairingSources = [SourceConstants.startSyncFlow, SourceConstants.aiChatPromotion]
-        let autoStartSetupSources = [SourceConstants.bookmarksPromotion, SourceConstants.passwordsPromotion]
-        if autoStartPairingSources.contains(source) {
+        switch source {
+        case SourceConstants.startSyncFlow:
             viewModel.beginPairingFlow()
-        } else if autoStartSetupSources.contains(source), featureFlagger.isFeatureOn(.syncPromotionRedesign) {
+        case SourceConstants.aiChatPromotion:
             viewModel.enableSyncToggleTapped()
+        case SourceConstants.bookmarksPromotion, SourceConstants.passwordsPromotion:
+            guard featureFlagger.isFeatureOn(.syncPromotionRedesign) else { return }
+            viewModel.enableSyncToggleTapped()
+        default:
+            break
         }
+    }
+
+    private func startSyncWithAnotherDeviceFromPromoIfNecessary() {
+        let anotherDevicePromotionSources = [SourceConstants.bookmarksAnotherDevicePromotion, SourceConstants.passwordsAnotherDevicePromotion]
+        guard let source, anotherDevicePromotionSources.contains(source), syncService.authState != .inactive else {
+            return
+        }
+        viewModel.beginPairingFlow()
     }
 
     private func askForAuthThenStartPairing() {
@@ -753,7 +778,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
     
     func controllerDidError(_ error: SyncConnectionError, underlyingError: (any Error)?, setupRole: SyncSetupRole) async {
         switch error {
-        case .unableToRecognizeCode:
+        case .unableToRecognizeCode, .unreadablePairingMessage:
             sendCodeParsingFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
             await handleError(.unableToRecognizeCode, error: underlyingError, event: nil)
         case .updateRequired:

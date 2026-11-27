@@ -86,8 +86,12 @@ extension BrowsingMenuBuilding {
         let menu = entryBuilder.makeAITabMenu()
 
         let headerItems: [BrowsingMenuModel.Entry] = header.compactMap { .init($0) }
-        let sections: [BrowsingMenuModel.Section] = menu.split(whereSeparator: \.isSeparator).map {
+        var sections: [BrowsingMenuModel.Section] = menu.split(whereSeparator: \.isSeparator).map {
             BrowsingMenuModel.Section(items: $0.compactMap { .init($0) })
+        }
+
+        if let internalFeedbackEntry = BrowsingMenuModel.Entry(entryBuilder.makeSendInternalFeedbackEntry()) {
+            sections.append(BrowsingMenuModel.Section(items: [internalFeedbackEntry]))
         }
 
         return BrowsingMenuModel(

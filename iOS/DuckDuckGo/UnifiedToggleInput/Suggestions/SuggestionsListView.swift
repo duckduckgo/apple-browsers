@@ -28,8 +28,9 @@ struct SuggestionsListView: View {
     @ObservedObject var viewModel: SuggestionsListViewModel
     let isAddressBarAtBottom: Bool
     var isFloatingPopover: Bool = false
+    var usesCardSurface = false
 
-    private enum Metrics {
+    fileprivate enum Metrics {
         /// Per Figma: the list table sits 6pt below the top-positioned input's bottom margin.
         static let listTopInset: CGFloat = 6
         static let popoverVerticalInset: CGFloat = 12
@@ -42,9 +43,19 @@ struct SuggestionsListView: View {
         /// List's horizontal content margin (cell edge). Reduced 8pt from the NTP's 24pt regularPadding
         /// to widen the cells in step with the narrower input card.
         static let listHorizontalContentMargin: CGFloat = 16
+        static let separatorLeadingInset: CGFloat = rowLeftInset + SuggestionRowView.titleLeadingInset
     }
 
+    @ViewBuilder
     var body: some View {
+        if usesCardSurface {
+            SuggestionsCardListView(viewModel: viewModel, isAddressBarAtBottom: isAddressBarAtBottom)
+        } else {
+            list
+        }
+    }
+
+    private var list: some View {
         ScrollViewReader { proxy in
             List {
                 ForEach(viewModel.sections) { section in
@@ -132,6 +143,127 @@ struct SuggestionsListView: View {
     }
 }
 
+/// The legacy NTP owns scrolling, so its recent chats use the list's rows without a nested `List`.
+struct LegacyRecentChatsView: View {
+
+    @ObservedObject var viewModel: SuggestionsListViewModel
+    let isAddressBarAtBottom: Bool
+    var usesCardSurface = false
+
+    var body: some View {
+        VStack(spacing: SuggestionsListView.Metrics.popoverSectionSpacing) {
+            ForEach(viewModel.sections) { section in
+                SuggestionsSectionCard(viewModel: viewModel, section: section,
+                                       isAddressBarAtBottom: isAddressBarAtBottom, usesCardSurface: usesCardSurface)
+            }
+        }
+        .onHover { isHovering in
+            if !isHovering { viewModel.selectedRowID = nil }
+        }
+    }
+}
+
+private struct SuggestionsSectionCard: View {
+
+    @ObservedObject var viewModel: SuggestionsListViewModel
+    let section: SuggestionSection
+    let isAddressBarAtBottom: Bool
+    let usesCardSurface: Bool
+
+    @Environment(\.displayScale) private var displayScale
+
+    private typealias Metrics = SuggestionsListView.Metrics
+
+    private enum CardMetrics {
+        static let cardSeparatorOpacity: Double = 0.5
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            ForEach(section.rows) { row in
+                SuggestionRowButton(viewModel: viewModel, row: row, isAddressBarAtBottom: isAddressBarAtBottom,
+                                    restingBackground: usesCardSurface ? nil : Color(designSystemColor: .surface))
+                    .id(row.id)
+                    .overlay(alignment: .bottom) {
+                        if row.id != section.rows.last?.id {
+                            Color(uiColor: .separator)
+                                .opacity(usesCardSurface ? CardMetrics.cardSeparatorOpacity : 1)
+                                .frame(height: 1 / displayScale)
+                                .padding(.leading, Metrics.separatorLeadingInset)
+                                .padding(.trailing, Metrics.rowRightInset)
+                        }
+                    }
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        .background {
+            if usesCardSurface {
+                RedesignedNewTabPageModuleBackground()
+            }
+        }
+    }
+
+    private var cornerRadius: CGFloat {
+        if usesCardSurface { return RedesignedNewTabPageCardBackground.cornerRadius }
+        if #available(iOS 26, *) { return 24 }
+        return 10
+    }
+}
+
+private struct SuggestionRowButton: View {
+
+    @ObservedObject var viewModel: SuggestionsListViewModel
+    let row: SuggestionRow
+    let isAddressBarAtBottom: Bool
+    let restingBackground: Color?
+
+    private typealias Metrics = SuggestionsListView.Metrics
+
+    var body: some View {
+        Button {
+            viewModel.selectRow(id: row.id)
+        } label: {
+            SuggestionRowView(
+                row: row,
+                isAddressBarAtBottom: isAddressBarAtBottom,
+                isSelected: row.id == viewModel.selectedRowID,
+                onTapAhead: { viewModel.tapAheadRow(id: row.id) },
+                onDelete: { viewModel.deleteRow(id: row.id) },
+                onFire: { frame in viewModel.fireDeleteRow(id: row.id, sourceRect: frame) })
+                .padding(.vertical, row.subtitle == nil ? Metrics.rowVerticalPaddingSingleLine : Metrics.rowVerticalPaddingWithSubtitle)
+                .padding(.leading, Metrics.rowLeftInset)
+                .padding(.trailing, Metrics.rowRightInset)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(SuggestionRowButtonStyle(isSelected: row.id == viewModel.selectedRowID, restingBackground: restingBackground))
+        .accessibilityIdentifier(row.accessibilityID)
+        .onHover { isHovering in
+            if isHovering { viewModel.selectedRowID = row.id }
+        }
+    }
+}
+
+private struct SuggestionRowButtonStyle: ButtonStyle {
+    let isSelected: Bool
+    let restingBackground: Color?
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .background {
+                ZStack {
+                    if isSelected {
+                        Color(designSystemColor: .accentPrimary)
+                    } else if let restingBackground {
+                        restingBackground
+                    }
+                    if configuration.isPressed {
+                        Color(uiColor: .tertiarySystemFill)
+                    }
+                }
+            }
+    }
+}
+
 /// insetGrouped reserves a large variable top inset above the first section; replace it with the
 /// design's `top` inset, and set the `horizontal` content margin (the cell edge) explicitly so the
 /// rows align with the escape hatch and favorites grid in every orientation.
@@ -189,6 +321,50 @@ private struct SeparatorTrailingToContentModifier: ViewModifier {
             content.alignmentGuide(.listRowSeparatorTrailing) { $0[.trailing] }
         } else {
             content
+        }
+    }
+}
+
+/// `List` cannot put one surface behind a whole section, and a glass surface per row shows each row's edge.
+private struct SuggestionsCardListView: View {
+
+    @ObservedObject var viewModel: SuggestionsListViewModel
+    let isAddressBarAtBottom: Bool
+
+    private typealias Metrics = SuggestionsListView.Metrics
+
+    private enum CardMetrics {
+        static let sectionSpacing: CGFloat = 12
+        static let headerBottomSpacing: CGFloat = 8
+    }
+
+    var body: some View {
+        ScrollViewReader { proxy in
+            ScrollView {
+                VStack(alignment: .leading, spacing: CardMetrics.sectionSpacing) {
+                    ForEach(viewModel.sections) { section in
+                        if let title = section.title, !title.isEmpty {
+                            Text(title)
+                                .daxTitle3()
+                                .foregroundColor(Color(designSystemColor: .textPrimary))
+                                .padding(.bottom, CardMetrics.headerBottomSpacing - CardMetrics.sectionSpacing)
+                        }
+                        SuggestionsSectionCard(viewModel: viewModel, section: section,
+                                               isAddressBarAtBottom: isAddressBarAtBottom, usesCardSurface: true)
+                    }
+                }
+                .padding(.horizontal, Metrics.listHorizontalContentMargin)
+                .padding(.top, isAddressBarAtBottom ? 0 : Metrics.listTopInset)
+                .padding(.bottom, Metrics.listTopInset)
+            }
+            .scrollDismissesKeyboardIfAvailable()
+            .onHover { isHovering in
+                if !isHovering { viewModel.selectedRowID = nil }
+            }
+            .onReceive(viewModel.$selectedRowID) { id in
+                guard let id else { return }
+                withAnimation { proxy.scrollTo(id) }
+            }
         }
     }
 }

@@ -24,6 +24,7 @@ enum FreemiumDBPEntryPoint: String, Equatable {
     case viewResultsBanner = "viewresultsbanner"
     case appMenuPreScan = "appmenuprescan"
     case appMenuPostScan = "appmenupostscan"
+    case scanCompleteNotification = "scancompletenotification"
 }
 
 /// Conforming types provide functionality to show Freemium DBP

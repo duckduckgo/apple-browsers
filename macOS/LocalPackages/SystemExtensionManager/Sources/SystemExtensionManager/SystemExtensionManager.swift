@@ -20,6 +20,7 @@ import Foundation
 import Cocoa
 import Combine
 import os.log
+import Security
 import SystemExtensions
 
 protocol SystemExtensionRequestManaging: AnyObject {
@@ -58,6 +59,8 @@ public struct SystemExtensionPropertiesSnapshot: Equatable {
 public struct SystemExtensionManager {
 
     private static let defaultRequestTimeout: TimeInterval = 120
+    // Every VPN start runs this check before activating, so keep a stalled properties request from delaying it.
+    private static let preActivationStateCheckTimeout: TimeInterval = 10
     private static let networkExtensionSettingsExtensionPointIdentifier = "com.apple.system_extension.network_extension.extension-point"
 
     static func systemSettingsURLString(forExtensionWithIdentifier extensionBundleID: String) -> String {
@@ -103,7 +106,7 @@ public struct SystemExtensionManager {
     ///
     public func activate(waitingForUserApproval: @escaping () -> Void) async throws -> String? {
 
-        workaroundToActivateBeforeSequoia()
+        await openSystemSettingsIfAwaitingUserApproval()
 
         let activationRequest = SystemExtensionRequest.activationRequest(
             forExtensionWithIdentifier: extensionBundleID,
@@ -140,10 +143,21 @@ public struct SystemExtensionManager {
     /// For the users that don't see the alert come up more than once this should be invisible.  For users (like myself) that
     /// see the alert every single time, they'll see both the alert and system settings being opened automatically.
     ///
-    private func workaroundToActivateBeforeSequoia() {
-        if hasPendingActivationRequests() {
-            openSystemSettingsSecurity()
+    private func openSystemSettingsIfAwaitingUserApproval() async {
+        guard let properties = await propertySnapshots(requestTimeout: min(requestTimeout, Self.preActivationStateCheckTimeout)),
+              Self.shouldOpenSystemSettingsBeforeActivation(for: properties) else {
+            return
         }
+
+        openSystemSettingsSecurity()
+    }
+
+    /// Decides from the raw properties rather than `activationState(from:)`, whose ranking reports
+    /// `.uninstalling` when a deactivated copy awaits reboot alongside a new copy awaiting approval.
+    /// An enabled copy means any waiting entry is stale, so Settings must stay closed.
+    ///
+    static func shouldOpenSystemSettingsBeforeActivation(for properties: [SystemExtensionPropertiesSnapshot]) -> Bool {
+        !properties.contains(where: \.isEnabled) && properties.contains(where: \.isAwaitingUserApproval)
     }
 
     public func deactivate() async throws {
@@ -159,29 +173,38 @@ public struct SystemExtensionManager {
     }
 
     public func activationState() async -> SystemExtensionActivationState {
+        guard let properties = await propertySnapshots(requestTimeout: requestTimeout) else {
+            return .unknown
+        }
+
+        return Self.activationState(from: properties)
+    }
+
+    /// - Returns: `nil` when the properties request fails, times out or is cancelled.
+    ///
+    private func propertySnapshots(requestTimeout: TimeInterval) async -> [SystemExtensionPropertiesSnapshot]? {
         do {
             let properties = try await SystemExtensionPropertiesRequest.properties(
                 forExtensionWithIdentifier: extensionBundleID,
                 manager: manager,
                 requestTimeout: requestTimeout
             )
-            let snapshots = properties.map {
+            return properties.map {
                 SystemExtensionPropertiesSnapshot(
                     isEnabled: $0.isEnabled,
                     isAwaitingUserApproval: $0.isAwaitingUserApproval,
                     isUninstalling: $0.isUninstalling
                 )
             }
-            return Self.activationState(from: snapshots)
         } catch is CancellationError {
-            return .unknown
+            return nil
         } catch {
             Logger.systemExtensionManager.error("""
             Failed to query system extension state
               bundleID:    \(extensionBundleID, privacy: .public)
               description: \(error.localizedDescription, privacy: .public)
             """)
-            return .unknown
+            return nil
         }
     }
 
@@ -208,32 +231,6 @@ public struct SystemExtensionManager {
     @available(macOS 15.1, *)
     public func makeActivationStateObserver(onStateChange: @escaping () -> Void) -> SystemExtensionActivationStateObserver {
         SystemExtensionActivationStateObserver(extensionBundleID: extensionBundleID, onStateChange: onStateChange)
-    }
-
-    // MARK: - Activation: Checking if there are pending requests
-
-    /// Checks if there are pending activation requests for the system extension.
-    ///
-    /// This implementation should work well for all macOS 11+ releases.  A better implementation for macOS 12+
-    /// would be to use a properties request, but that option requires bigger changes and some rethinking of these
-    /// classes which I'd rather avoid right now.  In short this solution was picked as a quick solution with the best
-    /// ROI to avoid getting blocked.
-    ///
-    private func hasPendingActivationRequests() -> Bool {
-        let task = Process()
-        let pipe = Pipe()
-
-        task.standardOutput = pipe
-        task.launchPath = "/bin/bash" // Specify the shell to use
-        task.arguments = ["-c", "$(which systemextensionsctl) list | $(which egrep) -c '(?:\(extensionBundleID)).+(?:activated waiting for user)+'"]
-
-        task.launch()
-        task.waitUntilExit()
-
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        let output = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        return (Int(output ?? "0") ?? 0) > 0
     }
 
     private func openSystemSettingsSecurity() {
@@ -435,6 +432,40 @@ extension SystemExtensionActivationStateObserver: OSSystemExtensionsWorkspaceObs
     }
 }
 
+/// The identity of a system extension build: its versions and the hash of its signed code.
+struct SystemExtensionBuild: Equatable {
+    let shortVersion: String
+    let version: String
+    /// The code directory hash (CDHash) of the bundle, or `nil` when it can't be read.
+    let codeDirectoryHash: Data?
+}
+
+extension SystemExtensionBuild {
+
+    init(_ properties: OSSystemExtensionProperties) {
+        self.init(shortVersion: properties.bundleShortVersion,
+                  version: properties.bundleVersion,
+                  codeDirectoryHash: Self.codeDirectoryHash(ofBundleAt: properties.url))
+    }
+
+    /// - Parameter url: The URL of a signed bundle.
+    /// - Returns: The code directory hash (CDHash) of the bundle, or `nil` when it can't be read.
+    static func codeDirectoryHash(ofBundleAt url: URL) -> Data? {
+        var staticCode: SecStaticCode?
+        guard SecStaticCodeCreateWithPath(url as CFURL, [], &staticCode) == errSecSuccess, let staticCode else {
+            return nil
+        }
+
+        var information: CFDictionary?
+        guard SecCodeCopySigningInformation(staticCode, [], &information) == errSecSuccess,
+              let information = information as? [String: Any] else {
+            return nil
+        }
+
+        return information[kSecCodeInfoUnique as String] as? Data
+    }
+}
+
 final class SystemExtensionRequest: NSObject {
 
     private let request: OSSystemExtensionRequest
@@ -567,8 +598,29 @@ extension SystemExtensionRequest: OSSystemExtensionRequestDelegate {
 
     func request(_ request: OSSystemExtensionRequest, actionForReplacingExtension existing: OSSystemExtensionProperties, withExtension ext: OSSystemExtensionProperties) -> OSSystemExtensionRequest.ReplacementAction {
 
-        updateVersion(to: ext.bundleShortVersion + "." + ext.bundleVersion)
-        return .replace
+        replacementAction(replacing: SystemExtensionBuild(existing),
+                          existingIsActive: existing.isEnabled && !existing.isAwaitingUserApproval && !existing.isUninstalling,
+                          with: SystemExtensionBuild(ext))
+    }
+
+    /// Decides whether to replace the active extension with the one being activated.
+    ///
+    /// - Parameters:
+    ///   - existing: The installed extension.
+    ///   - existingIsActive: Whether the installed extension is enabled, approved and not being uninstalled.
+    ///   - new: The extension being activated.
+    /// - Returns: `.cancel` when the installed extension is active and both are the same build with the same signed code,
+    ///   otherwise `.replace`.
+    func replacementAction(replacing existing: SystemExtensionBuild,
+                           existingIsActive: Bool,
+                           with new: SystemExtensionBuild) -> OSSystemExtensionRequest.ReplacementAction {
+        guard existingIsActive, existing.codeDirectoryHash != nil, existing == new else {
+            updateVersion(to: new.shortVersion + "." + new.version)
+            return .replace
+        }
+
+        Logger.systemExtensionManager.log("Keeping the active system extension \(new.shortVersion, privacy: .public) (\(new.version, privacy: .public)): the build being activated is identical")
+        return .cancel
     }
 
     func requestNeedsUserApproval(_ request: OSSystemExtensionRequest) {
@@ -594,7 +646,11 @@ extension SystemExtensionRequest: OSSystemExtensionRequestDelegate {
     }
 
     func request(_ request: OSSystemExtensionRequest, didFailWithError error: Error) {
-        Self.logRequestFailure(error: error, request: request)
+        if case OSSystemExtensionError.requestCanceled = error {
+            Logger.systemExtensionManager.info("System extension wasn't replaced because the version didn't change (requestCanceled): \(request.identifier, privacy: .public)")
+        } else {
+            Self.logRequestFailure(error: error, request: request)
+        }
         complete(with: .failure(error))
     }
 

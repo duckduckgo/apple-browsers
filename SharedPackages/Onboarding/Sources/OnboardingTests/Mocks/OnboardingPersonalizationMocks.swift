@@ -22,12 +22,6 @@ import Foundation
 final class MockOnboardingAppSettingsStore: OnboardingAppSettingsPersonalizationStore {
     private(set) var setCallCount = 0
 
-    var recentlyVisitedSitesEnabled = false {
-        didSet {
-            setCallCount += 1
-        }
-    }
-
     var isCookiePopUpProtectionEnabled = false {
         didSet {
             setCallCount += 1
@@ -43,12 +37,6 @@ final class MockOnboardingAppSettingsStore: OnboardingAppSettingsPersonalization
 
 final class MockOnboardingSERPStore: OnboardingSERPPersonalizationStore {
     private(set) var setCallCount = 0
-
-    var isSafeSearchEnabled = false {
-        didSet {
-            setCallCount += 1
-        }
-    }
 
     var isSearchAssistEnabled = false {
         didSet {

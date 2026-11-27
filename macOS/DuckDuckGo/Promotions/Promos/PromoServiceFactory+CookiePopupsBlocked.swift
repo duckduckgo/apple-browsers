@@ -30,7 +30,7 @@ extension PromoServiceFactory {
             triggers: [.appBecameActive],
             initiated: .app,
             promoType: PromoType(.featureTip, customTimeoutResult: .ignored()),
-            context: .global,
+            context: .webPage,
             delegate: delegate
         )
     }

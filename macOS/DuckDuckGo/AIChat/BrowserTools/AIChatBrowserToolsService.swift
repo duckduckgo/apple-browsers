@@ -21,65 +21,77 @@ import Combine
 import FeatureFlags_macOS
 import Foundation
 import History
-import Persistence
+import PixelKit
 import PrivacyConfig
 import WebKit
 
-/// Owns the MCP sessions, the tool catalog and their gating. App-wide rather than per web view,
-/// because a session belongs to the owner tab while each web view gets its own user script.
+/// Owns the tool catalog, invocation and permissions shared by all chat surfaces.
 @MainActor
 final class AIChatBrowserToolsService {
 
-    /// Identifies this browser in the MCP `initialize` result. The Windows browser reports
-    /// `windows-browser`.
-    static let serverName = "macos-browser"
-
-    let sessions = AIChatMCPSessionStore()
     let catalog: BrowserToolCatalog
     let invoker: BrowserToolInvoker
     let permissions: BrowserToolPermissionStoring
-    let elicitations: AIChatElicitationCoordinator
+    let clientToolPermissions: ClientToolPermissionCoordinator
+    let permissionPrompts: BrowserToolPermissionPromptPresenter
 
     private let configuration: AIChatBrowserToolsConfiguration
     private let windowControllersManager: WindowControllersManagerProtocol
     private let pushers = NSHashTable<AnyObject>.weakObjects()
-    private var catalogChangeNotifier: BrowserToolCatalogChangeNotifier?
+    private var lastClientToolsConfiguration: ClientToolsConfiguration?
+    private var featureFlagChanges: AnyCancellable?
+    private var fireBurns: AnyCancellable?
 
-    /// Reported to the front end as `supportsBrowserTools`. The front end must not open a session
-    /// when this is false, which also protects against version skew.
+    /// Whether browser tools are enabled by the parent feature flag.
     var isEnabled: Bool { configuration.isEnabled }
 
     /// - Parameter tools: overridable so tests can register their own catalog.
     init(featureFlagger: FeatureFlagger,
          windowControllersManager: WindowControllersManagerProtocol,
          historyCoordinator: HistoryCoordinating,
-         permissionStorage: any KeyedStoring<BrowserToolPermissionStorageKeys> = UserDefaults.standard.keyedStoring(),
+         bookmarkManager: BookmarkManager,
+         permissionManager: PermissionManagerProtocol,
          tools: [any BrowserTool]? = nil) {
-        let configuration = AIChatBrowserToolsConfiguration(featureFlagger: featureFlagger)
-        let catalog = BrowserToolCatalog(tools: tools ?? Self.defaultTools(windowControllersManager: windowControllersManager,
-                                                                           historyCoordinator: historyCoordinator),
-                                         configuration: configuration)
-        let permissions = BrowserToolPermissionStore(storage: permissionStorage)
-        let elicitations = AIChatElicitationCoordinator()
+        let tools = tools ?? Self.defaultTools(windowControllersManager: windowControllersManager,
+                                               historyCoordinator: historyCoordinator,
+                                               bookmarkManager: bookmarkManager)
+        let configuration = AIChatBrowserToolsConfiguration(featureFlagger: featureFlagger,
+                                                            askToolNames: Set(tools.filter { $0.permissionMode == .ask }.map(\.name)))
+        let catalog = BrowserToolCatalog(tools: tools, configuration: configuration)
+        let permissions = BrowserToolSitePermissions(permissionManager: permissionManager)
+        let clientToolPermissions = ClientToolPermissionCoordinator(permissions: permissions)
+        let instrumentation = BrowserToolsPixelInstrumentation(pixelFiring: PixelKit.shared)
+        clientToolPermissions.instrumentation = instrumentation
         self.configuration = configuration
         self.windowControllersManager = windowControllersManager
         self.catalog = catalog
         self.permissions = permissions
-        self.elicitations = elicitations
-        self.invoker = BrowserToolInvoker(catalog: catalog,
-                                          configuration: configuration,
-                                          permissions: permissions,
-                                          elicitations: elicitations)
-        self.catalogChangeNotifier = BrowserToolCatalogChangeNotifier(
-            changes: featureFlagger.updatesPublisher,
-            signature: { [configuration, catalog] in configuration.isEnabled ? catalog.enabledTools.map(\.name) : [] },
-            onChange: { [weak self] in self?.pushToolsListChanged() }
-        )
+        self.clientToolPermissions = clientToolPermissions
+        self.permissionPrompts = BrowserToolPermissionPromptPresenter(windowControllersManager: windowControllersManager) { prompt, decision, prompter in
+            clientToolPermissions.respond(to: prompt, decision: decision, from: prompter)
+        }
+        let invoker = BrowserToolInvoker(catalog: catalog, clientToolPermissions: clientToolPermissions)
+        invoker.instrumentation = instrumentation
+        self.invoker = invoker
+        self.lastClientToolsConfiguration = catalog.clientToolsConfiguration
+        self.featureFlagChanges = featureFlagger.updatesPublisher.sink { [weak self] in
+            Task { @MainActor in
+                self?.pushClientToolsChangedIfNeeded()
+            }
+        }
     }
 
-    /// Registration order is the order the front end sees in `tools/list`.
+    /// `requestAccess` grants last for a chat until quit; the Fire Button clears them too.
+    func revokeChatGrants(whenBurning burns: AnyPublisher<Fire.BurningData?, Never>) {
+        fireBurns = burns.compactMap { $0 }.sink { [weak self] _ in
+            Task { @MainActor in self?.clientToolPermissions.revokeChatGrants() }
+        }
+    }
+
+    /// Registration order determines the order of the advertised capabilities.
     private static func defaultTools(windowControllersManager: WindowControllersManagerProtocol,
-                                     historyCoordinator: HistoryCoordinating) -> [any BrowserTool] {
+                                     historyCoordinator: HistoryCoordinating,
+                                     bookmarkManager: BookmarkManager) -> [any BrowserTool] {
         let reader = BrowserToolPageContentReader(windowControllersManager: windowControllersManager)
         return [
             ListOpenTabsBrowserTool(windowControllersManager: windowControllersManager),
@@ -87,8 +99,19 @@ final class AIChatBrowserToolsService {
             SearchHistoryBrowserTool(historyCoordinator: historyCoordinator),
             ReadTabContentBrowserTool(windowControllersManager: windowControllersManager, reader: reader),
             FindInPageBrowserTool(windowControllersManager: windowControllersManager, reader: reader),
-            HighlightInPageBrowserTool(windowControllersManager: windowControllersManager, highlighter: WebViewPageHighlighter())
+            HighlightInPageBrowserTool(windowControllersManager: windowControllersManager, highlighter: WebViewPageHighlighter()),
+            PinTabBrowserTool(windowControllersManager: windowControllersManager),
+            OpenTabBrowserTool(windowControllersManager: windowControllersManager),
+            CloseTabsBrowserTool(windowControllersManager: windowControllersManager),
+            BookmarkTabBrowserTool(windowControllersManager: windowControllersManager, bookmarkManager: bookmarkManager),
+            SearchDownloadsBrowserTool(),
+            SearchBookmarksBrowserTool(bookmarkManager: bookmarkManager)
         ]
+    }
+
+    /// Advertised to Duck.ai in `getAIChatNativeConfigValues`. Nil when no tool is enabled.
+    var clientToolsConfiguration: ClientToolsConfiguration? {
+        catalog.clientToolsConfiguration
     }
 
     // MARK: - Pushes
@@ -110,9 +133,13 @@ final class AIChatBrowserToolsService {
         }
     }
 
-    private func pushToolsListChanged() {
+    private func pushClientToolsChangedIfNeeded() {
+        let configuration = clientToolsConfiguration
+        guard configuration != lastClientToolsConfiguration else { return }
+        lastClientToolsConfiguration = configuration
+        let data = ClientToolsChangedData(clientTools: configuration)
         for pusher in livePushers {
-            pusher.pushToolsListChanged()
+            pusher.pushClientToolsChanged(data)
         }
     }
 
@@ -128,7 +155,7 @@ protocol AIChatBrowserToolsPushing: AnyObject {
     /// The web view showing the chat; resolves which owner tab the surface belongs to.
     var pushTargetWebView: WKWebView? { get }
 
-    func pushToolsListChanged()
+    func pushClientToolsChanged(_ data: ClientToolsChangedData)
     func pushTabChanged(_ data: AIChatTabChangedData)
 }
 
@@ -138,19 +165,26 @@ protocol AIChatBrowserToolsPushing: AnyObject {
 final class AIChatBrowserToolsConfiguration: BrowserToolsConfiguration {
 
     private let featureFlagger: FeatureFlagger
+    private let askToolNames: Set<String>
 
-    init(featureFlagger: FeatureFlagger) {
+    init(featureFlagger: FeatureFlagger, askToolNames: Set<String>) {
         self.featureFlagger = featureFlagger
+        self.askToolNames = askToolNames
     }
 
     var isEnabled: Bool {
         featureFlagger.isFeatureOn(.aiChatBrowserTools)
     }
 
+    var isRequestAccessEnabled: Bool {
+        isEnabled && featureFlagger.isFeatureOn(.aiChatBrowserToolRequestAccess)
+    }
+
     func isToolEnabled(named name: String) -> Bool {
         guard isEnabled,
               let subfeature = AIChatBrowserToolsSubfeature(rawValue: name),
               let flag = Self.featureFlag(for: subfeature) else { return false }
+        if askToolNames.contains(name), !featureFlagger.isFeatureOn(.websitePermissionsPrompts) { return false }
         return featureFlagger.isFeatureOn(flag)
     }
 
@@ -163,6 +197,13 @@ final class AIChatBrowserToolsConfiguration: BrowserToolsConfiguration {
         case .readTabContent: .aiChatBrowserToolReadTabContent
         case .findInPage: .aiChatBrowserToolFindInPage
         case .highlightInPage: .aiChatBrowserToolHighlightInPage
+        case .pinTab: .aiChatBrowserToolPinTab
+        case .openTab: .aiChatBrowserToolOpenTab
+        case .closeTabs: .aiChatBrowserToolCloseTabs
+        case .bookmarkTab: .aiChatBrowserToolBookmarkTab
+        case .searchDownloads: .aiChatBrowserToolSearchDownloads
+        case .searchBookmarks: .aiChatBrowserToolSearchBookmarks
+        case .requestAccess: nil // Not a tool: see `isRequestAccessEnabled`.
         }
     }
 }

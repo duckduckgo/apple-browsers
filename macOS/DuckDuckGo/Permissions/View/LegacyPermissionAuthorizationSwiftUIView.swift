@@ -48,8 +48,8 @@ enum PermissionAuthorizationType: Equatable {
             case .popups: self = .popups
             case .notification: self = .notification
             case .externalScheme(let scheme): self = .externalScheme(scheme: scheme)
-            case .autoplayPolicy:
-                assertionFailure("Autoplay policy does not use authorization flow")
+            case .autoplayPolicy, .browserTool:
+                assertionFailure("\(first) does not use the website authorization flow")
                 self = .camera // fallback, shouldn't happen
             }
         } else {
@@ -686,7 +686,7 @@ extension PermissionType {
             return UserText.permissionCenterSystemNotificationDisabled
         case .microphone:
             return UserText.permissionSystemMicrophoneDisabled
-        case .camera, .popups, .externalScheme, .autoplayPolicy:
+        case .camera, .popups, .externalScheme, .autoplayPolicy, .browserTool:
             return ""
         }
     }
@@ -700,7 +700,7 @@ extension PermissionType {
             return UserText.permissionCenterSystemSettingsNotifications
         case .microphone:
             return UserText.permissionSystemSettingsMicrophone
-        case .camera, .popups, .externalScheme, .autoplayPolicy:
+        case .camera, .popups, .externalScheme, .autoplayPolicy, .browserTool:
             return ""
         }
     }
@@ -714,7 +714,7 @@ extension PermissionType {
             return URL(string: "x-apple.systempreferences:com.apple.preference.notifications")
         case .microphone:
             return URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone")
-        case .camera, .popups, .externalScheme, .autoplayPolicy:
+        case .camera, .popups, .externalScheme, .autoplayPolicy, .browserTool:
             return nil
         }
     }

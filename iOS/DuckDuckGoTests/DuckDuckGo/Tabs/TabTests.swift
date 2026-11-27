@@ -147,6 +147,54 @@ class TabTests: XCTestCase {
         )
     }
 
+    @available(iOS 18.4, *)
+    func testCPMCommitEventIsNilForALinkPreview() {
+        let event = TabViewController.cpmCommitEvent(tabIdentifier: "tab",
+                                                     url: URL(string: "https://example.com")!,
+                                                     isLinkPreview: true,
+                                                     isErrorPage: false,
+                                                     committingNavigationKind: .other,
+                                                     extensionIsLoaded: true)
+
+        XCTAssertNil(event)
+    }
+
+    @available(iOS 18.4, *)
+    func testCPMCommitEventCarriesTheCommittingKindAndTheExtensionState() {
+        let url = URL(string: "https://example.com/page")!
+        for kind in [CPMNavigationKind.other, .backForward, .sessionRestoration, .nonHTMLDocument] {
+            let event = TabViewController.cpmCommitEvent(tabIdentifier: "tab",
+                                                         url: url,
+                                                         isLinkPreview: false,
+                                                         isErrorPage: false,
+                                                         committingNavigationKind: kind,
+                                                         extensionIsLoaded: false)
+
+            guard case .navigationCommitted(let tab, let committedURL, let committedKind, let loaded) = event else {
+                return XCTFail("Expected a navigationCommitted event for \(kind)")
+            }
+            XCTAssertEqual(tab, "tab")
+            XCTAssertEqual(committedURL, url)
+            XCTAssertEqual(committedKind, kind)
+            XCTAssertFalse(loaded)
+        }
+    }
+
+    @available(iOS 18.4, *)
+    func testCPMCommitEventOfTheErrorPageIsAnErrorPageWhateverTheCommittingKind() {
+        let event = TabViewController.cpmCommitEvent(tabIdentifier: "tab",
+                                                     url: URL(string: "https://example.com")!,
+                                                     isLinkPreview: false,
+                                                     isErrorPage: true,
+                                                     committingNavigationKind: .other,
+                                                     extensionIsLoaded: true)
+
+        guard case .navigationCommitted(_, _, let kind, _) = event else {
+            return XCTFail("Expected a navigationCommitted event")
+        }
+        XCTAssertEqual(kind, .errorPage)
+    }
+
     /// This test supports the migration scenario where desktop was not a property of tab
     func testWhenEncodedWithoutDesktopPropertyThenDecodesSuccessfully() {
         let tab = Tab(coder: CoderStub(properties: ["link": link(), "viewed": false]))

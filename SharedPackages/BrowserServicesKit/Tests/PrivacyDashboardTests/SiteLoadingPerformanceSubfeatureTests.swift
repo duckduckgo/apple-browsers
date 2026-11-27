@@ -43,7 +43,7 @@ final class SiteLoadingPerformanceSubfeatureTests: XCTestCase {
             }
         )
 
-        let payload: [String: Any] = [
+        let payload = [
             "metrics": [
                 "firstContentfulPaint": 556.0,
                 "timeToFirstByte": 235.0,
@@ -59,7 +59,7 @@ final class SiteLoadingPerformanceSubfeatureTests: XCTestCase {
                 "domContentLoaded": 961.0
             ]
         ]
-        let message = WKScriptMessage.mock(name: "expandedPerformanceMetricsResult", body: payload)
+        let message = await WKScriptMessage.mock(name: "expandedPerformanceMetricsResult", body: payload)
 
         _ = try await subfeature.expandedPerformanceMetricsResult(params: payload, original: message)
 
@@ -87,8 +87,8 @@ final class SiteLoadingPerformanceSubfeatureTests: XCTestCase {
             samplePercentage: 20,
             pixelFire: { _, _ in fired += 1 }
         )
-        let bogus: Any = "not a dictionary"
-        let message = WKScriptMessage.mock(name: "expandedPerformanceMetricsResult", body: bogus)
+        let bogus = "not a dictionary"
+        let message = await WKScriptMessage.mock(name: "expandedPerformanceMetricsResult", body: bogus)
 
         _ = try await subfeature.expandedPerformanceMetricsResult(params: bogus, original: message)
 
@@ -101,8 +101,8 @@ final class SiteLoadingPerformanceSubfeatureTests: XCTestCase {
             samplePercentage: 20,
             pixelFire: { _, _ in fired += 1 }
         )
-        let payload: [String: Any] = ["other": "value"]
-        let message = WKScriptMessage.mock(name: "expandedPerformanceMetricsResult", body: payload)
+        let payload = ["other": "value"]
+        let message = await WKScriptMessage.mock(name: "expandedPerformanceMetricsResult", body: payload)
 
         _ = try await subfeature.expandedPerformanceMetricsResult(params: payload, original: message)
 

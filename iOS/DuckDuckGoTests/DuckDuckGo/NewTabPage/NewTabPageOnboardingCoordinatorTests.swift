@@ -43,7 +43,7 @@ final class NewTabPageOnboardingCoordinatorTests: XCTestCase {
                                                       floatingUIManager: FloatingUIManager(isFloatingUIFeatureEnabled: false),
                                                       tutorialSettings: tutorial,
                                                       unifiedToggleInputFeature: InputFeature())
-        page = RedesignedNewTabPageViewController(blocks: [], onboardingCoordinator: coordinator)
+        page = RedesignedNewTabPageViewController(blocks: [], returnSettings: .makeForTests(), onboardingCoordinator: coordinator)
         page.loadViewIfNeeded()
     }
 
@@ -203,7 +203,7 @@ final class NewTabPageOnboardingCoordinatorTests: XCTestCase {
                                                       floatingUIManager: FloatingUIManager(isFloatingUIFeatureEnabled: false),
                                                       tutorialSettings: tutorial,
                                                       unifiedToggleInputFeature: InputFeature(isAvailable: true))
-        page = RedesignedNewTabPageViewController(blocks: [], onboardingCoordinator: coordinator)
+        page = RedesignedNewTabPageViewController(blocks: [], returnSettings: .makeForTests(), onboardingCoordinator: coordinator)
         page.loadViewIfNeeded()
         page.chromeDelegate = chrome
         dialogs.specToReturn = .final
@@ -232,7 +232,7 @@ final class NewTabPageOnboardingCoordinatorTests: XCTestCase {
 
     func testWhenNoDialogIsDueThenExistingLogoVisibilityIsPreservedWithoutSurfaceNotifications() {
         let welcome = NewTabPageSwiftUIBlock(id: .welcome, rootView: Text("Welcome"))
-        page = RedesignedNewTabPageViewController(blocks: [welcome], onboardingCoordinator: coordinator)
+        page = RedesignedNewTabPageViewController(blocks: [welcome], returnSettings: .makeForTests(), onboardingCoordinator: coordinator)
         page.loadViewIfNeeded()
         page.setLogoHidden(true)
         var surfaceChanges = 0
@@ -256,6 +256,7 @@ final class NewTabPageOnboardingCoordinatorTests: XCTestCase {
         var isAvailable: Bool = false
         var isToggleHiddenOnDuckAITab: Bool { false }
         var isAttachmentPasteEnabled: Bool { false }
+        var isFullTabChatInputAvailable: Bool { false }
     }
 
     private final class DialogFactory: NewTabDaxDialogProviding {

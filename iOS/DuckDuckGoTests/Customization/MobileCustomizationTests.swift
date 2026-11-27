@@ -239,7 +239,7 @@ final class MobileCustomizationTests {
         #expect(!MobileCustomization.Button.bookmarks.requiresWebPage)
         #expect(!MobileCustomization.Button.downloads.requiresWebPage)
         #expect(!MobileCustomization.Button.home.requiresWebPage)
-        #expect(!MobileCustomization.Button.newTab.requiresWebPage)
+        #expect(MobileCustomization.Button.newTab.requiresWebPage)
         #expect(!MobileCustomization.Button.passwords.requiresWebPage)
     }
 

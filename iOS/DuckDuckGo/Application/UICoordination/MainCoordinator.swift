@@ -32,11 +32,11 @@ import EventHub
 import SetDefaultBrowserUI
 import SystemSettingsPiPTutorial
 import DataBrokerProtection_iOS
-import PrivacyStats
 import Networking
 import WebExtensions
 import Onboarding
 import FeatureFlags_iOS
+import WebPageTranslation
 
 @MainActor
 protocol URLHandling: AnyObject {
@@ -79,7 +79,9 @@ final class MainCoordinator {
     private let onboardingSearchExperienceSelectionHandler: OnboardingSearchExperienceSelectionHandler
     private let privacyStats: PrivacyStatsProviding
     private let daxGreetingActivity: DaxGreetingActivityStore
+    private let daxDialogs: DaxDialogs
     private let wideEvent: WideEventManaging
+    private let eventHub: EventHubManaging
     private let voiceSessionStateManager: VoiceSessionStateProviding
 
     private(set) var webExtensionManager: WebExtensionManaging?
@@ -97,15 +99,18 @@ final class MainCoordinator {
     private var darkReaderCancellables = Set<AnyCancellable>()
     private var youTubeAdBlockingCancellable: AnyCancellable?
     private let nativeMessagingSupport = NativeMessagingSupport()
+    private let webExtensionAvailability: WebExtensionAvailabilityProviding?
     private var webExtensionLoadTask: Task<Void, Never>?
     private var isWebExtensionLoadPending = false
     private var protectedDataCancellable: AnyCancellable?
+    private var onboardingTimeLimitCancellable: AnyCancellable?
     private var pendingProtectedDataWork: [() -> Void] = []
     private var privacyConfigurationManager: PrivacyConfigurationManaging?
     private let onboardingManager: OnboardingFlowManaging
     let isFloatingUIFeatureEnabledForCurrentLaunch: Bool
 
     private var hasPresentedOnboarding = false
+    private var idleReturnForegroundScreen = IdleReturnForegroundScreen(presented: nil, wasOnNewTabPage: false, isProtectionEnabled: false)
 
     init(privacyConfigurationManager: PrivacyConfigurationManaging,
          syncService: SyncService,
@@ -113,6 +118,7 @@ final class MainCoordinator {
          bookmarksDatabase: CoreDataDatabase,
          remoteMessagingService: RemoteMessagingService,
          daxDialogs: DaxDialogs,
+         idleReturnEligibilityManager: IdleReturnEligibilityManaging,
          reportingService: ReportingService,
          variantManager: DefaultVariantManager,
          subscriptionService: SubscriptionService,
@@ -147,10 +153,13 @@ final class MainCoordinator {
          onboardingManager: OnboardingManaging,
          eventHub: EventHubManaging,
          usageContextProvider: UsageContextProviding,
-         promptExposureReporter: PromptExposureReporting
+         promptExposureReporter: PromptExposureReporting,
+         translationModels: TranslationModels?
     ) throws {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
+        self.webExtensionAvailability = contentBlockingService.userScriptsDependencies.webExtensionAvailability
+        self.daxDialogs = daxDialogs
         self.isFloatingUIFeatureEnabledForCurrentLaunch = featureFlagger.isFloatingUIFeatureEnabled()
         self.keyValueStore = keyValueStore
         self.darkReaderFeatureSettings = AppDarkReaderFeatureSettings(featureFlagger: featureFlagger,
@@ -158,6 +167,7 @@ final class MainCoordinator {
         self.promoCoordinationService = promoCoordinationService
         self.promptExposureReporter = promptExposureReporter
         self.wideEvent = wideEvent
+        self.eventHub = eventHub
         self.onboardingManager = onboardingManager
         self.voiceSessionStateManager = VoiceSessionStateManager()
         FireModeCapability.resolve(using: featureFlagger)
@@ -182,7 +192,7 @@ final class MainCoordinator {
         )
         let contextualOnboardingPresenter = ContextualOnboardingPresenter(variantManager: variantManager, daxDialogsFactory: daxDialogsFactory)
         let textZoomCoordinatorProvider = Self.makeTextZoomCoordinatorProvider()
-        let autoconsentManagementProvider = AutoconsentManagementProvider()
+        let autoconsentManagementProvider = AutoconsentManagementProvider(eventHub: eventHub)
         let websiteDataManager = Self.makeWebsiteDataManager(fireproofing: fireproofing, featureFlagger: featureFlagger)
         interactionStateSource = TabInteractionStateDiskSource()
         self.launchSourceManager = launchSourceManager
@@ -201,13 +211,19 @@ final class MainCoordinator {
             readLastActiveDate: { dailyActivityStore.currentActivity().lastActiveDate },
             isEnabled: { NewTabPageRedesignFeature(featureFlagger: featureFlagger).isAvailable })
         self.daxGreetingActivity = daxGreetingActivity
-        self.privacyStats = Self.makePrivacyStats()
+        self.privacyStats = DeferredPrivacyStats()
         let toggleModeStorage: ToggleModeStoring = ToggleModeStorage()
         let appSwitcherSnapshotCleaner = AppSwitcherSnapshotCleaner()
         let clearAppSwitcherSnapshots: @MainActor () async -> Void = {
             await appSwitcherSnapshotCleaner.clearSnapshots()
         }
         WebContentFreezeMonitor.reportFreezeEndedWithApp(featureFlagger: featureFlagger)
+        let translationOfferProvider = Self.makeTranslationOfferProvider(translationModels: translationModels,
+                                                                         featureFlagger: featureFlagger,
+                                                                         privacyConfig: privacyConfigurationManager)
+        // One translator for every tab, so only one model is ever in memory.
+        let pageTranslator = translationModels.map { PageTranslator(modelsProvider: $0) }
+
         tabManager = TabManager(tabsModelProvider: tabsModelProvider,
                                 previewsSource: previewsSource,
                                 interactionStateSource: interactionStateSource,
@@ -248,6 +264,8 @@ final class MainCoordinator {
                                 toggleModeStorage: toggleModeStorage,
                                 adBlockingAvailability: contentBlockingService.adBlockingAvailability,
                                 eventHub: eventHub,
+                                pageTranslationOfferProvider: translationOfferProvider,
+                                pageTranslator: pageTranslator,
                                 clearAppSwitcherSnapshots: clearAppSwitcherSnapshots)
         // Start before any tab saves a decision, so each saved site keeps its favicon.
         _ = tabManager.sitePermissionsFavicons
@@ -276,12 +294,6 @@ final class MainCoordinator {
             syncService: syncService.sync
         )
         let aiChatAddressBarExperience = AIChatAddressBarExperience(featureFlagger: featureFlagger, aiChatSettings: aiChatSettings)
-        let idleReturnEligibilityManager = IdleReturnEligibilityManager(
-            featureFlagger: featureFlagger,
-            keyValueStore: keyValueStore,
-            privacyConfigurationManager: privacyConfigurationManager,
-            isStillOnboarding: { daxDialogsManager.isStillOnboarding() }
-        )
         let afterInactivityOptionAdapter = AfterInactivityOptionAdapter(
             keyValueStore: keyValueStore,
             idleReturnEligibilityManager: idleReturnEligibilityManager
@@ -350,7 +362,16 @@ final class MainCoordinator {
                                         onboardingManager: onboardingManager,
                                         promoCoordinationService: promoCoordinationService,
                                         usageContextProvider: usageContextProvider,
-                                        promptExposureReporter: promptExposureReporter)
+                                        promptExposureReporter: promptExposureReporter,
+                                        translationModels: translationModels)
+
+        onboardingTimeLimitCancellable = daxDialogs.isDismissedPublisher
+            .filter { [weak daxDialogs] isDismissed in
+                isDismissed && daxDialogs?.timeLimit.endedByTimeLimit == true
+            }
+            .sink { [weak controller] _ in
+                controller?.endContextualOnboardingAfterTimeLimit()
+            }
 
         setupWebExtensions(privacyConfigurationManager: privacyConfigurationManager)
 
@@ -362,8 +383,26 @@ final class MainCoordinator {
 
     }
 
-    func start() {
-        controller.loadViewIfNeeded()
+    func start(drawsIdleReturnNewTabPage: Bool) {
+        controller.loadInitialViewIfNeeded(drawsIdleReturnNewTabPage: drawsIdleReturnNewTabPage)
+    }
+
+    /// Whether a warm return puts up the after-idle New Tab Page before its first frame, given the UI it's returning to.
+    func drawsNewTabPageForIdleReturnOnForeground(outcome: IdleReturnOutcome,
+                                                  isFeatureOn: Bool,
+                                                  hasLaunchAction: Bool,
+                                                  isTabClearingEnabled: Bool) -> Bool {
+        outcome.drawsNewTabPageOnForeground(isFeatureOn: isFeatureOn,
+                                            hasLaunchAction: hasLaunchAction,
+                                            isClearingTabs: isTabClearingEnabled || controller.autoClearInProgress,
+                                            isVoiceSessionActive: voiceSessionStateManager.isVoiceSessionActive,
+                                            hasPageToReplace: tabManager.currentTabsModel.currentTab?.link != nil,
+                                            isScreenPresented: controller.presentedViewController != nil)
+    }
+
+    /// Before a warm return's first frame, so the previous page isn't drawn again first.
+    func drawNewTabPageForIdleReturnOnForeground() {
+        controller.openNewTabPageAfterIdleReturn()
     }
 
     private func subscribeToDarkReaderChanges() {
@@ -436,15 +475,18 @@ final class MainCoordinator {
 
         let webExtensionManager = WebExtensionManagerFactory.makeManager(
             mainViewController: controller,
-            appSession: AppDependencyProvider.shared.appSessionInfo,
             featureFlagger: featureFlagger,
             privacyConfigurationManager: privacyConfigurationManager,
             autoconsentPreferences: AppUserDefaults(),
             darkReaderExcludedDomainsProvider: darkReaderFeatureSettings,
-            searchTokenProvider: controller,
-            scriptletConfiguration: makeScriptletConfiguration()
+            scriptletConfiguration: makeScriptletConfiguration(),
+            eventHub: eventHub,
+            isAppleSurrogateRedirectionEnabled: { [webExtensionAvailability] in
+                webExtensionAvailability?.isAppleSurrogateRedirectionEnabled == true
+            }
         )
         self.webExtensionManager = webExtensionManager
+        webExtensionManager.installUserAllowlistNotifier(privacyConfigurationManager: privacyConfigurationManager)
 
         let lifecycleCoordinator = WebExtensionLifecycleCoordinator(
             manager: webExtensionManager,
@@ -585,12 +627,6 @@ final class MainCoordinator {
         if controller.adBlockingAvailability.isEnabled {
             enabledTypes.insert(.adBlockingExtension)
         }
-        let searchTokenCohort = featureFlagger.assignedCohort(for: FeatureFlag.searchTokenExperimentV4) as? FeatureFlag.SearchTokenExperimentCohort
-        // The search-token extension pulls its token over native messaging,
-        // so skipping this extension builds without that support (Alpha)
-        if searchTokenCohort == .treatment, nativeMessagingSupport.isSupported {
-            enabledTypes.insert(.searchToken)
-        }
         return enabledTypes
     }
 
@@ -648,12 +684,19 @@ final class MainCoordinator {
                         fireModeMemoryCacheCleaner: MemoryCacheCleaner(dataStoreProvider: { DDGWebsiteDataStoreProvider.current(fireMode: true) }))
     }
 
-    private static func makePrivacyStats() -> PrivacyStatsProviding {
-        let location = PrivacyStatsDatabase.defaultLocation
-        if let database = PrivacyStatsDatabase(location: location) {
-            return PrivacyStats(databaseProvider: database)
+    /// One detector shared by every tab, so detection never sets up TranslateKit per page.
+    private static func makeTranslationOfferProvider(translationModels: TranslationModels?,
+                                                     featureFlagger: FeatureFlagger,
+                                                     privacyConfig: PrivacyConfigurationManaging) -> PageTranslationOfferProvider? {
+        guard let translationModels else {
+            return nil
         }
-        return UnavailablePrivacyStats(storeLocation: location)
+        let capability = WebPageTranslationCapability.create(featureFlagger: featureFlagger)
+        let settings = WebPageTranslationSettings(privacyConfigurationManager: privacyConfig)
+        return PageTranslationOfferProvider(detector: PageLanguageDetector(),
+                                            manifest: { translationModels.manifest },
+                                            capability: capability,
+                                            settings: settings)
     }
 
     // MARK: - Public API
@@ -670,8 +713,8 @@ final class MainCoordinator {
         controller.presentNetworkProtectionStatusSettingsModal(entryPoint: entryPoint, scrollToStrictRouting: scrollToStrictRouting)
     }
 
-    func presentDataBrokerProtectionDashboard() {
-        controller.presentDataBrokerProtectionDashboard()
+    func presentDataBrokerProtectionDashboard(freeScanEntryPoint: FreemiumDBPEntryPoint? = nil) {
+        controller.presentDataBrokerProtectionDashboard(freeScanEntryPoint: freeScanEntryPoint)
     }
 
     func presentModalPromptIfNeeded() {
@@ -693,8 +736,17 @@ final class MainCoordinator {
 
     // MARK: App Lifecycle handling
 
+    /// Records what is on screen as the foreground begins, before the user can act during the launch wait.
+    func captureIdleReturnForegroundScreen() -> IdleReturnForegroundScreen {
+        idleReturnForegroundScreen = IdleReturnForegroundScreen(presented: controller.presentedViewController,
+                                                                wasOnNewTabPage: tabManager.currentTabsModel.currentTab?.link == nil,
+                                                                isProtectionEnabled: featureFlagger.isFeatureOn(.idleReturnLaunchWaitProtection))
+        return idleReturnForegroundScreen
+    }
+
     func onForeground(isFirstForeground: Bool) {
         daxGreetingActivity.recordForegroundOpen()
+        daxDialogs.recordForegroundOpen()
         homePageConfiguration.handleAppForegrounded()
 
         // Apply tracker animation suppression based on launch source
@@ -773,22 +825,24 @@ extension MainCoordinator: URLHandling {
         fireMediumWidgetPixelIfNeeded(url: url)
 
         let syncPairingInfo = featureFlagger.isFeatureOn(.canInterceptSyncSetupUrls) ? PairingInfo(url: url) : nil
+        let deepLink = AppDeepLinkSchemes.fromURL(url)
 
+        // New Search clears the navigation stack itself, only when it has to.
         if syncPairingInfo == nil
+            && deepLink != .newSearch
             && url.scheme != AppDeepLinkSchemes.openVPN.url.scheme
             && url.scheme != AppDeepLinkSchemes.openAIChat.url.scheme
             && url.scheme != AppDeepLinkSchemes.openAIVoiceChat.url.scheme {
             controller.clearNavigationStack()
         }
-        switch AppDeepLinkSchemes.fromURL(url) {
+        switch deepLink {
         case .newSearch:
-            controller.newTab(reuseExisting: true)
-            controller.enterSearch()
+            handleNewSearchDeepLink()
         case .favorites:
-            controller.newTab(reuseExisting: true, allowingKeyboard: false)
+            controller.newTab(reuseExisting: true, allowingKeyboard: false, entrance: .fromOutsideTheApp)
         case .quickLink:
             let query = AppDeepLinkSchemes.query(fromQuickLink: url)
-            controller.loadQueryInNewTab(query, reuseExisting: .any)
+            controller.loadQueryInNewTab(query, reuseExisting: .any, entrance: .fromOutsideTheApp)
         case .addFavorite:
             controller.startAddFavoriteFlow()
         case .fireButton:
@@ -818,6 +872,23 @@ extension MainCoordinator: URLHandling {
             return false
         }
         return true
+    }
+
+    private func handleNewSearchDeepLink() {
+        // Already on a New Tab Page: focus it in place. Clearing and rebuilding it would drop
+        // the keyboard the app opened with, or is about to raise, and raise it again.
+        // An input left in another mode, such as Duck.ai, is still rebuilt so it opens in the
+        // mode a new search starts in.
+        if controller.isNewTabPageVisible, controller.presentedViewController == nil,
+           controller.isInputInInitialToggleMode {
+            if !controller.isInputFocused {
+                controller.enterSearch()
+            }
+            return
+        }
+        controller.clearNavigationStack()
+        controller.newTab(reuseExisting: true, entrance: .fromOutsideTheApp)
+        controller.enterSearch()
     }
 
     private func handleOpenPasswords(url: URL) {
@@ -877,7 +948,7 @@ extension MainCoordinator: ShortcutItemHandling {
 
     private func handleQuery(_ query: String) {
         controller.clearNavigationStack()
-        controller.loadQueryInNewTab(query, fromExternalLink: true)
+        controller.loadQueryInNewTab(query, reuseExisting: .any, fromExternalLink: true, entrance: .fromOutsideTheApp)
     }
 
     private func handleSearchPassword() {
@@ -935,20 +1006,28 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
             return
         }
 
+        // Leave alone a screen or page the user opened while launch waited for App Lock or Automatically Clear Data.
+        // Clearing every Fire tab presents the empty tab switcher itself, so that one isn't the user's.
+        let presented = controller.presentedViewController
+        let isEmptyTabSwitcher = presented != nil && presented === controller.tabSwitcherController
+            && controller.tabSwitcherController?.tabsModel.isEmpty == true
+        if idleReturnForegroundScreen.userActed(presented: isEmptyTabSwitcher ? nil : presented,
+                                                isOnNewTabPage: tabManager.currentTabsModel.currentTab?.link == nil) {
+            // A Duck.ai page the user opened already recorded its own entry.
+            startUntreatedReturnSession(timeAwayMs: timeAwayMs, reportsDuckAIEntry: false)
+            completion(.suppressed)
+            return
+        }
+
         // Restore a cold-start NTP's hatch; warm returns preserve its existing or consumed state and input focus.
         //
         // We require a non-nil current tab here: if there is no current tab,
         // we still want to fall through to `newTab(...)` to create one.
         if let currentTab = tabManager.currentTabsModel.currentTab, currentTab.link == nil {
-            guard featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) else {
-                startUntreatedReturnSession(timeAwayMs: timeAwayMs)
-                completion(.keptCurrent)
-                return
-            }
-            controller.closeScreensOverNewTabPageForIdleReturn(screenLeftOpen: controller.presentedViewController) { [weak self] in
+            let screenLeftOpen = idleReturnForegroundScreen.screenLeftOpen(current: controller.presentedViewController)
+            controller.closeScreensOverNewTabPageForIdleReturn(screenLeftOpen: screenLeftOpen) { [weak self] in
                 guard let self else { return }
-                if !featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
-                    || !controller.restoreEscapeHatchOnKeptNewTabPage(isFirstForeground: isFirstForeground, timeAwayMs: timeAwayMs) {
+                if !controller.restoreEscapeHatchOnKeptNewTabPage(isFirstForeground: isFirstForeground, timeAwayMs: timeAwayMs) {
                     startUntreatedReturnSession(timeAwayMs: timeAwayMs)
                 }
                 completion(.keptCurrent)
@@ -958,12 +1037,18 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
 
         // The NTP session starts when the NTP actually renders; stash the time away so it carries it.
         controller.noteNewTabPageReturn(timeAwayMs: timeAwayMs)
-        let deferKeyboard = featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
         controller.prepareForIdleReturnNTP { [weak self] in
             guard let self else { return }
-            self.controller.newTab(reuseExisting: true, allowingKeyboard: !deferKeyboard, openedAfterIdle: true)
+            self.controller.openNewTabPageAfterIdleReturn()
             completion(.openedNewTab)
         }
+    }
+
+    /// The arrival on the New Tab Page the launch drew is held until the return is noted.
+    func recordNewTabPageDrawnAtLaunch(timeAwayMs: Int?, completion: @escaping (IdleReturnNewTabPageResult) -> Void) {
+        controller.noteNewTabPageReturn(timeAwayMs: timeAwayMs)
+        controller.recordPendingNewTabPagePresentationIfVisible()
+        completion(.openedNewTab)
     }
 
     func markLastUsedTabAsResumedAfterIdle(timeAwayMs: Int?) {
@@ -976,16 +1061,20 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
         startUntreatedReturnSession(timeAwayMs: timeAwayMs)
     }
 
+    func releaseHeldNewTabPage() {
+        controller.releaseHeldNewTabPage()
+    }
+
     /// A return where no after-idle treatment was applied, so `after_idle` stays false and
     /// the post-idle event — which only reports on treated returns — is not started.
     /// `focused` starts from the input focus a short return keeps; an app-open keyboard raises it later.
-    private func startUntreatedReturnSession(timeAwayMs: Int?) {
+    private func startUntreatedReturnSession(timeAwayMs: Int?, reportsDuckAIEntry: Bool = true) {
         guard !controller.resumePendingAfterIdlePresentation(timeAwayMs: timeAwayMs) else { return }
         controller.postIdleSessionInstrumentation.noteReturn(timeAwayMs: timeAwayMs)
-        startReturnSession(afterIdleSurface: nil)
+        startReturnSession(afterIdleSurface: nil, reportsDuckAIEntry: reportsDuckAIEntry)
     }
 
-    private func startReturnSession(afterIdleSurface: PostIdleSessionWideEventData.Surface?) {
+    private func startReturnSession(afterIdleSurface: PostIdleSessionWideEventData.Surface?, reportsDuckAIEntry: Bool = true) {
         let focused = controller.isInputFocused
         let landedOn = landedOnForCurrentTab()
         controller.postIdleSessionInstrumentation.sessionStarted(landedOn: landedOn, afterIdleSurface: afterIdleSurface,
@@ -993,7 +1082,7 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
                                                                  toggleEnabled: controller.isReturnSessionToggleEnabled,
                                                                  togglePosition: controller.returnSessionTogglePosition(focused: focused))
         // A live voice chat carries on from its own entry.
-        if landedOn == .duckAI, !voiceSessionStateManager.isVoiceSessionActive {
+        if landedOn == .duckAI, reportsDuckAIEntry, !voiceSessionStateManager.isVoiceSessionActive {
             controller.fireAIChatEntryPointPixel(source: .appOpen, opensNewTab: false, hasPrompt: false)
             // The Duck.ai tab is already on screen, so show it to the entry that just started.
             controller.reportDuckAISessionCurrentTab()

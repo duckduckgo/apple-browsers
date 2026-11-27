@@ -90,6 +90,7 @@ let package = Package(
             ],
             path: "Tests/AppUpdaterTestHelpers",
             swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency"),
                 .define("DEBUG", .when(configuration: .debug)),
             ]
         ),
@@ -114,6 +115,8 @@ let package = Package(
                 "AppUpdaterTestHelpers",
                 .product(name: "Networking", package: "Networking"),
                 .product(name: "BrowserServicesKitTestsUtils", package: "BrowserServicesKit"),
+                .product(name: "Persistence", package: "Persistence"),
+                .product(name: "PixelKit", package: "PixelKit"),
             ]
         ),
         .testTarget(
@@ -125,6 +128,7 @@ let package = Package(
                 "AppUpdaterTestHelpers",
                 .product(name: "Sparkle", package: "Sparkle"),
                 .product(name: "BrowserServicesKitTestsUtils", package: "BrowserServicesKit"),
+                .product(name: "PrivacyConfigTestsUtils", package: "BrowserServicesKit"),
                 .product(name: "Persistence", package: "Persistence"),
                 .product(name: "PixelKit", package: "PixelKit"),
                 .product(name: "PrivacyConfig", package: "BrowserServicesKit"),

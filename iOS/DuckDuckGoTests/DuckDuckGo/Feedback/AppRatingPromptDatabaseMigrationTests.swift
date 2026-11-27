@@ -56,7 +56,7 @@ class AppRatingPromptDatabaseMigrationTests: XCTestCase {
 
             // Run the migration
             let newCoordinator = NSPersistentStoreCoordinator(managedObjectModel: latestModel)
-            let newStore = try newCoordinator.addPersistentStore(ofType: NSSQLiteStoreType,
+            _ = try newCoordinator.addPersistentStore(ofType: NSSQLiteStoreType,
                                                                  configurationName: nil,
                                                                  at: storeURL,
                                                                  options: options)

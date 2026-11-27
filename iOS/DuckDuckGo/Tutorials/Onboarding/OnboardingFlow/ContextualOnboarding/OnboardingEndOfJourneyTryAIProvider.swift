@@ -48,7 +48,7 @@ protocol OnboardingEndOfJourneyTryAIDialogDeciding {
 struct OnboardingEndOfJourneyTryAIProvider {
     /// Search-path reasons — those whose tailored flow includes an AI-chat address-bar toggle screen, so
     /// `didEnableAIChatSearchInputDuringOnboarding` reflects a real choice rather than the default.
-    private static let searchPathReasons: Set<OnboardingDownloadReason> = [.browserPrivately, .noAI, .blockAds]
+    private static let searchPathReasons: Set<OnboardingDownloadReason> = [.browserPrivately, .noAI, .blockAds, .vpn]
 
     private let onboardingManager: OnboardingFlowProviding & OnboardingDownloadReasonHandling
     private let searchExperienceProvider: OnboardingSearchExperienceProvider
@@ -79,7 +79,7 @@ extension OnboardingEndOfJourneyTryAIProvider: OnboardingEndOfJourneyTryAIConten
         guard
             // The Default onboarding flow (not the Duck.ai CPP flow)
             onboardingManager.currentOnboardingFlow == .default,
-            // The user selected one of `.browserPrivately`, `.noAI`, `.blockAds` download reasons
+            // The user selected a search-path download reason
             let reason = onboardingManager.currentDownloadReason,
             Self.searchPathReasons.contains(reason),
             // The user opted into AI chat in the address bar during onboarding

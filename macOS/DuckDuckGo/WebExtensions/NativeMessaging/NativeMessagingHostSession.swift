@@ -41,6 +41,8 @@ final class NativeMessagingHostSession {
     var terminationHandler: (@MainActor (Error?) -> Void)?
 
     let hostName: String
+    /// The unique identifier of the extension context that opened the session.
+    let extensionIdentifier: String
     let diagnosticIdentifier = String(UUID().uuidString.prefix(8))
 
     private let createdAt = Date()
@@ -70,19 +72,23 @@ final class NativeMessagingHostSession {
     ///
     /// - Parameters:
     ///   - hostName: The name the extension asked for, which is also the manifest's `name`.
+    ///   - extensionIdentifier: The unique identifier of the extension context that opens the session.
     ///   - executable: The binary the host manifest's `path` names.
     ///   - callerOrigin: The origin the host sees as its first argument. Chrome passes
     ///     `chrome-extension://<id>/` there, and a host that has an `allowed_origins` list
     ///     matches the argument against it and quits when it finds no match. So this is
     ///     normally the extension's Chrome origin rather than our own `webkit-extension://`
     ///     base URL. `NativeMessagingHandler` picks the value.
-    init(hostName: String, executable: URL, callerOrigin: String) {
+    init(hostName: String, extensionIdentifier: String, executable: URL, callerOrigin: String) {
         self.hostName = hostName
+        self.extensionIdentifier = extensionIdentifier
         process.executableURL = executable
         process.arguments = [callerOrigin]
         process.standardInput = inputPipe
         process.standardOutput = outputPipe
         process.standardError = errorPipe
+        // A host that dies before reading would otherwise kill the browser with SIGPIPE on our next write.
+        inputPipe.fileHandleForWriting.disableSIGPIPE()
     }
 
     // MARK: - Lifecycle
@@ -379,5 +385,13 @@ final class NativeMessagingHostSession {
         // 0 is EOF. A read error also ends the host's output.
         guard count > 0 else { return nil }
         return Data(buffer[..<count])
+    }
+}
+
+private extension FileHandle {
+
+    /// Makes writes fail with `EPIPE` instead of raising `SIGPIPE` when the reader is gone.
+    func disableSIGPIPE() {
+        _ = fcntl(fileDescriptor, F_SETNOSIGPIPE, 1)
     }
 }

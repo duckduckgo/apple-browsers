@@ -44,6 +44,15 @@ extension NSAlert {
         return alert
     }
 
+    static func turnOnLocalModelConfirmation() -> NSAlert {
+        let alert = NSAlert()
+        alert.messageText = UserText.localModelConnectConfirmationTitle
+        alert.informativeText = UserText.localModelConnectConfirmationMessage
+        alert.addButton(withTitle: UserText.localModelConnect, response: .OK)
+        alert.addButton(withTitle: UserText.cancel, response: .cancel, keyEquivalent: .escape)
+        return alert
+    }
+
     static func fireproofAlert(with domain: String) -> NSAlert {
         let alert = NSAlert()
         alert.messageText = UserText.fireproofConfirmationTitle(domain: domain)

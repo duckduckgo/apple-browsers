@@ -22,7 +22,13 @@ import Core
 import Onboarding
 @testable import DuckDuckGo
 
-final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, OnboardingCustomInteractionPixelReporting, OnboardingDaxDialogsReporting, OnboardingAddToDockReporting, OnboardingDownloadReasonPixelReporting {
+final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, OnboardingCustomInteractionPixelReporting, OnboardingDaxDialogsReporting, OnboardingAddToDockReporting, OnboardingDownloadReasonPixelReporting, OnboardingTimeLimitReporting {
+
+    private(set) var timeLimitReasons: [OnboardingSharedPixelEvent.TimeLimitReason] = []
+
+    func measureTimeLimitReached(_ reason: OnboardingSharedPixelEvent.TimeLimitReason) {
+        timeLimitReasons.append(reason)
+    }
 
     private(set) var didCallMeasureOnboardingIntroImpression = false
     private(set) var didCallMeasureSkipOnboardingCTAAction = false
@@ -345,9 +351,6 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
     private(set) var didCallMeasureDownloadReasonImpression = false
     private(set) var didCallMeasureDownloadReasonSelection = false
     private(set) var didCaptureDownloadReasonSelection: OnboardingDownloadReason?
-    private(set) var didCallMeasureSearchPrivacySettingsImpression = false
-    private(set) var didCallMeasureSearchPrivacySettingsSelection = false
-    private(set) var didCaptureSearchPrivacySettingsSelection: (recentlyVisitedSitesEnabled: Bool, safeSearchEnabled: Bool)?
     private(set) var didCallMeasureAIModelImpression = false
     private(set) var didCallMeasureAIModelSelection = false
     private(set) var didCaptureAIModelSelection: String?
@@ -371,15 +374,6 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
     func measureDownloadReasonSelection(_ reason: OnboardingDownloadReason) {
         didCallMeasureDownloadReasonSelection = true
         didCaptureDownloadReasonSelection = reason
-    }
-
-    func measureSearchPrivacySettingsImpression() {
-        didCallMeasureSearchPrivacySettingsImpression = true
-    }
-
-    func measureSearchPrivacySettingsSelection(recentlyVisitedSitesEnabled: Bool, safeSearchEnabled: Bool) {
-        didCallMeasureSearchPrivacySettingsSelection = true
-        didCaptureSearchPrivacySettingsSelection = (recentlyVisitedSitesEnabled, safeSearchEnabled)
     }
 
     func measureAIModelImpression() {
@@ -425,6 +419,54 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
     func measureAdBlockingSelection(youTubeAdBlockingEnabled: Bool, cookiePopUpProtectionEnabled: Bool, popUpsWithoutOptOutsEnabled: Bool) {
         didCallMeasureAdBlockingSelection = true
         didCaptureAdBlockingSelection = (youTubeAdBlockingEnabled, cookiePopUpProtectionEnabled, popUpsWithoutOptOutsEnabled)
+    }
+
+    // MARK: - VPN download-reason path
+
+    private(set) var didCallMeasureTryVPNImpression = false
+    private(set) var didCallMeasureTryVPNAction = false
+    private(set) var didCallMeasureSkipTryVPNAction = false
+    private(set) var capturedTryVPNPaywallEvents: [SubscriptionFlowEvent] = []
+    private(set) var didCallMeasureVPNActivationImpression = false
+    private(set) var capturedVPNActivationContinueIsVPNOn: Bool?
+    private(set) var capturedVPNActivationFailureReasons: [OnboardingSharedPixelEvent.VPNActivationEvent.FailureReason] = []
+    private(set) var didCallMeasureSubscriptionReminderImpression = false
+    private(set) var didCallMeasureSubscriptionReminderContinue = false
+
+    func measureTryVPNImpression() {
+        didCallMeasureTryVPNImpression = true
+    }
+
+    func measureTryVPNAction() {
+        didCallMeasureTryVPNAction = true
+    }
+
+    func measureSkipTryVPNAction() {
+        didCallMeasureSkipTryVPNAction = true
+    }
+
+    func measureTryVPNPaywallEvent(_ event: SubscriptionFlowEvent) {
+        capturedTryVPNPaywallEvents.append(event)
+    }
+
+    func measureVPNActivationImpression() {
+        didCallMeasureVPNActivationImpression = true
+    }
+
+    func measureVPNActivationContinue(isVPNOn: Bool) {
+        capturedVPNActivationContinueIsVPNOn = isVPNOn
+    }
+
+    func measureVPNActivationFailed(_ reason: OnboardingSharedPixelEvent.VPNActivationEvent.FailureReason) {
+        capturedVPNActivationFailureReasons.append(reason)
+    }
+
+    func measureSubscriptionReminderImpression() {
+        didCallMeasureSubscriptionReminderImpression = true
+    }
+
+    func measureSubscriptionReminderContinue() {
+        didCallMeasureSubscriptionReminderContinue = true
     }
 
     // MARK: - Try Duck.ai End of Journey

@@ -45,6 +45,11 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
     /// (sub-label + toggle state) is re-pushed to open New Tab Pages.
     var onCustomizeResponsesChanged: () -> Void = {}
 
+    /// Resolves the submit pixel's model parameters from the sent model and effort; `nil` leaves them out.
+    var newChatModelPixelParameters: (_ sentModelId: String?,
+                                      _ sentReasoningEffort: String?,
+                                      _ isImageGeneration: Bool) -> DuckAINewChatModelPixelParameters? = { _, _, _ in nil }
+
     /// Retains the Customize Responses modal host while it is presented over the NTP window.
     private var customizeResponsesModal: CustomizeResponsesModalController?
 
@@ -75,7 +80,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
     func submitSearch(_ term: String, target: NewTabPage.NewTabPageDataModel.OpenTarget) {
         // Check for the keyboard shortcut to open the chat
         if isShiftPressed() {
-            submitChat(term, target: isCommandPressed() ? .newTab : .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContexts: nil, files: nil, aiTermsAccepted: false)
+            submitChat(term, target: isCommandPressed() ? .newTab : .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContexts: nil, files: nil, textPasted: nil, aiTermsAccepted: false)
             return
         }
 
@@ -172,8 +177,11 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
                     reasoningEffort: String?,
                     pageContexts: [NewTabPage.NewTabPageDataModel.OmnibarPageContext]?,
                     files: [NewTabPage.NewTabPageDataModel.OmnibarPromptFile]?,
+                    textPasted: [NewTabPage.NewTabPageDataModel.OmnibarPromptPastedText]?,
                     aiTermsAccepted: Bool) {
-        firePixel(NewTabPagePixel.promptSubmitted)
+        let isImageGeneration = mode == AIChatNativePrompt.imageGenerationMode || toolChoice?.contains(AIChatRAGTool.imageGeneration.rawValue) == true
+        firePixel(NewTabPagePixel.promptSubmitted(hasPastedText: textPasted?.isEmpty == false,
+                                                  newChatModel: newChatModelPixelParameters(modelId, reasoningEffort, isImageGeneration)))
 
         // The NTP sends `aiTermsAccepted` only for an Ask click with its disclaimer on screen.
         termsOfServiceDisclaimer.acceptIfShown(aiTermsAccepted)
@@ -182,7 +190,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
             PixelKit.fire(AIChatPixel.aiChatNtpSubmitWithImage(imageCount: images.count), frequency: .dailyAndCount, includeAppVersionParameter: true)
         }
 
-        if mode == AIChatNativePrompt.imageGenerationMode || toolChoice?.contains(AIChatRAGTool.imageGeneration.rawValue) == true {
+        if isImageGeneration {
             PixelKit.fire(AIChatPixel.aiChatNtpImageGenerationSubmitted, frequency: .dailyAndCount, includeAppVersionParameter: true)
         } else if mode == AIChatNativePrompt.voiceMode {
             PixelKit.fire(AIChatPixel.aiChatNewVoiceChatOmnibarNtp, frequency: .dailyAndStandard, includeAppVersionParameter: true)
@@ -217,16 +225,17 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
         NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.newTabPage)
         tabOpener.openAIChatTab(with: .query(chat), behavior: behavior)
 
-        // Re-set prompt after tab opener to include images, files, attached page contexts, mode,
+        // Re-set prompt after tab opener to include images, files, pasted text, attached page contexts, mode,
         // tool choice, model selection, and reasoning effort (tab opener overwrites with a plain query)
         let nativeImages = images?.map { AIChatNativePrompt.NativePromptImage(data: $0.data, format: $0.format) }
         let nativeFiles = files?.map { AIChatNativePrompt.NativePromptFile(data: $0.data, fileName: $0.fileName, mimeType: $0.mimeType) }
+        let nativeTextPasted = textPasted.flatMap { $0.isEmpty ? nil : $0.map { AIChatNativePrompt.NativePromptPastedText(content: $0.content) } }
         let nativeReasoningEffort = reasoningEffort.flatMap(AIChatReasoningEffort.init(rawValue:))
         let pageContextPayload = (pageContexts?.map(Self.pageContextData(from:))).flatMap { $0.isEmpty ? nil : AIChatPageContextPayload.multiple($0) }
         let nativePrompt = AIChatNativePrompt.queryPrompt(chat,
                                                           autoSubmit: true,
                                                           toolChoice: toolChoice,
-                                                          attachments: AIChatPromptAttachments(images: nativeImages, files: nativeFiles),
+                                                          attachments: AIChatPromptAttachments(images: nativeImages, files: nativeFiles, textPasted: nativeTextPasted),
                                                           modelId: modelId,
                                                           pageContext: pageContextPayload,
                                                           mode: mode,

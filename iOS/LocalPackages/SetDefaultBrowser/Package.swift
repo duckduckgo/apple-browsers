@@ -27,12 +27,13 @@ let package = Package(
         .package(path: "../DuckUI"),
         .package(path: "../../../SharedPackages/Infrastructure/DesignResourcesKitIcons"),
         .package(path: "../../../SharedPackages/UIComponents"),
-        .package(path: "../MetricBuilder"),
+        .package(path: "../../../SharedPackages/Infrastructure/MetricBuilder"),
         .package(url: "https://github.com/duckduckgo/apple-toolbox.git", exact: "3.2.1"),
     ],
     targets: [
         .target(
-            name: "SetDefaultBrowserCore"
+            name: "SetDefaultBrowserCore",
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
         .target(
             name: "SetDefaultBrowserUI",
@@ -42,20 +43,23 @@ let package = Package(
                 .product(name: "MetricBuilder", package: "MetricBuilder"),
                 .product(name: "DesignResourcesKitIcons", package: "DesignResourcesKitIcons"),
                 .product(name: "UIComponents", package: "UIComponents"),
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
         .target(
             name: "SetDefaultBrowserTestSupport",
             dependencies: [
                 "SetDefaultBrowserCore"
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
         .testTarget(
             name: "SetDefaultBrowserTests",
             dependencies: [
                 "SetDefaultBrowserCore",
                 "SetDefaultBrowserTestSupport",
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
     ]
 )

@@ -22,28 +22,10 @@ import UIKit
 
 final class FloatingDomainCapsuleController {
 
+    /// Top bar only: the pill holds the bar's frame above this visibility and shrinks below it.
     static let handoffStart: CGFloat = 0.60
 
-    /// End of the bottom bar's button-row collapse band (`[handoffEnd, 1]`) — the row finishes
-    /// shrinking to one line before the pill starts fading in, so the pill never overlaps a still
-    /// two-row toolbar. Both `handoffStart` and this value are geometry-locked for the bar/pill
-    /// (the bar is pinned on screen and the pill sits at the bar's full frame), so widening the span
-    /// between them can't make either visibly creep; it only slows the handoff down enough that a
-    /// fast scroll renders several blended frames instead of a one-frame cut.
-    static let handoffEnd: CGFloat = 0.85
-
-    /// End of the bar<->pill alpha crossfade band (`[handoffStart, alphaHandoffEnd]`). On the bottom
-    /// bar this is pinned to `handoffEnd` so the fade waits for the button row to finish collapsing
-    /// first (see above). The top bar has no button row to sequence before it, so its fade instead
-    /// starts at `1` — the instant any scrolling begins — rather than holding at full opacity through
-    /// an entire silent `[handoffEnd, 1]` dead zone before suddenly fading; that dead-then-fast pattern
-    /// is what reads as an abrupt swap even though the fade itself is smoothly blended.
-    static func alphaHandoffEnd(for addressBarPosition: AddressBarPosition) -> CGFloat {
-        addressBarPosition == .top ? 1 : handoffEnd
-    }
-
-    /// The pill's domain text only starts appearing below `handoffStart`, i.e. once the bar's own URL
-    /// text has fully faded. Crossfading the two reads as a single text morphing in place.
+    /// Top bar only: the pill's domain text appears once the bar's own URL text has faded.
     static let domainLabelFadeInEnd: CGFloat = 0.45
 
     /// Gap between the pill and the adjacent screen edge at rest. Used by the bottom capsule, and
@@ -137,6 +119,8 @@ final class FloatingDomainCapsuleController {
         return label
     }()
     private var hasAppliedGlassStyleAtValidSize = false
+    private var hasAppliedCornerConfiguration = false
+    private var appliedCornerRadius: CGFloat?
 
     lazy var button: UIButton = {
         let button = UIButton(type: .system)
@@ -160,9 +144,6 @@ final class FloatingDomainCapsuleController {
         backgroundView.layer.cornerCurve = .continuous
         backgroundView.layer.cornerRadius = 14
         backgroundView.clipsToBounds = true
-        if #available(iOS 26, *) {
-            backgroundView.cornerConfiguration = .capsule()
-        }
         button.insertSubview(backgroundView, at: 0)
 
         NSLayoutConstraint.activate([
@@ -194,6 +175,7 @@ final class FloatingDomainCapsuleController {
                 barsVisibilityPercent: CGFloat,
                 expandedFrame: CGRect,
                 reduceMotion: Bool,
+                bottomBar: UIView? = nil,
                 in view: UIView) {
         let shouldShow = FloatingUILayoutPolicy.shouldShowFloatingDomainCapsule(
             isFloatingUIEnabled: isFloatingUIEnabled,
@@ -208,7 +190,6 @@ final class FloatingDomainCapsuleController {
             button.isHidden = true
             return
         }
-
         if domainLabel.text != domain {
             domainLabel.text = domain
         }
@@ -217,24 +198,46 @@ final class FloatingDomainCapsuleController {
         }
 
         let p = max(0, min(1, barsVisibilityPercent))
+        let bottomPose = bottomMorphPose(barsVisibilityPercent: barsVisibilityPercent,
+                                         addressBarPosition: addressBarPosition,
+                                         domain: domain,
+                                         expandedFrame: expandedFrame,
+                                         reduceMotion: reduceMotion,
+                                         in: view)
 
         // Keep the pill geometry current even when it's about to be hidden, so it is never left
         // frozen at a stale size/position the next time it becomes visible.
-        applyMorphGeometry(for: p, addressBarPosition: addressBarPosition, expandedFrame: expandedFrame, reduceMotion: reduceMotion, in: view)
+        if let bottomPose {
+            applyGeometry(frame: bottomPose.frame, cornerRadius: bottomPose.cornerRadius, addressBarPosition: addressBarPosition)
+        } else {
+            applyMorphGeometry(for: p, addressBarPosition: addressBarPosition, expandedFrame: expandedFrame, reduceMotion: reduceMotion, in: view)
+        }
+        applyShadow(amount: bottomPose?.shadowAmount ?? 0)
 
-        let pillAlpha = pillAlpha(for: p, addressBarPosition: addressBarPosition, reduceMotion: reduceMotion)
+        let pillAlpha = bottomPose.map { $0.isGlassOnPill ? 1 : 0 }
+            ?? pillAlpha(for: p, addressBarPosition: addressBarPosition, reduceMotion: reduceMotion)
         guard pillAlpha > 0.01 else {
             button.alpha = 0
             button.isHidden = true
             return
         }
 
-        domainLabel.alpha = reduceMotion
-            ? 1
-            : 1 - FloatingUILayoutPolicy.rampedProgress(p, from: Self.domainLabelFadeInEnd, to: Self.handoffStart)
+        if let bottomPose {
+            domainLabel.alpha = bottomPose.domainLabelAlpha
+        } else {
+            domainLabel.alpha = reduceMotion
+                ? 1
+                : 1 - FloatingUILayoutPolicy.rampedProgress(p, from: Self.domainLabelFadeInEnd, to: Self.handoffStart)
+        }
         button.isHidden = false
         button.alpha = pillAlpha
-        if view.subviews.last !== button {
+        // While the bar's content is still fading it has to sit above the glass the pill now draws.
+        if bottomPose != nil, let bottomBar, bottomBar.superview === view, bottomBar.alpha > 0.01 {
+            if let barIndex = view.subviews.firstIndex(of: bottomBar),
+               view.subviews.firstIndex(of: button) != barIndex - 1 {
+                view.insertSubview(button, belowSubview: bottomBar)
+            }
+        } else if view.subviews.last !== button {
             view.bringSubviewToFront(button)
         }
     }
@@ -243,32 +246,65 @@ final class FloatingDomainCapsuleController {
         if reduceMotion {
             return max(0, min(1, 1 - p))
         }
-        return 1 - FloatingUILayoutPolicy.rampedProgress(p, from: Self.handoffStart, to: Self.alphaHandoffEnd(for: addressBarPosition))
+        return 1 - FloatingUILayoutPolicy.rampedProgress(p, from: Self.handoffStart, to: 1)
     }
 
-    /// Interpolates the pill's real width/height/vertical-centre (and capsule corner radius) between
-    /// its natural capsule size and the bar's `expandedFrame`, so it physically morphs rather than
-    /// scaling a transparent copy. Reduce Motion (or a missing bar frame) pins it to the capsule size.
-    private func applyMorphGeometry(for p: CGFloat,
-                                    addressBarPosition: AddressBarPosition,
-                                    expandedFrame: CGRect,
-                                    reduceMotion: Bool,
-                                    in view: UIView) {
-        let labelSize = domainLabel.intrinsicContentSize
+    /// The shared bar/pill shape for the bottom bar, or nil when the pill doesn't morph out of it.
+    func bottomMorphPose(barsVisibilityPercent: CGFloat,
+                         addressBarPosition: AddressBarPosition,
+                         domain: String?,
+                         expandedFrame: CGRect,
+                         reduceMotion: Bool,
+                         in view: UIView) -> FloatingUILayoutPolicy.BottomMorphPose? {
+        guard addressBarPosition == .bottom, !reduceMotion, !expandedFrame.isEmpty,
+              let domain, !domain.isEmpty else { return nil }
+        return FloatingUILayoutPolicy.bottomMorphPose(
+            barsVisibilityPercent: barsVisibilityPercent,
+            expandedFrame: expandedFrame,
+            restFrame: restFrame(addressBarPosition: addressBarPosition, domain: domain, expandedFrame: expandedFrame, in: view),
+            expandedCornerRadius: BrowserToolbarView.floatingUICornerRadius)
+    }
+
+    private func labelWidth(for domain: String?) -> CGFloat {
+        guard let domain, domain != domainLabel.text else { return domainLabel.intrinsicContentSize.width }
+        let attributes: [NSAttributedString.Key: Any] = [.font: domainLabel.font as Any]
+        return ceil((domain as NSString).size(withAttributes: attributes).width)
+    }
+
+    private func restFrame(addressBarPosition: AddressBarPosition, domain: String? = nil, expandedFrame: CGRect, in view: UIView) -> CGRect {
         let capsuleHeight = self.capsuleHeight
-        let capsuleWidth = min(labelSize.width + 24, max(0, view.bounds.width - 32))
+        let capsuleWidth = min(labelWidth(for: domain) + 24, max(0, view.bounds.width - 32))
         let restCenterY = Self.restCenterY(
             addressBarPosition: addressBarPosition,
             expandedFrame: expandedFrame,
             boundsMaxY: view.bounds.maxY,
             safeAreaInsets: view.safeAreaInsets,
             capsuleHeight: capsuleHeight)
+        return CGRect(x: view.bounds.midX - capsuleWidth / 2,
+                      y: restCenterY - capsuleHeight / 2,
+                      width: capsuleWidth,
+                      height: capsuleHeight)
+    }
 
+    /// Top bar and Reduce Motion: the pill holds the bar's `expandedFrame` through the cross-fade,
+    /// then shrinks to its natural capsule size. Reduce Motion (or a missing bar frame) pins it there.
+    private func applyMorphGeometry(for p: CGFloat,
+                                    addressBarPosition: AddressBarPosition,
+                                    expandedFrame: CGRect,
+                                    reduceMotion: Bool,
+                                    in view: UIView) {
+        let rest = restFrame(addressBarPosition: addressBarPosition, expandedFrame: expandedFrame, in: view)
         let morphP = (reduceMotion || expandedFrame.isEmpty) ? 0 : min(1, p / Self.handoffStart)
-        let width = capsuleWidth + (expandedFrame.width - capsuleWidth) * morphP
-        let height = capsuleHeight + (expandedFrame.height - capsuleHeight) * morphP
-        let centerY = restCenterY + (expandedFrame.midY - restCenterY) * morphP
+        let width = rest.width + (expandedFrame.width - rest.width) * morphP
+        let height = rest.height + (expandedFrame.height - rest.height) * morphP
+        let centerY = rest.midY + (expandedFrame.midY - rest.midY) * morphP
+        applyGeometry(frame: CGRect(x: view.bounds.midX - width / 2, y: centerY - height / 2, width: width, height: height),
+                      cornerRadius: nil,
+                      addressBarPosition: addressBarPosition)
+    }
 
+    /// - Parameter cornerRadius: nil keeps the pill a capsule.
+    private func applyGeometry(frame: CGRect, cornerRadius: CGFloat?, addressBarPosition: AddressBarPosition) {
         // This overlay does not participate in the browser's layout. Updating its frame avoids
         // invalidating the root constraint graph for every step of the morph.
         let autoresizingMask: UIView.AutoresizingMask = [.flexibleLeftMargin, .flexibleRightMargin,
@@ -276,17 +312,43 @@ final class FloatingDomainCapsuleController {
         if button.autoresizingMask != autoresizingMask {
             button.autoresizingMask = autoresizingMask
         }
-        let frame = CGRect(x: view.bounds.midX - width / 2, y: centerY - height / 2, width: width, height: height)
         if button.frame != frame {
             button.frame = frame
         }
-        if #unavailable(iOS 26) {
-            backgroundView.layer.cornerRadius = height / 2
-        }
+        applyCornerRadius(cornerRadius, height: frame.height)
 
-        if !hasAppliedGlassStyleAtValidSize, width > 0, height > 0 {
+        if !hasAppliedGlassStyleAtValidSize, frame.width > 0, frame.height > 0 {
             hasAppliedGlassStyleAtValidSize = true
             applyGlassStyle()
+        }
+    }
+
+    /// The pill carries the bar's shadow while it is the bar's shape, and loses it as it shrinks. Like
+    /// the bar, it has none on iOS 26+, where the glass draws its own.
+    private func applyShadow(amount: CGFloat) {
+        let opacity = Float(BrowserToolbarView.floatingShadowOpacity * amount)
+        guard button.layer.shadowOpacity != opacity || opacity > 0 else { return }
+        button.layer.shadowOpacity = opacity
+        guard opacity > 0 else { return }
+        button.layer.shadowColor = UIColor.black.cgColor
+        button.layer.shadowRadius = BrowserToolbarView.floatingShadowRadius
+        button.layer.shadowOffset = BrowserToolbarView.floatingShadowOffset
+        button.layer.shadowPath = UIBezierPath(roundedRect: button.bounds,
+                                               cornerRadius: appliedCornerRadius ?? button.bounds.height / 2).cgPath
+    }
+
+    private func applyCornerRadius(_ cornerRadius: CGFloat?, height: CGFloat) {
+        let radius = cornerRadius.map { ($0 * 2).rounded() / 2 }
+        if #available(iOS 26, *) {
+            guard radius != appliedCornerRadius || !hasAppliedCornerConfiguration else { return }
+            hasAppliedCornerConfiguration = true
+            appliedCornerRadius = radius
+            // Concentric, like the resting bar's glass: at the hand-off the pill has the bar's frame,
+            // so it resolves to the bar's exact corners even where the screen's are rounder than
+            // `radius`. Moving inward, the concentric part falls away and `radius` takes over.
+            backgroundView.cornerConfiguration = radius.map { .corners(radius: .containerConcentric(minimum: $0)) } ?? .capsule()
+        } else {
+            backgroundView.layer.cornerRadius = radius ?? height / 2
         }
     }
 

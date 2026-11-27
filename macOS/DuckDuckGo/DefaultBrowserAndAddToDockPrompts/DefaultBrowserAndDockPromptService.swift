@@ -30,6 +30,10 @@ final class DefaultBrowserAndDockPromptService {
     let userActivityManager: DefaultBrowserAndDockPromptUserActivityManager
     let notificationPresenter: DefaultBrowserAndDockPromptNotificationPresenting
     let uiHosting: () -> DefaultBrowserAndDockPromptUIHosting?
+    let uiProvider: DefaultBrowserAndDockPromptUIProviding
+    let actionPerformer: DefaultBrowserAndDockActionPerforming
+    let rolloutMonitor: AppStoreDockRolloutMonitor
+    let dateProvider: () -> Date
 
     init(
         privacyConfigManager: PrivacyConfigurationManaging,
@@ -37,19 +41,17 @@ final class DefaultBrowserAndDockPromptService {
         notificationPresenter: DefaultBrowserAndDockPromptNotificationPresenting,
         uiHosting: @escaping () -> DefaultBrowserAndDockPromptUIHosting?,
         isOnboardingCompletedProvider: @escaping () -> Bool,
-        dockCustomization: DockCustomization
+        dockCustomization: DockCustomization,
+        addToDockVideoFeatureFlagger: FeatureFlagger,
+        addToDockVideoPresenter: AddToDockVideoPresenting
     ) {
 
         var defaultBrowserAndDockPromptDebugStore: DefaultBrowserAndDockPromptDebugStore?
-        var debugSimulatedDateStore: DebugSimulatedDateStore?
         let buildType = StandardApplicationBuildType()
         if buildType.isDebugBuild || buildType.isReviewBuild {
-            debugSimulatedDateStore = DebugSimulatedDateStore(keyValueStore: keyValueStore)
             defaultBrowserAndDockPromptDebugStore = DefaultBrowserAndDockPromptDebugStore()
         }
-        let defaultBrowserAndDockPromptDateProvider: () -> Date = {
-            debugSimulatedDateStore?.simulatedDate ?? Date()
-        }
+        let defaultBrowserAndDockPromptDateProvider = DebugSimulatedDateStore.makeDateProvider(keyValueStore: keyValueStore)
         let defaultBrowserAndDockInstallDateProvider: () -> Date? = {
             defaultBrowserAndDockPromptDebugStore?.simulatedInstallDate ?? LocalStatisticsStore().installDate
         }
@@ -72,18 +74,31 @@ final class DefaultBrowserAndDockPromptService {
             installDateProvider: defaultBrowserAndDockInstallDateProvider,
             dateProvider: defaultBrowserAndDockPromptDateProvider
         )
+        let actionPerformer = DefaultBrowserAndDockActionPerformer(dockCustomization: dockCustomization,
+                                                                   defaultBrowserProvider: SystemDefaultBrowserProvider(),
+                                                                   featureFlagger: addToDockVideoFeatureFlagger,
+                                                                   videoPresenter: addToDockVideoPresenter)
+        self.actionPerformer = actionPerformer
+        let rolloutMonitor = AppStoreDockRolloutMonitor(store: AppStoreDockRolloutStore(keyValueStore: keyValueStore),
+                                                        dockCustomization: dockCustomization,
+                                                        dateProvider: defaultBrowserAndDockPromptDateProvider)
+        rolloutMonitor.resume()
+        self.rolloutMonitor = rolloutMonitor
         coordinator = DefaultBrowserAndDockPromptCoordinator(
             promptTypeDecider: defaultBrowserAndDockPromptDecider,
             store: store,
             notificationPresenter: notificationPresenter,
             featureFlagger: featureFlagger,
             isOnboardingCompleted: isOnboardingCompletedProvider,
-            dockCustomization: dockCustomization,
+            actionPerformer: actionPerformer,
+            rolloutMonitor: rolloutMonitor,
             dateProvider: defaultBrowserAndDockPromptDateProvider
         )
         let statusUpdateNotifier = DefaultBrowserAndDockPromptStatusUpdateNotifier(dockCustomizer: dockCustomization)
         let uiProvider = DefaultBrowserAndDockPromptUIProvider()
         self.uiHosting = uiHosting
+        self.uiProvider = uiProvider
+        dateProvider = defaultBrowserAndDockPromptDateProvider
 
         presenter = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, statusUpdateNotifier: statusUpdateNotifier, uiProvider: uiProvider)
     }

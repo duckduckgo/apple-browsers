@@ -25,7 +25,7 @@ public protocol OnboardingSharedPixelHandling {
     func fire(_ event: OnboardingSharedPixelEvent,
               source: OnboardingPixelParameter.Source?,
               flow: OnboardingPixelParameter.Flow?,
-              variant: OnboardingPixelParameter.Variant?)
+              variants: OnboardingPixelParameter.Variants)
 }
 
 public extension OnboardingSharedPixelHandling {
@@ -33,7 +33,7 @@ public extension OnboardingSharedPixelHandling {
     /// Fires the provided shared onboarding pixel event with nil source and flow parameters.
     /// For use on macOS only, which has no non-default onboarding sources, flows, or variants.
     func fire(_ event: OnboardingSharedPixelEvent) {
-        fire(event, source: nil, flow: nil, variant: nil)
+        fire(event, source: nil, flow: nil, variants: .init())
     }
     #endif
 }
@@ -50,21 +50,38 @@ public enum OnboardingPixelParameter {
         case `default` = "default"
         case duckAI = "duckai"
         case tailoredByDownloadReason = "tailored_by_download_reason"
+        case tailoredByDownloadReasonVPN = "tailored_by_download_reason_vpn"
     }
 
-    /// Pixel parameter for the variant of the onboarding flow the user enters after a branching step during onboarding.
-    public enum Variant: String {
+    /// The user's choice at the search experience fork: searching or chatting with Duck.ai.
+    public enum SearchExperienceVariant: String {
         case duckAISearch = "search_plus_duckai-search"
         case duckAIChat = "search_plus_duckai-chat"
-        // Records the download reason the user selected, passed to every pixel after the choice for internal cohort segmentation.
+    }
+
+    /// The download reason the user selected, passed to every pixel after the choice for internal cohort segmentation.
+    public enum DownloadReasonVariant: String {
         case downloadReasonSearch = "download_reason_search"
         case downloadReasonAIChat = "download_reason_ai-chat"
         case downloadReasonNoAI = "download_reason_no-ai"
         case downloadReasonAdBlocking = "download_reason_ad-blocking"
+        case downloadReasonVPN = "download_reason_vpn"
+    }
+
+    /// The variants of the onboarding flow the user entered at each branching step (fork).
+    /// Each fork is reported under its own `variant_<fork>` key, so a later fork never overwrites an earlier one.
+    public struct Variants: Equatable {
+        public var searchExperience: SearchExperienceVariant?
+        public var downloadReason: DownloadReasonVariant?
+
+        public init(searchExperience: SearchExperienceVariant? = nil, downloadReason: DownloadReasonVariant? = nil) {
+            self.searchExperience = searchExperience
+            self.downloadReason = downloadReason
+        }
     }
 }
 
-public extension OnboardingPixelParameter.Variant {
+public extension OnboardingPixelParameter.DownloadReasonVariant {
     /// Maps the domain download reason to its pixel variant, so the selected reason can be
     /// recorded on the segmented-onboarding pixels for cohort segmentation.
     init(_ reason: OnboardingDownloadReason) {
@@ -73,6 +90,7 @@ public extension OnboardingPixelParameter.Variant {
         case .privateAIChat:    self = .downloadReasonAIChat
         case .noAI:             self = .downloadReasonNoAI
         case .blockAds:         self = .downloadReasonAdBlocking
+        case .vpn:              self = .downloadReasonVPN
         }
     }
 }
@@ -83,7 +101,8 @@ final public class OnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
         static let daysSinceInstall = "daysSinceInstall"
         static let source = "source"
         static let flow = "flow"
-        static let variant = "variant"
+        static let variantSearchExperience = "variant_search_experience"
+        static let variantDownloadReason = "variant_download_reason"
     }
 
     public enum InstallType: String {
@@ -163,7 +182,7 @@ final public class OnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
     public func fire(_ event: OnboardingSharedPixelEvent,
                      source: OnboardingPixelParameter.Source?,
                      flow: OnboardingPixelParameter.Flow?,
-                     variant: OnboardingPixelParameter.Variant?) {
+                     variants: OnboardingPixelParameter.Variants) {
         var additionalParameters = installParameters
         if let source {
             additionalParameters[ParameterKeys.source] = source.rawValue
@@ -171,12 +190,17 @@ final public class OnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
         if let flow {
             additionalParameters[ParameterKeys.flow] = flow.rawValue
         }
-        if let variant {
-            additionalParameters[ParameterKeys.variant] = variant.rawValue
+        if let searchExperience = variants.searchExperience {
+            additionalParameters[ParameterKeys.variantSearchExperience] = searchExperience.rawValue
+        }
+        if let downloadReason = variants.downloadReason {
+            additionalParameters[ParameterKeys.variantDownloadReason] = downloadReason.rawValue
         }
 
+        // The time-limit pixel fires once per install, whatever its reason or onboarding context.
+        let frequency: PixelKit.Frequency = if case .timeLimit = event { .legacyInitial } else { .uniqueByNameAndParameters }
         pixelFiring?.fire(event.prefixed(platform.pixelPrefix),
-                          frequency: .uniqueByNameAndParameters,
+                          frequency: frequency,
                           options: .parameters(additionalParameters))
     }
 
@@ -213,16 +237,30 @@ public enum OnboardingSharedPixelEvent: PixelKit.Event, Equatable {
     case fireButton(EngagementEvent)
     case end(EngagementEvent)
     case endTryDuckAI(EngagementEvent) // iOS only — the Try Duck.ai end-of-journey dialog
-    case subscriptionPromo(EngagementEvent) // iOS only
+    case subscriptionPromo(EngagementEvent)
+    case timeLimit(TimeLimitReason) // iOS only
 
     // Segmented onboarding (download-reason) events — iOS only
     case downloadChoice(DownloadChoiceEvent)
-    case preferencesSerp(SerpEngagementEvent)
     case preferencesAIModel(AIModelEvent)
     case preferencesAIToggleMode(AIToggleModeEvent)
     case preferencesAISearch(AISearchEngagementEvent)
     case preferencesDuckAI(DuckAIEvent)
     case preferencesAdBlocking(AdBlockingEngagementEvent)
+
+    // VPN download-reason path — iOS only
+    case tryVPN(EngagementEvent) // "Try for Free" is engage, "Skip" is dismiss
+    case tryVPNPaywall(TryVPNPaywallEvent)
+    /// The "Subscription Found" alert on the Try VPN paywall: shown, Restore (engage) or Cancel (dismiss),
+    /// and confirmed once the restore succeeds.
+    case tryVPNSubscriptionFound(EngagementEvent)
+    case vpnActivation(VPNActivationEvent)
+    case subscriptionReminder(EngagementEvent)
+
+    public enum TimeLimitReason: String {
+        case days
+        case appOpens = "app-opens"
+    }
 
     public enum EngagementEvent: Equatable {
         public enum Value: String {
@@ -233,6 +271,31 @@ public enum OnboardingSharedPixelEvent: PixelKit.Event, Equatable {
         case shown
         case clicked(Value)
         case confirmed
+    }
+
+    /// The paywall opened from the Try VPN step.
+    public enum TryVPNPaywallEvent: Equatable {
+        public enum FailureReason: String {
+            /// The purchase failed, for reasons other than the user cancelling it.
+            case purchaseFailed = "purchase_failed"
+        }
+
+        case failed(FailureReason)
+    }
+
+    /// The Turn on VPN step after Try VPN.
+    public enum VPNActivationEvent: Equatable {
+        public enum FailureReason: String {
+            /// The user declined the system prompt to add the VPN configuration.
+            case permissionDenied = "permission_denied"
+            /// The VPN failed to start, reported a connection error, or didn't connect in time.
+            case connectionFailed = "connection_failed"
+        }
+
+        case shown
+        /// "Next" with the VPN on is engage, "Skip" with it off is dismiss.
+        case clicked(EngagementEvent.Value)
+        case failed(FailureReason)
     }
 
     public enum SearchExperienceEvent: Equatable {
@@ -313,16 +376,11 @@ public enum OnboardingSharedPixelEvent: PixelKit.Event, Equatable {
             case aiChat = "ai-chat"
             case noAI = "no-ai"
             case adBlocking = "ad-blocking"
+            case vpn
         }
 
         case shown
         case clicked(Value)
-    }
-
-    /// The SERP preferences screen.
-    public enum SerpEngagementEvent: Equatable {
-        case shown
-        case clicked(recentlyVisitedSitesEnabled: Bool, safeSearchEnabled: Bool)
     }
 
     /// The AI search settings screen.
@@ -413,13 +471,18 @@ private extension OnboardingSharedPixelEvent {
         case .end: return "end"
         case .endTryDuckAI: return "end-try-duckai"
         case .subscriptionPromo: return "subscription-promo"
+        case .timeLimit: return "time-limit"
         case .downloadChoice: return "download-choice"
-        case .preferencesSerp: return "preferences_serp"
         case .preferencesAIModel: return "preferences_ai-model"
         case .preferencesAIToggleMode: return "preferences_ai-toggle-mode"
         case .preferencesAISearch: return "preferences_ai-search"
         case .preferencesDuckAI: return "preferences_duck-ai"
         case .preferencesAdBlocking: return "preferences_ad-blocking"
+        case .tryVPN: return "try-vpn"
+        case .tryVPNPaywall: return "try-vpn-paywall"
+        case .tryVPNSubscriptionFound: return "try-vpn-subscription-found"
+        case .vpnActivation: return "vpn-activation"
+        case .subscriptionReminder: return "subscription-reminder"
         }
     }
 
@@ -428,10 +491,13 @@ private extension OnboardingSharedPixelEvent {
         static let clicked = "clicked"
         static let dismiss = "dismiss"
         static let confirmed = "confirmed"
+        static let failed = "failed"
     }
 
     var eventType: String {
         switch self {
+        case .timeLimit:
+            return "reached"
         case .welcome(let event),
                 .setDefault(let event),
                 .aiIntro(let event),
@@ -445,7 +511,10 @@ private extension OnboardingSharedPixelEvent {
                 .fireButton(let event),
                 .end(let event),
                 .endTryDuckAI(let event),
-                .subscriptionPromo(let event):
+                .subscriptionPromo(let event),
+                .tryVPN(let event),
+                .tryVPNSubscriptionFound(let event),
+                .subscriptionReminder(let event):
             switch event {
             case .shown:
                 return ParameterValues.shown
@@ -453,6 +522,20 @@ private extension OnboardingSharedPixelEvent {
                 return ParameterValues.clicked
             case .confirmed:
                 return ParameterValues.confirmed
+            }
+        case .tryVPNPaywall(let event):
+            switch event {
+            case .failed:
+                return ParameterValues.failed
+            }
+        case .vpnActivation(let event):
+            switch event {
+            case .shown:
+                return ParameterValues.shown
+            case .clicked:
+                return ParameterValues.clicked
+            case .failed:
+                return ParameterValues.failed
             }
         case .appIconColor(let event):
             switch event {
@@ -504,13 +587,6 @@ private extension OnboardingSharedPixelEvent {
             case .clicked:
                 return ParameterValues.clicked
             }
-        case .preferencesSerp(let event):
-            switch event {
-            case .shown:
-                return ParameterValues.shown
-            case .clicked:
-                return ParameterValues.clicked
-            }
         case .preferencesAISearch(let event):
             switch event {
             case .shown:
@@ -551,6 +627,8 @@ private extension OnboardingSharedPixelEvent {
 
     var value: String? {
         switch self {
+        case .timeLimit(let reason):
+            return reason.rawValue
         case .welcome(let event),
                 .setDefault(let event),
                 .aiIntro(let event),
@@ -564,12 +642,29 @@ private extension OnboardingSharedPixelEvent {
                 .fireButton(let event),
                 .end(let event),
                 .endTryDuckAI(let event),
-                .subscriptionPromo(let event):
+                .subscriptionPromo(let event),
+                .tryVPN(let event),
+                .tryVPNSubscriptionFound(let event),
+                .subscriptionReminder(let event):
             switch event {
             case .shown, .confirmed:
                 return nil
             case .clicked(let value):
                 return value.rawValue
+            }
+        case .tryVPNPaywall(let event):
+            switch event {
+            case .failed(let reason):
+                return reason.rawValue
+            }
+        case .vpnActivation(let event):
+            switch event {
+            case .shown:
+                return nil
+            case .clicked(let value):
+                return value.rawValue
+            case .failed(let reason):
+                return reason.rawValue
             }
         case .appIconColor(let event):
             switch event {
@@ -625,12 +720,6 @@ private extension OnboardingSharedPixelEvent {
             case .clicked(let value):
                 return value.rawValue
             }
-        case .preferencesSerp(let event):
-            switch event {
-            case .shown, .clicked:
-                // Toggle states are emitted via `extraParameters`, not as `value`.
-                return nil
-            }
         case .preferencesAISearch(let event):
             switch event {
             case .shown, .clicked:
@@ -668,11 +757,6 @@ private extension OnboardingSharedPixelEvent {
     // Screen-specific toggle states emitted as their own pixel parameters (in addition to `event`/`value`).
     var extraParameters: [String: String] {
         switch self {
-        case .preferencesSerp(.clicked(let recentlyVisitedSitesEnabled, let safeSearchEnabled)):
-            return [
-                "recently_visited_sites_enabled": String(recentlyVisitedSitesEnabled),
-                "safe_search_enabled": String(safeSearchEnabled)
-            ]
         case .preferencesAISearch(.clicked(let searchAssistEnabled, let aiGeneratedImagesEnabled)):
             return [
                 "search_assist_enabled": String(searchAssistEnabled),

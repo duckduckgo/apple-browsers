@@ -20,6 +20,10 @@
             "type": "string",
             "description": "The form factor of the device",
             "enum": ["phone", "tablet"]
+        },
+        "dev_mode": {
+            "type": "boolean",
+            "description": "Whether the event came from a non-production build (debug, alpha, review or experimental). Only included when true, and only in the POST payload."
         }
     },
     "global": {

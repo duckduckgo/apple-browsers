@@ -46,27 +46,79 @@ final class OverlayWindowPresenter {
 
     private let mainWindow: UIWindow
     private var didHideMainWindow = false
+    private let afterNextFrames: (@escaping () -> Void) -> Void
+    /// A removed overlay kept on screen until the main window has drawn under it.
+    private weak var windowAwaitingHide: UIWindow?
 
-    init(mainWindow: UIWindow) {
+    init(mainWindow: UIWindow,
+         afterNextFrames: @escaping (@escaping () -> Void) -> Void = { FrameWaiter.run(afterFrames: 2, $0) }) {
         self.mainWindow = mainWindow
+        self.afterNextFrames = afterNextFrames
     }
 
     func revealBlankSnapshotWindow(_ overlayWindow: UIWindow) {
+        finishPendingHide()
         overlayWindow.isHidden = false
     }
 
     func revealInteractiveWindow(_ overlayWindow: UIWindow) {
+        finishPendingHide()
         overlayWindow.makeKeyAndVisible()
         mainWindow.isHidden = true
         didHideMainWindow = true
     }
 
     func removeWindow(_ overlayWindow: UIWindow) {
-        overlayWindow.isHidden = true
-        if didHideMainWindow {
-            didHideMainWindow = false
-            mainWindow.makeKeyAndVisible()
+        finishPendingHide()
+        guard didHideMainWindow else {
+            overlayWindow.isHidden = true
+            return
         }
+        didHideMainWindow = false
+        // A hidden window takes a frame or more to draw again. Show it under the overlay first,
+        // so hiding the overlay doesn't reveal a black screen.
+        mainWindow.makeKeyAndVisible()
+        windowAwaitingHide = overlayWindow
+        afterNextFrames { [weak self] in
+            guard self?.windowAwaitingHide === overlayWindow else { return }
+            self?.finishPendingHide()
+        }
+    }
+
+    /// Frames don't draw in the background, so a hide can still be pending when the next overlay appears.
+    private func finishPendingHide() {
+        windowAwaitingHide?.isHidden = true
+        windowAwaitingHide = nil
+    }
+
+}
+
+/// Runs a handler once the screen has drawn the given number of frames.
+private final class FrameWaiter {
+
+    private var framesLeft: Int
+    private let handler: () -> Void
+    private var displayLink: CADisplayLink?
+
+    private init(framesLeft: Int, handler: @escaping () -> Void) {
+        self.framesLeft = framesLeft
+        self.handler = handler
+    }
+
+    static func run(afterFrames frames: Int, _ handler: @escaping () -> Void) {
+        let waiter = FrameWaiter(framesLeft: frames, handler: handler)
+        // The display link keeps the waiter alive until it is invalidated.
+        let displayLink = CADisplayLink(target: waiter, selector: #selector(frameDidDraw))
+        waiter.displayLink = displayLink
+        displayLink.add(to: .main, forMode: .common)
+    }
+
+    @objc private func frameDidDraw() {
+        framesLeft -= 1
+        guard framesLeft <= 0 else { return }
+        displayLink?.invalidate()
+        displayLink = nil
+        handler()
     }
 
 }
@@ -150,7 +202,14 @@ final class OverlayWindowManager: OverlayWindowManaging {
     }
 
     func displayOverlay(with viewController: UIViewController) {
-        guard overlayWindow == nil else { return }
+        // Swap into the overlay window that is already on screen, usually the blank snapshot. A new
+        // window can reach the screen a frame after the windows it replaces are hidden, which shows black.
+        if let existingWindow = overlayWindow ?? obtainOverlayWindow() {
+            activeReasons = []
+            existingWindow.rootViewController = viewController
+            revealInteractiveWindow(existingWindow)
+            return
+        }
         revealInteractiveWindow(makeOverlayWindow(with: viewController))
     }
 

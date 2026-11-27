@@ -53,24 +53,6 @@ extension OnboardingPersonalizationContent.Item.ItemType {
 
     func uiBindingTo(manager: OnboardingPersonalizationManaging) -> Binding<Bool> {
         switch self {
-        case .recentlyVisitedSites:
-            Binding(
-                get: {
-                    manager.isRecentlyVisitedSitesEnabled
-                },
-                set: {
-                    manager.setRecentlyVisitedSites($0)
-                }
-            )
-        case .safeSearch:
-            Binding(
-                get: {
-                    manager.isSafeSearchEnabled
-                },
-                set: {
-                    manager.setSafeSearch($0)
-                }
-            )
         case .searchAssist:
             Binding(
                 get: {

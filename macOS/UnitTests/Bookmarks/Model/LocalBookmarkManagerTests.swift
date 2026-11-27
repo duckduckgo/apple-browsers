@@ -731,6 +731,28 @@ final class LocalBookmarkManagerTests: XCTestCase {
         XCTAssertTrue(bookmarkStoreMock.loadAllCalled)
     }
 
+    @MainActor
+    func testWhenMakeBookmarksAtIndexIsCalled_ThenNewBookmarksAreSavedInOneCallAtConsecutiveIndices() async {
+        let (sut, bookmarkStoreMock) = await manager {
+            Bookmark.aBookmark
+        }
+        let firstURL = URL(string: "https://first.example.com")!
+        let secondURL = URL(string: "https://second.example.com")!
+        let websitesInfo = [
+            WebsiteInfo(url: firstURL, title: "Website 1"),
+            WebsiteInfo(url: Bookmark.aBookmark.urlObject!, title: "Already bookmarked"),
+            WebsiteInfo(url: secondURL, title: "Website 2"),
+        ].compactMap { $0 }
+
+        sut.makeBookmarks(for: websitesInfo, isFavorite: false, index: 3, parent: nil)
+
+        let saved = bookmarkStoreMock.saveEntitiesAtIndicesCalledWith
+        XCTAssertEqual(saved?.map { ($0.entity as? Bookmark)?.url }, [firstURL.absoluteString, secondURL.absoluteString])
+        XCTAssertEqual(saved?.map(\.index), [3, 4])
+        XCTAssertTrue(sut.isUrlBookmarked(url: firstURL))
+        XCTAssertTrue(sut.isUrlBookmarked(url: secondURL))
+    }
+
     // MARK: - Search
 
     func testWhenBookmarkListIsNilThenSearchIsEmpty() {

@@ -33,7 +33,7 @@ final class UpdateAvailablePromoDelegateTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.promoQueueUpdateAvailablePromo.rawValue: true])
+        featureFlagger = MockFeatureFlagger()
         updateController = MockUpdateAvailabilityController()
         windowControllersManager = WindowControllersManagerMock()
         sut = UpdateAvailablePromoDelegate(updateController: updateController,
@@ -49,23 +49,47 @@ final class UpdateAvailablePromoDelegateTests: XCTestCase {
         super.tearDown()
     }
 
-    func testWhenFeatureFlagOffThenNotEligible() {
-        featureFlagger.featuresStub = [FeatureFlag.promoQueueUpdateAvailablePromo.rawValue: false]
-        updateController.hasPendingUpdate = true
-
-        XCTAssertFalse(sut.isEligible)
-    }
-
     func testWhenNoPendingUpdateThenNotEligible() {
         updateController.hasPendingUpdate = false
 
         XCTAssertFalse(sut.isEligible)
     }
 
-    func testWhenFeatureFlagOnAndPendingUpdateThenEligible() {
+    func testWhenPendingUpdateIndicatorsDueThenEligible() {
         updateController.hasPendingUpdate = true
+        updateController.mustShowUpdateIndicators = true
 
         XCTAssertTrue(sut.isEligible)
+    }
+
+    func testWhenMoreProminentUpdatesOnThenNotEligible() {
+        featureFlagger.featuresStub[FeatureFlag.moreProminentUpdates.rawValue] = true
+        updateController.hasPendingUpdate = true
+        updateController.mustShowUpdateIndicators = true
+
+        XCTAssertFalse(sut.isEligible)
+    }
+
+    func testWhenPendingUpdateButIndicatorsNotDueThenNotEligible() {
+        updateController.hasPendingUpdate = true
+        updateController.mustShowUpdateIndicators = false
+
+        XCTAssertFalse(sut.isEligible)
+    }
+
+    func testWhenIndicatorsDueButNoPendingUpdateThenNotEligible() {
+        updateController.hasPendingUpdate = false
+        updateController.mustShowUpdateIndicators = true
+
+        XCTAssertFalse(sut.isEligible)
+    }
+
+    func testWhenNoUpdateControllerThenNotEligible() {
+        sut = UpdateAvailablePromoDelegate(updateController: nil,
+                                           windowControllersManager: windowControllersManager,
+                                           featureFlagger: featureFlagger)
+
+        XCTAssertFalse(sut.isEligible)
     }
 
     func testWhenThereIsNoKeyWindowThenShowReturnsNoChange() async {
@@ -89,7 +113,7 @@ private final class MockUpdateAvailabilityController: UpdateController {
     var latestUpdatePublisher: Published<Update?>.Publisher { $latestUpdate }
     @Published var hasPendingUpdate = false
     var hasPendingUpdatePublisher: Published<Bool>.Publisher { $hasPendingUpdate }
-    var mustShowUpdateIndicators: Bool { hasPendingUpdate }
+    var mustShowUpdateIndicators = false
     var needsNotificationDot = false
     var notificationDotPublisher: AnyPublisher<Bool, Never> { Just(needsNotificationDot).eraseToAnyPublisher() }
     var clearsNotificationDotOnMenuOpen = false

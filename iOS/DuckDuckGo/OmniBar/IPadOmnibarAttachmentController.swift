@@ -27,12 +27,15 @@ import PixelKit
 final class IPadOmnibarDraft {
     var text = ""
     var attachments: [UnifiedToggleInputAttachment] = []
+    /// The unsent model pick on this tab; `nil` means the new-chat default.
+    var modelSelection = UTIModelSelection()
     private(set) var generation = UUID()
     private(set) var isValid = true
 
     func clear() {
         text = ""
         attachments = []
+        modelSelection = UTIModelSelection()
         generation = UUID()
     }
 
@@ -199,6 +202,10 @@ final class IPadOmnibarAttachmentController {
         attachmentsStripView?.replaceAttachment(id: id, with: attachment)
     }
 
+    func reportMenuShown() {
+        pixelFiring?.fire(UnifiedToggleInputAttachMenuPixel.shown(surface: .addressBar, simplifiedPromptBox: false), frequency: .dailyAndCount)
+    }
+
     private func firePastedTextPixel(_ action: UnifiedToggleInputPastedTextPixel.Action) {
         pixelFiring?.fire(UnifiedToggleInputPastedTextPixel(action: action, surface: .addressBar), frequency: .dailyAndCount)
     }
@@ -223,6 +230,10 @@ final class IPadOmnibarAttachmentController {
         guard isAttachButtonAvailable, canAttachMore else { return nil }
         return presenter.makeAttachmentMenu(
             presenterProvider: { [weak self] in self?.presenterProvider?() },
+            onItemSelected: { [weak self] in
+                self?.pixelFiring?.fire(UnifiedToggleInputAttachMenuPixel.itemSelected($0, surface: .addressBar,
+                                                                                         simplifiedPromptBox: false), frequency: .dailyAndCount)
+            },
             photoSelectionLimit: attachmentPolicy.canAttachImages ? attachmentPolicy.remainingImagesForPicker : 0,
             canAttachFile: canPresentFilePicker,
             allowedFileTypes: allowedFileUTTypes
@@ -315,7 +326,11 @@ final class IPadOmnibarAttachmentController {
             return
         }
 
-        PixelKit.fire(Pixel.Event.unifiedToggleInputFileAttached, frequency: .dailyAndCount, options: .parameters(["surface": UnifiedToggleInputPixelSurface.addressBar.rawValue, "source": "file_picker"]))
+        PixelKit.fire(Pixel.Event.unifiedToggleInputFileAttached, frequency: .dailyAndCount, options: .parameters([
+            "surface": UnifiedToggleInputPixelSurface.addressBar.rawValue,
+            "source": "file_picker",
+            UnifiedToggleInputCoordinatorPixelHelper.simplifiedPromptBoxKey: UnifiedToggleInputCoordinatorPixelHelper.simplifiedPromptBoxValue(false)
+        ]))
         addAttachment(.file(fileAttachment), to: draft)
     }
 

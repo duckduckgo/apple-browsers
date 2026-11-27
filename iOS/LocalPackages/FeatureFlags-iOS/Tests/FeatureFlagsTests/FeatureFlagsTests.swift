@@ -25,6 +25,71 @@ import XCTest
 
 final class FeatureFlagsTests: XCTestCase {
 
+    func testDebounceLogic2026UsesIOSBrowserConfigAndIsEnabledByDefault() {
+        let flag = FeatureFlag.debounceLogic2026
+        guard case let .remoteReleasable(subfeature) = flag.source else {
+            XCTFail("Expected remote-releasable source")
+            return
+        }
+        XCTAssertEqual(subfeature as? iOSBrowserConfigSubfeature, .debounceLogic2026)
+        XCTAssertEqual(subfeature.parent, .iOSBrowserConfig)
+        XCTAssertEqual(subfeature.rawValue, "debounceLogic2026")
+        guard case .enabled = flag.defaultValue else {
+            XCTFail("Expected enabled default")
+            return
+        }
+        XCTAssertTrue(flag.supportsLocalOverriding)
+    }
+
+    func testIdleReturnLaunchWaitProtectionIsARemoteKillSwitchEnabledByDefault() {
+        let flag = FeatureFlag.idleReturnLaunchWaitProtection
+        guard case let .remoteReleasable(subfeature) = flag.source else {
+            XCTFail("Expected remote-releasable source")
+            return
+        }
+        XCTAssertEqual(subfeature as? iOSBrowserConfigSubfeature, .idleReturnLaunchWaitProtection)
+        XCTAssertEqual(subfeature.parent, .iOSBrowserConfig)
+        XCTAssertEqual(subfeature.rawValue, "idleReturnLaunchWaitProtection")
+        guard case .enabled = flag.defaultValue else {
+            XCTFail("Expected enabled default")
+            return
+        }
+        XCTAssertTrue(flag.supportsLocalOverriding)
+    }
+
+    func testContextualOnboardingTimeLimitUsesIOSBrowserConfigAndInternalOnlyDefault() {
+        let flag = FeatureFlag.contextualOnboardingTimeLimit
+        guard case let .remoteReleasable(subfeature) = flag.source else {
+            XCTFail("Expected remote-releasable source")
+            return
+        }
+        XCTAssertEqual(subfeature as? iOSBrowserConfigSubfeature, .contextualOnboardingTimeLimit)
+        XCTAssertEqual(subfeature.parent, .iOSBrowserConfig)
+        XCTAssertEqual(subfeature.parent.rawValue, "iOSBrowserConfig")
+        XCTAssertEqual(subfeature.rawValue, "contextualOnboardingTimeLimit")
+        guard case .internalOnly = flag.defaultValue else {
+            XCTFail("Expected internal-only default")
+            return
+        }
+        XCTAssertTrue(flag.supportsLocalOverriding)
+    }
+
+    func testLocalModelsUsesTheSharedSubfeatureAndInternalOnlyDefault() {
+        let flag = FeatureFlag.aiChatLocalModels
+        guard case let .remoteReleasable(subfeature) = flag.source else {
+            XCTFail("Expected remote-releasable source")
+            return
+        }
+        XCTAssertEqual(subfeature as? AIChatSubfeature, .localModels)
+        XCTAssertEqual(subfeature.parent, .aiChat)
+        XCTAssertEqual(subfeature.rawValue, "localModels")
+        guard case .internalOnly = flag.defaultValue else {
+            XCTFail("Expected internal-only default")
+            return
+        }
+        XCTAssertTrue(flag.supportsLocalOverriding)
+    }
+
     func testAttachmentPrivacyUsesRemoteKillSwitchAndInternalOnlyDefault() {
         let flag = FeatureFlag.unifiedToggleInputAttachmentPrivacy
         guard case let .remoteReleasable(subfeature) = flag.source else {
@@ -157,22 +222,10 @@ final class FeatureFlagsTests: XCTestCase {
     }
 
     func testWhenReadingIOSBrowserConfigSubfeatureThenParentAndRawValueAreStable() {
-        let subfeature = iOSBrowserConfigSubfeature.searchTokenExperimentV4
+        let subfeature = iOSBrowserConfigSubfeature.tabEvictionOnMemoryWarning
 
         XCTAssertEqual(subfeature.parent, .iOSBrowserConfig)
-        XCTAssertEqual(subfeature.rawValue, "searchTokenExperimentV4")
-    }
-
-    func testWhenReadingSearchTokenFeatureFlagThenSourceAndCohortUseSearchTokenConfiguration() {
-        guard case let .remoteReleasable(subfeature) = FeatureFlag.searchTokenExperimentV4.source else {
-            XCTFail("Expected remote-releasable source")
-            return
-        }
-
-        XCTAssertEqual((subfeature as? iOSBrowserConfigSubfeature)?.rawValue,
-                       iOSBrowserConfigSubfeature.searchTokenExperimentV4.rawValue)
-        XCTAssertEqual(FeatureFlag.searchTokenExperimentV4.cohortType.map(ObjectIdentifier.init),
-                       ObjectIdentifier(FeatureFlag.SearchTokenExperimentCohort.self))
+        XCTAssertEqual(subfeature.rawValue, "tabEvictionOnMemoryWarning")
     }
 
     func testTabEvictionFlagsAreDefaultEnabledRemoteReleasableAndLocallyOverridable() {
@@ -206,22 +259,6 @@ final class FeatureFlagsTests: XCTestCase {
                        SyncSubfeature.canUsePatchEndpointForLegacyDeviceRename.rawValue)
         guard case .enabled = flag.defaultValue else {
             XCTFail("Expected enabled default")
-            return
-        }
-        XCTAssertTrue(flag.supportsLocalOverriding)
-    }
-
-    func testAlwaysShowKeyboardOnNewTabPageIsDefaultDisabledRemoteReleasableAndLocallyOverridable() {
-        let flag = FeatureFlag.alwaysShowKeyboardOnNewTabPage
-        guard case let .remoteReleasable(subfeature) = flag.source else {
-            XCTFail("Expected remote-releasable source")
-            return
-        }
-        XCTAssertEqual(subfeature as? iOSBrowserConfigSubfeature, .alwaysShowKeyboardOnNewTabPage)
-        XCTAssertEqual(subfeature.parent, .iOSBrowserConfig)
-        XCTAssertEqual(subfeature.rawValue, "alwaysShowKeyboardOnNewTabPage")
-        guard case .disabled = flag.defaultValue else {
-            XCTFail("Expected disabled default")
             return
         }
         XCTAssertTrue(flag.supportsLocalOverriding)

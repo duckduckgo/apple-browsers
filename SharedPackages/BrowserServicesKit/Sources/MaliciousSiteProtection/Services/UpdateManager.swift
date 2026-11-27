@@ -36,11 +36,10 @@ public protocol MaliciousSiteUpdateManaging {
 
 /// Information about a completed dataset update
 struct DataSetUpdateInfo {
-    let fromRevision: Int
-    let toRevision: Int
+    /// Size of the whole dataset file written after the update.
     let bytesWritten: Int
+    /// Time spent applying, encoding and writing the update.
     let processingDuration: TimeInterval
-    let isFullReplacement: Bool
 }
 
 protocol InternalUpdateManaging: MaliciousSiteUpdateManaging {
@@ -126,11 +125,8 @@ public struct UpdateManager: InternalUpdateManaging {
             let processingDuration = CFAbsoluteTimeGetCurrent() - processingStartTime
 
             let updateInfo = DataSetUpdateInfo(
-                fromRevision: oldRevision,
-                toRevision: changeSet.revision,
                 bytesWritten: bytesWritten,
-                processingDuration: processingDuration,
-                isFullReplacement: changeSet.replace
+                processingDuration: processingDuration
             )
 
             return updateInfo
@@ -182,9 +178,11 @@ public struct UpdateManager: InternalUpdateManaging {
             let supportedThreats = supportedThreatsProvider()
 
             var results: [Bool] = []
-            var totalBytesWritten = 0
-            var totalProcessingDuration: TimeInterval = 0
             let dataTypes = DataManager.StoredDataType.dataTypes(for: datasetType, supportedThreats: supportedThreats)
+
+            // Totals for the datasets this round wrote. The network isn't counted.
+            var aggregateProcessingDuration: TimeInterval = 0
+            var aggregateBytesWritten: Int?
 
             for dataType in dataTypes {
                 do {
@@ -192,16 +190,22 @@ public struct UpdateManager: InternalUpdateManaging {
                     results.append(true)
 
                     if let updateInfo {
-                        // Fire single dataset events (performance + disk usage)
                         fireDataSetUpdatePerformanceEvents(for: dataType.dataKey, updateInfo: updateInfo)
-                        totalBytesWritten += updateInfo.bytesWritten
-                        totalProcessingDuration += updateInfo.processingDuration
+                        aggregateProcessingDuration += updateInfo.processingDuration
+                        aggregateBytesWritten = (aggregateBytesWritten ?? 0) + updateInfo.bytesWritten
                     }
-
                 } catch {
                     Logger.updateManager.error("Failed to update dataset type: \(datasetType.rawValue) for kind: \(dataType.dataKey.threatKind). Error: \(error)")
                     results.append(false)
                 }
+            }
+
+            if let aggregateBytesWritten {
+                fireAggregatePerformanceEvents(
+                    for: datasetType,
+                    processingDuration: aggregateProcessingDuration,
+                    bytesWritten: aggregateBytesWritten
+                )
             }
 
             // Check that at least one of the dataset type have updated
@@ -209,16 +213,6 @@ public struct UpdateManager: InternalUpdateManaging {
 
             if shouldSaveLastUpdateDate {
                 await saveLastUpdateDate(for: datasetType)
-            }
-
-            let didUpdateAnyDataSets = totalBytesWritten > 0
-            if didUpdateAnyDataSets {
-                fireAggregateDataSetsUpdatePerformanceEvents(
-                    datasetType: datasetType,
-                    sampleDataType: dataTypes.first,
-                    aggregateDuration: totalProcessingDuration,
-                    totalBytesWritten: totalBytesWritten
-                )
             }
         }
     }
@@ -243,84 +237,41 @@ public struct UpdateManager: InternalUpdateManaging {
 #if os(iOS)
 extension UpdateManager {
 
+    /// Fires the update time and the size of the file written, each as a bucket in the pixel name.
     func fireDataSetUpdatePerformanceEvents<DataKey: MaliciousSiteDataKey>(
         for key: DataKey,
         updateInfo: DataSetUpdateInfo
     ) {
-        let diskWritesMB = Double(updateInfo.bytesWritten) / (1024.0 * 1024.0)
-        let updateFrequencyMinutes = (updateIntervalProvider(key.dataType) ?? 0) / 60.0
+        let category = key.threatKind
+        let type = key.dataType.kind
 
-        let performanceBucket = DataSetUpdatePerformanceBucket.bucketForSingleDataSetUpdate(
-            type: key.dataType.kind,
-            processingTime: updateInfo.processingDuration
-        ).rawValue
-
-        let diskUsageBucket = DataSetUpdateDiskUsageBucket.bucketForSingleDataSetUpdate(
-            type: key.dataType.kind,
-            diskWritesMB: diskWritesMB
-        ).rawValue
-
-        // Fire separate performance event
-        let performanceInfo = SingleDataSetUpdatePerformanceInfo(
-            category: key.threatKind,
-            type: key.dataType.kind,
-            fromRevision: updateInfo.fromRevision,
-            toRevision: updateInfo.toRevision,
-            isFullReplacement: updateInfo.isFullReplacement,
-            updateFrequencyMinutes: updateFrequencyMinutes,
-            performanceBucket: performanceBucket
-        )
-        eventMapping.fire(.singleDataSetUpdatePerformance(performanceInfo))
-
-        // Fire separate disk usage event
-        let diskUsageInfo = SingleDataSetUpdateDiskUsageInfo(
-            category: key.threatKind,
-            type: key.dataType.kind,
-            toRevision: updateInfo.toRevision,
-            updateFrequencyMinutes: updateFrequencyMinutes,
-            diskUsageBucket: diskUsageBucket
-        )
-        eventMapping.fire(.singleDataSetUpdateDiskUsage(diskUsageInfo))
+        eventMapping.fire(.dataSetUpdateTime(
+            category: category,
+            type: type,
+            bucket: Event.DurationBucketAggregation(seconds: updateInfo.processingDuration)
+        ))
+        eventMapping.fire(.dataSetSize(
+            category: category,
+            type: type,
+            bucket: Event.DatasetSizeBucketAggregation(bytes: updateInfo.bytesWritten)
+        ))
     }
 
-    func fireAggregateDataSetsUpdatePerformanceEvents(
-        datasetType: DataManager.StoredDataType.Kind,
-        sampleDataType: DataManager.StoredDataType?,
-        aggregateDuration: TimeInterval,
-        totalBytesWritten: Int
+    /// Fires the total time spent applying, encoding and writing a round's updates, and the total size it wrote,
+    /// for a round that wrote at least one dataset.
+    func fireAggregatePerformanceEvents(
+        for type: DataManager.StoredDataType.Kind,
+        processingDuration: TimeInterval,
+        bytesWritten: Int
     ) {
-        let totalDiskWritesMB = Double(totalBytesWritten) / (1024.0 * 1024.0)
-        let updateFrequencyMinutes = if let sampleDataType {
-            (updateIntervalProvider(sampleDataType) ?? 0) / 60.0
-        } else {
-            0.0
-        }
-
-        let performanceBucket = DataSetUpdatePerformanceBucket.bucketForAggregateDataSetsUpdate(
-            type: datasetType,
-            totalProcessingTime: aggregateDuration
-        ).rawValue
-
-        let diskUsageBucket = DataSetUpdateDiskUsageBucket.bucketForAggregateDataSetsUpdate(
-            type: datasetType,
-            totalDiskWritesMB: totalDiskWritesMB
-        ).rawValue
-
-        // Fire separate aggregate performance event
-        let aggregatePerformanceInfo = AggregateDataSetPerformanceInfo(
-            type: datasetType,
-            updateFrequencyMinutes: updateFrequencyMinutes,
-            performanceBucket: performanceBucket
-        )
-        eventMapping.fire(.aggregateDataSetUpdatePerformance(aggregatePerformanceInfo))
-
-        // Fire separate aggregate disk usage event
-        let aggregateDiskUsageInfo = AggregateDataSetUpdateDiskUsageInfo(
-            type: datasetType,
-            updateFrequencyMinutes: updateFrequencyMinutes,
-            diskUsageBucket: diskUsageBucket
-        )
-        eventMapping.fire(.aggregateDataSetUpdateDiskUsage(aggregateDiskUsageInfo))
+        eventMapping.fire(.dataSetAggregateUpdateTime(
+            type: type,
+            bucket: Event.DurationBucketAggregation(seconds: processingDuration)
+        ))
+        eventMapping.fire(.dataSetAggregateSize(
+            type: type,
+            bucket: Event.DatasetSizeBucketAggregation(bytes: bytesWritten)
+        ))
     }
 
 }

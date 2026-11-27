@@ -24,8 +24,7 @@ import XCTest
 /// WebKit throws `WKNSError` proxies; reading `localizedDescription` from one
 /// crashes on x86_64. If the wrappers rethrow the proxy (`throw error` instead
 /// of `throw NSError.webKitSafe(error)` in WKWebExtension+CopyingErrors.swift),
-/// these tests fail on arm64 and crash under Rosetta (see
-/// CPMMessagingDiagnosticsRecorderTests for the Rosetta commands).
+/// these tests fail on arm64 and crash under Rosetta.
 @available(macOS 15.4, iOS 18.4, *)
 @MainActor
 final class WKWebExtensionCopyingErrorsTests: XCTestCase {

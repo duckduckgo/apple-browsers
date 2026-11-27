@@ -23,7 +23,7 @@ import Core
 import FeatureFlags_iOS
 @testable import DuckDuckGo
 @testable import DDGSync
-import Persistence
+@_spi(Testing) import Persistence
 import Common
 import FoundationExtensions
 import SyncUI_iOS
@@ -217,6 +217,22 @@ final class SyncSettingsViewControllerPixelTests {
                 "ui_version": "v2"
             ]
         })
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Setup screens opened from the Bookmarks another-device promo report the promo as their source", .timeLimit(.minutes(1)))
+    func setupScreensOpenedFromBookmarksAnotherDevicePromoReportPromoSource() {
+        let vc = makeViewController(source: SyncSettingsViewController.SourceConstants.bookmarksAnotherDevicePromotion,
+                                    enabledFeatureFlags: [])
+
+        vc.barcodeScreenShown()
+        vc.scanQRCodeScreenShown()
+
+        let screenShownPixelNames = [Pixel.Event.syncSetupBarcodeScreenShown.name, Pixel.Event.syncSetupScanQRScreenShown.name]
+        let sources = pixelKitMock.actualFireCalls
+            .filter { screenShownPixelNames.contains($0.pixel.name) }
+            .map { $0.additionalParameters?["source"] }
+        #expect(sources == ["promotion_bookmarks_multi_device", "promotion_bookmarks_multi_device"])
     }
 
     @available(iOS 16, macOS 13, *)
@@ -431,7 +447,8 @@ final class SyncSettingsViewControllerPixelTests {
             featureFlagger: MockFeatureFlagger(enabledFeatureFlags: enabledFeatureFlags),
             syncAutoRestoreHandler: syncAutoRestoreHandler,
             pixelFiring: pixelKitMock,
-            cameraAuthorization: cameraAuthorization
+            cameraAuthorization: cameraAuthorization,
+            syncPromoStorage: MockKeyValueStore().keyedStoring()
         )
     }
 

@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import DesignResourcesKitIcons
 import UIKit
 
 extension UIMenu.Identifier {
@@ -53,6 +54,7 @@ struct BookmarksMenuSection: MainMenuSection {
             return menu.replacingChildren(menu.children.map { child in
                 if let command = child as? UICommand {
                     command.image = BookmarksMenuTree.bookmarkURL(from: command).flatMap(favicon)
+                    command.showingImage()
                 }
                 return child
             })
@@ -78,9 +80,10 @@ struct BookmarksMenuTree: MainMenuDeferredContent {
                     case .bookmark(let bookmark):
                         return UICommand(title: bookmark.title, image: favicon(bookmark.url),
                                          action: MainMenuCommand.openBookmark.action,
-                                         propertyList: Self.argument(for: bookmark, in: .bookmarksTree))
+                                         propertyList: Self.argument(for: bookmark, in: .bookmarksTree)).showingImage()
                     case .folder(let title, let id):
-                        return UIMenu(title: title, children: [makeFolder(withID: id)])
+                        return UIMenu(title: title, image: DesignSystemImages.Color.Size16.folder, children: [makeFolder(withID: id)])
+                            .showingImage()
                     }
                 })
             }

@@ -34,10 +34,6 @@ protocol TabDelegate: AnyObject {
 
     func tabWillRequestNewTab(_ tab: TabViewController) -> UIKeyModifierFlags?
 
-    /// The current cached search token, or nil if none is live. Used by the SERP interceptor
-    /// to attach the `X-DDG-Search-Token` header for the treatment cohort of the Search Token experiment.
-    func searchToken(for tab: TabViewController) -> String?
-
     func tabDidRequestNewTab(_ tab: TabViewController)
 
     func tabDidRequestNewVoiceChat(_ tab: TabViewController, source: AIChatEntryPointSource)
@@ -67,6 +63,10 @@ protocol TabDelegate: AnyObject {
              didRequestNewTabForUrl url: URL,
              openedByPage: Bool,
              inheritingAttribution: AdClickAttributionLogic.State?)
+
+    /// A screen this tab presented is still up; the new tab closes it as it opens.
+    /// Returns false when the new tab can't, so the caller closes the screen as usual.
+    func tab(_ tab: TabViewController, didRequestNewTabClosingPresentedScreenForUrl url: URL) -> Bool
 
     /// Prompts in the new tab are attributed to `entrySource`; nil leaves them unattributed.
     func tab(_ tab: TabViewController,
@@ -132,6 +132,12 @@ protocol TabDelegate: AnyObject {
     /// Routed through the delegate so the entry pixel is reported alongside the interceptor state.
     func tabDidRequestNewAIChatTab(tab: TabViewController)
 
+    /// What the chrome knows that pulling up past the bottom of a Duck.ai chat gates on; nil when `tab` isn't the current tab.
+    func duckAISwipeNewChatChromeState(for tab: TabViewController) -> DuckAISwipeNewChatChromeState?
+
+    /// The user pulled up past the bottom of the Duck.ai chat in `tab` to open a new chat in a new tab.
+    func tabDidRequestNewChatBySwipe(_ tab: TabViewController)
+
     /// Called when the user picks Ask Duck.ai from the web view's text-selection edit menu.
     func tab(_ tab: TabViewController, didRequestAIChatForSelectedText text: String)
 
@@ -168,6 +174,8 @@ protocol TabDelegate: AnyObject {
     func tabDidRequestSettingsToAIChat(_ tab: TabViewController)
 
     func tabDidRequestSettingsToSync(_ tab: TabViewController)
+
+    func tabDidRequestSettingsToDataClearing(_ tab: TabViewController)
 
     func tabDidRequestFindInPage(tab: TabViewController)
     func closeFindInPage(tab: TabViewController)
@@ -241,6 +249,10 @@ protocol TabDelegate: AnyObject {
     func tabDidCloseContextualDuckAI(_ tab: TabViewController, chatDeleted: Bool)
 
     func tab(_ tab: TabViewController, didCommitDuckAINavigationChangingChat didChangeChat: Bool)
+
+    /// Whether a prompt such as a notification banner, find in page, the Duck Player pill or a Dax dialog is already on screen,
+    /// so the tab skips its own.
+    func tabIsShowingOtherPrompt(_ tab: TabViewController) -> Bool
 }
 
 extension TabDelegate {
@@ -275,6 +287,6 @@ extension TabDelegate {
 
     func tab(_ tab: TabViewController, didCommitDuckAINavigationChangingChat didChangeChat: Bool) {}
 
-    func searchToken(for tab: TabViewController) -> String? { nil }
+    func tabIsShowingOtherPrompt(_ tab: TabViewController) -> Bool { false }
 
 }

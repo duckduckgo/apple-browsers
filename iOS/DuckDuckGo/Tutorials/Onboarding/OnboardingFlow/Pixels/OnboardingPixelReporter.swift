@@ -34,6 +34,10 @@ protocol OnboardingIntroImpressionReporting {
     func measureOnboardingIntroImpression()
 }
 
+protocol OnboardingTimeLimitReporting {
+    func measureTimeLimitReached(_ reason: OnboardingSharedPixelEvent.TimeLimitReason)
+}
+
 protocol OnboardingIntroPixelReporting: OnboardingIntroImpressionReporting {
     func measureStartOnboardingCTAAction()
     func measureSkipOnboardingCTAAction()
@@ -111,8 +115,6 @@ protocol OnboardingAddToDockReporting {
 protocol OnboardingDownloadReasonPixelReporting {
     func measureDownloadReasonImpression()
     func measureDownloadReasonSelection(_ reason: OnboardingDownloadReason)
-    func measureSearchPrivacySettingsImpression()
-    func measureSearchPrivacySettingsSelection(recentlyVisitedSitesEnabled: Bool, safeSearchEnabled: Bool)
     func measureAIModelImpression()
     func measureAIModelSelection(model: String)
     func measureToggleInputModeImpression()
@@ -123,10 +125,19 @@ protocol OnboardingDownloadReasonPixelReporting {
     func measureKeepDuckAISelection(shouldKeep: Bool)
     func measureAdBlockingImpression()
     func measureAdBlockingSelection(youTubeAdBlockingEnabled: Bool, cookiePopUpProtectionEnabled: Bool, popUpsWithoutOptOutsEnabled: Bool)
+    func measureTryVPNImpression()
+    func measureTryVPNAction()
+    func measureSkipTryVPNAction()
+    func measureTryVPNPaywallEvent(_ event: SubscriptionFlowEvent)
+    func measureVPNActivationImpression()
+    func measureVPNActivationContinue(isVPNOn: Bool)
+    func measureVPNActivationFailed(_ reason: OnboardingSharedPixelEvent.VPNActivationEvent.FailureReason)
+    func measureSubscriptionReminderImpression()
+    func measureSubscriptionReminderContinue()
 }
 
 typealias LinearOnboardingPixelReporting = OnboardingIntroPixelReporting & OnboardingAddToDockReporting & OnboardingDownloadReasonPixelReporting
-typealias OnboardingPixelReporting = LinearOnboardingPixelReporting & OnboardingCustomInteractionPixelReporting & OnboardingDaxDialogsReporting
+typealias OnboardingPixelReporting = LinearOnboardingPixelReporting & OnboardingCustomInteractionPixelReporting & OnboardingDaxDialogsReporting & OnboardingTimeLimitReporting
 
 // MARK: - Implementation
 
@@ -172,19 +183,26 @@ final class OnboardingPixelReporter {
         pixelFiring?.fire(event, frequency: unique ? .legacyInitial : .standard, options: .parameters(additionalParameters))
     }
 
-    // Fires a shared onboarding pixel with the current stored context (source, flow and variant).
+    // Fires a shared onboarding pixel with the current stored context (source, flow and the variant of each fork).
     private func fireSharedPixel(_ event: OnboardingSharedPixelEvent) {
         sharedPixelHandler.fire(event,
                                 source: sharedPixelsStorage.onboardingSource,
                                 flow: sharedPixelsStorage.onboardingFlow,
-                                variant: sharedPixelsStorage.onboardingVariant)
+                                variants: OnboardingPixelParameter.Variants(
+                                    searchExperience: sharedPixelsStorage.onboardingSearchExperienceVariant,
+                                    downloadReason: sharedPixelsStorage.onboardingDownloadReasonVariant
+                                ))
     }
 
-    // Records the onboarding variant only if one hasn't been set yet, so the first branching
-    // choice wins and a later step can't overwrite it.
-    private func setVariantIfNotAlreadySet(_ variant: OnboardingPixelParameter.Variant) {
-        guard sharedPixelsStorage.onboardingVariant == nil else { return }
-        sharedPixelsStorage.onboardingVariant = variant
+    // Each fork keeps its first choice, so a repeated step can't overwrite it.
+    private func setSearchExperienceVariantIfNotAlreadySet(_ variant: OnboardingPixelParameter.SearchExperienceVariant) {
+        guard sharedPixelsStorage.onboardingSearchExperienceVariant == nil else { return }
+        sharedPixelsStorage.onboardingSearchExperienceVariant = variant
+    }
+
+    private func setDownloadReasonVariantIfNotAlreadySet(_ variant: OnboardingPixelParameter.DownloadReasonVariant) {
+        guard sharedPixelsStorage.onboardingDownloadReasonVariant == nil else { return }
+        sharedPixelsStorage.onboardingDownloadReasonVariant = variant
     }
 
 }
@@ -262,6 +280,7 @@ extension OnboardingPixelReporter: OnboardingIntroPixelReporting {
     func measureChooseBrowserCTAAction() {
         fire(event: .onboardingIntroChooseBrowserCTAPressed, unique: false)
         fireSharedPixel(.setDefault(.clicked(.engage)))
+        downloadReasonExperimentMetric.measureSetDefaultTapped()
     }
 
     func measureAiIntroImpression() {
@@ -338,7 +357,7 @@ extension OnboardingPixelReporter: OnboardingIntroPixelReporting {
         case (_, .search):
             fireSharedPixel(.searchChatToggle(.clicked(.suggestedSearch)))
         }
-        setVariantIfNotAlreadySet(OnboardingPixelParameter.Variant(selection))
+        setSearchExperienceVariantIfNotAlreadySet(OnboardingPixelParameter.SearchExperienceVariant(selection))
     }
 
     func measureSkipOnboardingScreenImpression() {
@@ -386,6 +405,12 @@ extension OnboardingPixelReporter: OnboardingCustomInteractionPixelReporting {
 
 // MARK: - OnboardingPixelReporter + Screen Impression
 
+extension OnboardingPixelReporter: OnboardingTimeLimitReporting {
+    func measureTimeLimitReached(_ reason: OnboardingSharedPixelEvent.TimeLimitReason) {
+        fireSharedPixel(.timeLimit(reason))
+    }
+}
+
 extension OnboardingPixelReporter: OnboardingDaxDialogsReporting {
 
     func measureScreenImpression(event: Pixel.Event) {
@@ -394,7 +419,9 @@ extension OnboardingPixelReporter: OnboardingDaxDialogsReporting {
 
     func measureScreenImpression(_ event: OnboardingSharedPixelEvent) {
         if event == .end(.shown) || event == .endTryDuckAI(.shown) {
-            downloadReasonExperimentMetric.measureDownloadReasonExperimentOnboardingCompleted()
+            downloadReasonExperimentMetric.measureDownloadReasonExperimentOnboardingCompleted(
+                downloadReasonToken: OnboardingDownloadReasonStore.currentPixelToken(userDefaults)
+            )
         }
 
         fireSharedPixel(event)
@@ -533,7 +560,7 @@ extension OnboardingPixelReporter: OnboardingAddToDockReporting {
 
 }
 
-extension OnboardingPixelParameter.Variant {
+extension OnboardingPixelParameter.SearchExperienceVariant {
 
     init(_ mode: DuckAIQueryMode) {
         switch mode {
@@ -555,18 +582,13 @@ extension OnboardingPixelReporter: OnboardingDownloadReasonPixelReporting {
     }
 
     func measureDownloadReasonSelection(_ reason: OnboardingDownloadReason) {
-        fireSharedPixel(.downloadChoice(.clicked(.init(reason))))
+        let value = OnboardingSharedPixelEvent.DownloadChoiceEvent.Value(reason)
+        let variant = OnboardingPixelParameter.DownloadReasonVariant(reason)
+
+        fireSharedPixel(.downloadChoice(.clicked(value)))
         // Persist the chosen reason as the variant so every subsequent tailored-step pixel carries it.
-        setVariantIfNotAlreadySet(OnboardingPixelParameter.Variant(reason))
+        setDownloadReasonVariantIfNotAlreadySet(variant)
         downloadReasonExperimentMetric.measureDownloadReasonSelected(reason)
-    }
-
-    func measureSearchPrivacySettingsImpression() {
-        fireSharedPixel(.preferencesSerp(.shown))
-    }
-
-    func measureSearchPrivacySettingsSelection(recentlyVisitedSitesEnabled: Bool, safeSearchEnabled: Bool) {
-        fireSharedPixel(.preferencesSerp(.clicked(recentlyVisitedSitesEnabled: recentlyVisitedSitesEnabled, safeSearchEnabled: safeSearchEnabled)))
     }
 
     func measureAIModelImpression() {
@@ -609,6 +631,57 @@ extension OnboardingPixelReporter: OnboardingDownloadReasonPixelReporting {
         fireSharedPixel(.preferencesAdBlocking(.clicked(youTubeAdBlockingEnabled: youTubeAdBlockingEnabled, cookiePopUpProtectionEnabled: cookiePopUpProtectionEnabled, popUpsWithoutOptOutsEnabled: popUpsWithoutOptOutsEnabled)))
     }
 
+    // MARK: VPN download-reason path
+
+    func measureTryVPNImpression() {
+        fireSharedPixel(.tryVPN(.shown))
+    }
+
+    func measureTryVPNAction() {
+        fireSharedPixel(.tryVPN(.clicked(.engage)))
+    }
+
+    func measureSkipTryVPNAction() {
+        fireSharedPixel(.tryVPN(.clicked(.dismiss)))
+    }
+
+    /// Purchase failures on the paywall opened from Try VPN, and what happens on its "Subscription Found" alert.
+    func measureTryVPNPaywallEvent(_ event: SubscriptionFlowEvent) {
+        switch event {
+        case .purchaseFailed:
+            fireSharedPixel(.tryVPNPaywall(.failed(.purchaseFailed)))
+        case .subscriptionFound:
+            fireSharedPixel(.tryVPNSubscriptionFound(.shown))
+        case .subscriptionFoundRestoreTapped:
+            fireSharedPixel(.tryVPNSubscriptionFound(.clicked(.engage)))
+        case .subscriptionFoundCancelled:
+            fireSharedPixel(.tryVPNSubscriptionFound(.clicked(.dismiss)))
+        case .subscriptionRestored:
+            fireSharedPixel(.tryVPNSubscriptionFound(.confirmed))
+        }
+    }
+
+    func measureVPNActivationImpression() {
+        fireSharedPixel(.vpnActivation(.shown))
+    }
+
+    /// "Next" once the VPN is on, or "Skip" while it's off.
+    func measureVPNActivationContinue(isVPNOn: Bool) {
+        fireSharedPixel(.vpnActivation(.clicked(isVPNOn ? .engage : .dismiss)))
+    }
+
+    func measureVPNActivationFailed(_ reason: OnboardingSharedPixelEvent.VPNActivationEvent.FailureReason) {
+        fireSharedPixel(.vpnActivation(.failed(reason)))
+    }
+
+    func measureSubscriptionReminderImpression() {
+        fireSharedPixel(.subscriptionReminder(.shown))
+    }
+
+    func measureSubscriptionReminderContinue() {
+        fireSharedPixel(.subscriptionReminder(.clicked(.engage)))
+    }
+
 }
 
 private extension OnboardingSharedPixelEvent.DownloadChoiceEvent.Value {
@@ -619,6 +692,7 @@ private extension OnboardingSharedPixelEvent.DownloadChoiceEvent.Value {
         case .privateAIChat: self = .aiChat
         case .noAI: self = .noAI
         case .blockAds: self = .adBlocking
+        case .vpn: self = .vpn
         }
     }
 
@@ -649,6 +723,13 @@ struct OnboardingDownloadReasonExperimentMetric {
         case downloadReasonSelectedAIChat = "download_reason_selected_ai-chat"
         case downloadReasonSelectedNoAI = "download_reason_selected_no-ai"
         case downloadReasonSelectedAdBlocking = "download_reason_selected_ad-blocking"
+        case downloadReasonSelectedVPN = "download_reason_selected_vpn"
+        case downloadReasonOnboardingCompletedSearch = "download_reason_onboarding_completed_search"
+        case downloadReasonOnboardingCompletedAIChat = "download_reason_onboarding_completed_ai-chat"
+        case downloadReasonOnboardingCompletedNoAI = "download_reason_onboarding_completed_no-ai"
+        case downloadReasonOnboardingCompletedAdBlocking = "download_reason_onboarding_completed_ad-blocking"
+        case downloadReasonOnboardingCompletedVPN = "download_reason_onboarding_completed_vpn"
+        case setDefault = "set_default"
     }
 
     private static let conversionWindowD0: ConversionWindow = 0...0
@@ -659,8 +740,26 @@ struct OnboardingDownloadReasonExperimentMetric {
         self.experimentPixelFiring = experimentPixelFiring
     }
 
-    func measureDownloadReasonExperimentOnboardingCompleted() {
+    /// Fires `onboarding_completed`, and the same metric for the user's download reason when they picked one.
+    /// - Parameter downloadReasonToken: The stored reason's pixel token (see `OnboardingDownloadReasonStore`).
+    func measureDownloadReasonExperimentOnboardingCompleted(downloadReasonToken: String?) {
         fire(metric: .onboardingCompleted)
+        let perReasonMetric: Name? = switch downloadReasonToken {
+        case "search": .downloadReasonOnboardingCompletedSearch
+        case "ai-chat": .downloadReasonOnboardingCompletedAIChat
+        case "no-ai": .downloadReasonOnboardingCompletedNoAI
+        case "ad-blocking": .downloadReasonOnboardingCompletedAdBlocking
+        case "vpn": .downloadReasonOnboardingCompletedVPN
+        default: nil
+        }
+        if let perReasonMetric {
+            fire(metric: perReasonMetric)
+        }
+    }
+
+    /// The set-as-default guardrail: the user tapped "Set as default" in onboarding.
+    func measureSetDefaultTapped() {
+        fire(metric: .setDefault)
     }
 
     /// Fires the per-reason "selected" metric (one metric per option, empty value, d0) when the user
@@ -671,13 +770,14 @@ struct OnboardingDownloadReasonExperimentMetric {
         case .privateAIChat: .downloadReasonSelectedAIChat
         case .noAI: .downloadReasonSelectedNoAI
         case .blockAds: .downloadReasonSelectedAdBlocking
+        case .vpn: .downloadReasonSelectedVPN
         }
         fire(metric: metric)
     }
 
     private func fire(metric: Name) {
         experimentPixelFiring.fireExperimentPixel(
-            for: iOSBrowserConfigSubfeature.onboardingFlowByDownloadReasonExperiment.rawValue,
+            for: PrivacyProSubfeature.onboardingVPNDownloadReasonExperiment.rawValue,
             metric: metric.rawValue,
             conversionWindowDays: Self.conversionWindowD0,
             value: ""

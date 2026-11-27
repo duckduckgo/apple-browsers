@@ -42,18 +42,20 @@ public final class ContentBlockingUpdating {
         let rulesUpdate: ContentBlockerRulesManager.UpdateEvent
         let sourceProvider: ScriptSourceProviding
         let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
+        let segmentSkipPreferences: SegmentSkipPreferences
         var findInPageImplementation: FindInPageImplementation?
         var sitePermissionsMediaCaptureUserScript: MediaCaptureUserScript?
         var sitePermissionsGeolocationUserScript: GeolocationUserScript?
         var isSitePermissionsEnabled: Bool { sitePermissionsGeolocationUserScript != nil }
         var makeUserScripts: @MainActor (ScriptSourceProviding) -> UserScripts {
-            { [duckAiNativeStorageHandler, findInPageImplementation, sitePermissionsMediaCaptureUserScript, sitePermissionsGeolocationUserScript, isSitePermissionsEnabled] sourceProvider in
+            { [duckAiNativeStorageHandler, segmentSkipPreferences, findInPageImplementation, sitePermissionsMediaCaptureUserScript, sitePermissionsGeolocationUserScript, isSitePermissionsEnabled] sourceProvider in
                 UserScripts(with: sourceProvider,
                             findInPageImplementation: findInPageImplementation ?? AppDependencyProvider.shared.findInPageImplementation,
                             sitePermissionsEnabled: isSitePermissionsEnabled,
                             mediaCaptureUserScript: sitePermissionsMediaCaptureUserScript,
                             geolocationUserScript: sitePermissionsGeolocationUserScript,
-                            duckAiNativeStorageHandler: duckAiNativeStorageHandler)
+                            duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+                            segmentSkipPreferences: segmentSkipPreferences)
             }
         }
 
@@ -77,13 +79,15 @@ public final class ContentBlockingUpdating {
     private(set) var userContentBlockingAssets: AnyPublisher<NewContent, Never>!
 
     init(userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
-         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil) {
+         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
+         segmentSkipPreferences: SegmentSkipPreferences) {
 
         let makeValue: (Update) -> NewContent = { rulesUpdate in
             let sourceProvider = DefaultScriptSourceProvider(dependencies: userScriptsDependencies)
             return NewContent(rulesUpdate: rulesUpdate,
                               sourceProvider: sourceProvider,
                               duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+                              segmentSkipPreferences: segmentSkipPreferences,
                               sitePermissionsGeolocationUserScript: nil)
         }
 

@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import EventHub
 import Foundation
 import UIKit
 import PixelKit
@@ -49,7 +50,10 @@ final class AutoconsentManagement: AutoconsentManaging {
     private var pendingSummaryTask: DispatchWorkItem?
     private var pendingAdditionalParams: [String: String] = [:]
 
-    init() {
+    private let eventHub: EventHubManaging
+
+    init(eventHub: EventHubManaging) {
+        self.eventHub = eventHub
         setupNotificationObservers()
     }
 
@@ -90,6 +94,9 @@ final class AutoconsentManagement: AutoconsentManaging {
 
         // Fire summary immediately if there are events
         fireSummaryPixel()
+
+        // The app-wide Event Hub flush on backgrounding has already run, so persist the counts just added
+        eventHub.onAppBackgrounded()
     }
 
     func firePixel(pixel: AutoconsentPixel, siteRank: CPMSiteRank?, additionalParameters: [String: String] = [:]) {
@@ -128,6 +135,7 @@ final class AutoconsentManagement: AutoconsentManaging {
                 var parameters = pendingAdditionalParams
                 parameters["siteRank"] = siteRank?.rawValue
                 PixelKit.fire(AutoconsentPixel.summary(events: events), frequency: .standard, withAdditionalParameters: parameters, includeAppVersionParameter: true)
+                CPMCoverageReporter.report(counts: CPMCoverageCounts(summary: events), siteRank: siteRank) { eventHub.handleNativeEvent($0) }
             }
             pixelCounter = [:]
             pendingAdditionalParams = [:]

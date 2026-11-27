@@ -83,7 +83,7 @@ final class DuckAIURLSuggestionsLoaderTests: XCTestCase {
     // `lastCompletedFetchQuery`, Dax stays permanently suppressed. Empty-query fetches must settle synchronously.
 
     func test_emptyQueryFetch_setsLastCompletedFetchQuerySynchronously() {
-        let loader = DuckAIURLSuggestionsLoader(dataSource: EmptySuggestionLoadingDataSource())
+        let loader = DuckAIURLSuggestionsLoader(dataSource: EmptySuggestionLoadingDataSource(), featureFlagger: MockFeatureFlagger())
         XCTAssertNil(loader.lastCompletedFetchQuery)
 
         loader.fetch(query: "")
@@ -92,7 +92,7 @@ final class DuckAIURLSuggestionsLoaderTests: XCTestCase {
     }
 
     func test_emptyQueryFetch_clearsTopURLsOnlyWhenNonEmpty() {
-        let loader = DuckAIURLSuggestionsLoader(dataSource: EmptySuggestionLoadingDataSource())
+        let loader = DuckAIURLSuggestionsLoader(dataSource: EmptySuggestionLoadingDataSource(), featureFlagger: MockFeatureFlagger())
         loader.publishURLsForTesting([.website(url: URL(string: "https://example.com/")!)])
         var emissions: [[Suggestion]] = []
         let cancellable = loader.$topURLs.sink { emissions.append($0) }

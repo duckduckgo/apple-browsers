@@ -10,7 +10,7 @@ on:
       all_os_versions:
         description: "Test all supported macOS versions (not just the latest)"
         type: boolean
-        default: true
+        default: false
       single_test_class:
         description: "Run one or more UITestCases (optional, space-separated, e.g. 'AutocompleteTests' or 'AutocompleteTests BookmarksTests')"
         type: string
@@ -35,7 +35,7 @@ on:
       all_os_versions:
         description: "Test all supported macOS versions (not just the latest)"
         type: boolean
-        default: true
+        default: false
       branch:
         description: "Branch name"
         required: false
@@ -72,14 +72,14 @@ on:
       - '.github/workflows/should_run_pr_checks.yml'
       - '.github/actions/**'
       - '.xcode-version'
-      - 'SharedPackages/BrowserServicesKit/Package.swift'
 
 concurrency:
   # When this workflow is called by another workflow (e.g. code freeze), `github.workflow` contains the name of the calling workflow,
   # and the value of `${{ github.workflow }}-${{ github.ref }}` would be the same for PR Checks and UI Tests, which would prevent them
   # from being run concurrently. We're adding a suffix here to tell PR Checks and UI Tests apart and allow for running the two
   # side by side in the code freeze workflow.
-  group: ${{ github.workflow }}-${{ github.ref }}-ui-tests-${{ inputs.build-type }}
+  # `github.event_name` keeps scheduled runs out of the push group, so a merge to main doesn't cancel the nightly run.
+  group: ${{ github.workflow }}-${{ github.ref }}-ui-tests-${{ inputs.build-type }}-${{ github.event_name }}
   cancel-in-progress: true
 
 jobs:
@@ -128,7 +128,8 @@ jobs:
     if: needs.should-run-checks.outputs.should_run == 'true'
 
     outputs:
-      # One object per runner configuration: {"runner": [labels], "os-version", "xcode-version"}.
+      # One object per runner configuration: {"runner": [labels], "os-version", "xcode-version"},
+      # plus an optional "ruby-version" for runners without the Ruby version in .ruby-version.
       # The ui-tests jobs multiply this list by the test list to build their matrix.
       config: ${{ steps.define-runners.outputs.config }}
       test: ${{ steps.list-tests.outputs.test }}
@@ -170,8 +171,8 @@ jobs:
           else
             all_os_versions='true'
             config=$(jq -c <<< '[
-              {"runner": ["macos-15-xlarge"], "os-version": "15", "xcode-version": "26.2"},
-              {"runner": ["macos-26-xlarge"], "os-version": "26", "xcode-version": "26.6"},
+              {"runner": ["image:osx-sequoia-26", "ui-tests"], "os-version": "15", "xcode-version": "26.2", "ruby-version": "3.4.5"},
+              {"runner": ["image:osx-tahoe-26", "ui-tests"], "os-version": "26", "xcode-version": "26.6", "ruby-version": "3.4.5"},
               {"runner": ["image:osx-27-edge", "ui-tests"], "os-version": "27", "xcode-version": "27.0"}
             ]')
           fi
@@ -286,6 +287,7 @@ jobs:
       runner: ${{ toJSON(matrix.config.runner) }}
       os-version: ${{ matrix.config.os-version }}
       xcode-version: ${{ matrix.config.xcode-version }}
+      ruby-version: ${{ matrix.config.ruby-version }}
       test: ${{ matrix.test }}
       user-mode: production
       build-type: ${{ inputs.build-type || 'dmg' }}
@@ -309,6 +311,7 @@ jobs:
       runner: ${{ toJSON(matrix.config.runner) }}
       os-version: ${{ matrix.config.os-version }}
       xcode-version: ${{ matrix.config.xcode-version }}
+      ruby-version: ${{ matrix.config.ruby-version }}
       test: ${{ matrix.test }}
       user-mode: internal
       build-type: ${{ inputs.build-type || 'dmg' }}
@@ -331,6 +334,7 @@ jobs:
       runner: ${{ toJSON(matrix.config.runner) }}
       os-version: ${{ matrix.config.os-version }}
       xcode-version: ${{ matrix.config.xcode-version }}
+      ruby-version: ${{ matrix.config.ruby-version }}
       test: ${{ matrix.test }}
       user-mode: production
       build-type: appstore
@@ -374,6 +378,7 @@ jobs:
       uses: ./.github/actions/measure-duration
       with:
         mode: stop
+        scope: workflow
         start-timestamp: ${{ needs.setup-tests.outputs.start-timestamp }}
         pixel-name: ${{ (needs.setup-tests.outputs.all-os-versions == 'true') && 'm_ci_apple_duration_macos_ui_tests_all' || 'm_ci_apple_duration_macos_ui_tests_latest' }}
 

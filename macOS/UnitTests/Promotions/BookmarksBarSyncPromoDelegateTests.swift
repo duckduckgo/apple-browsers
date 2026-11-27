@@ -39,7 +39,7 @@ final class BookmarksBarSyncPromoDelegateTests: XCTestCase {
     override func setUp() {
         super.setUp()
         featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags = [.promoQueueBookmarksBarSyncPromo, .newSyncEntryPoints, .syncFeatureLevel3]
+        featureFlagger.enabledFeatureFlags = [.newSyncEntryPoints, .syncFeatureLevel3]
         syncService = MockDDGSyncing(authState: .inactive, isSyncInProgress: false)
         notificationCenter = NotificationCenter()
         legacyStorage = KeyedStorage(storage: InMemoryKeyValueStore())
@@ -124,15 +124,9 @@ final class BookmarksBarSyncPromoDelegateTests: XCTestCase {
         XCTAssertTrue(makeSUT().isEligible)
     }
 
-    func testWhenKillSwitchIsOffThenPromoIsNotEligible() {
-        featureFlagger.enabledFeatureFlags = [.newSyncEntryPoints, .syncFeatureLevel3]
-
-        XCTAssertFalse(makeSUT().isEligible)
-    }
-
     func testWhenNewSyncEntryPointsAreOffThenPromoIsNotEligible() {
-        for enabledFeatureFlags in [[FeatureFlag.promoQueueBookmarksBarSyncPromo, .syncFeatureLevel3],
-                                    [FeatureFlag.promoQueueBookmarksBarSyncPromo, .newSyncEntryPoints]] {
+        for enabledFeatureFlags in [[FeatureFlag.syncFeatureLevel3],
+                                    [FeatureFlag.newSyncEntryPoints]] {
             featureFlagger.enabledFeatureFlags = enabledFeatureFlags
 
             XCTAssertFalse(makeSUT().isEligible, "Enabled flags: \(enabledFeatureFlags)")

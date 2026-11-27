@@ -17,7 +17,9 @@
 //  limitations under the License.
 //
 
+import FeatureFlags_iOS
 import GameController
+import PrivacyConfig
 import UIKit
 
 /// Coarse usage dimensions attached to Duck.ai pixels and wide events. Kept to closed, two-value enums.
@@ -55,11 +57,13 @@ struct UsageContextProvider: UsageContextProviding {
     private let windowAndScreenWidths: @MainActor () -> (window: CGFloat, screen: CGFloat)?
 
     init(isPad: Bool = UIDevice.current.userInterfaceIdiom == .pad,
-         keyboardMonitor: HardwareKeyboardMonitor = HardwareKeyboardMonitor(),
+         featureFlagger: FeatureFlagger? = nil,
+         keyboardMonitor: @autoclosure () -> HardwareKeyboardMonitor = HardwareKeyboardMonitor(),
          isLargeWidth: @escaping () -> Bool = { AppWidthObserver.shared.isLargeWidth },
          windowAndScreenWidths: @escaping @MainActor () -> (window: CGFloat, screen: CGFloat)? = Self.keyWindowWidths) {
+        let monitor = featureFlagger?.isFeatureOn(.hardwareKeyboardMonitoring) == true ? keyboardMonitor() : nil
         self.isPad = isPad
-        self.isHardwareKeyboardConnected = { keyboardMonitor.isConnected }
+        self.isHardwareKeyboardConnected = { monitor?.isConnected }
         self.isLargeWidth = isLargeWidth
         self.windowAndScreenWidths = windowAndScreenWidths
     }
@@ -104,33 +108,41 @@ extension UsageContext {
     }
 }
 
-/// GameController reports the hardware keyboard reliably only on the main thread, so pixels fired elsewhere
-/// read this copy, refreshed on each app activation and on keyboard connect and disconnect notifications.
+/// Keeps the hardware keyboard state for Duck.ai pixels and wide events, refreshed on each app activation and on
+/// keyboard connect and disconnect notifications.
 ///
-/// The first read waits until the app becomes active: it starts GameController's device session, which can
-/// block a background launch past the launch watchdog. Until then the state is unknown, so create it at launch,
-/// before the first activation; `Launching` owns the app's one instance through its `UsageContextProvider`.
+/// The monitor registers GameController observers and reads keyboard state on a background queue. First use can
+/// start a device session that blocks for seconds. WebKit can still wait on the main thread if it reaches that
+/// session while it is initializing. Keyboard state is unknown until the first read, which can return false for
+/// an attached keyboard until GameController posts the connect notification.
 final class HardwareKeyboardMonitor {
 
     private let lock = NSLock()
+    private let queue: DispatchQueue
     private let isConnectedNow: () -> Bool
     private var isKeyboardConnected: Bool?
-    private var observers: [NSObjectProtocol] = []
 
     init(notificationCenter: NotificationCenter = .default,
+         queue: DispatchQueue = DispatchQueue(label: "com.duckduckgo.hardware-keyboard-monitor", qos: .utility),
          isConnectedNow: @escaping () -> Bool = { GCKeyboard.coalesced != nil }) {
+        self.queue = queue
         self.isConnectedNow = isConnectedNow
-        let names: [Notification.Name] = [UIApplication.didBecomeActiveNotification, .GCKeyboardDidConnect, .GCKeyboardDidDisconnect]
-        observers = names.map { name in
-            notificationCenter.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
-                self?.refresh()
-            }
+        observe(UIApplication.didBecomeActiveNotification, in: notificationCenter)
+        queue.async { [weak self] in
+            self?.observe(.GCKeyboardDidConnect, in: notificationCenter)
+            self?.observe(.GCKeyboardDidDisconnect, in: notificationCenter)
         }
     }
 
     /// Nil until the first read.
     var isConnected: Bool? {
         lock.withLock { isKeyboardConnected }
+    }
+
+    private func observe(_ name: Notification.Name, in notificationCenter: NotificationCenter) {
+        _ = notificationCenter.addObserver(forName: name, object: nil, queue: nil) { [weak self] _ in
+            self?.queue.async { self?.refresh() }
+        }
     }
 
     /// Re-read rather than taking the notification's direction: another keyboard may still be attached.

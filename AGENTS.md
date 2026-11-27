@@ -13,10 +13,14 @@ something wrong and nothing catches it during the task. Procedures live in
 - Adding, moving or deleting files in the Xcode projects: use the
   `ddg-xcode-add-file` skill.
 - Adding or changing a pixel or wide event: use the `ddg-add-pixel` skill.
+- Adding an iOS Settings or Debug menu option that stores a value: also add a
+  launch profile key, as described in the `ddg-ios-launch-profile` skill.
 - Tests that depend on the remote Privacy Configuration arrange each flag
   state explicitly and assert the app's behavior in that state, including
   flags changing while the app runs. They never assert what the live
   configuration currently contains.
+- Before reviewing any change, read `REVIEW.md` first (and `REVIEW-pixels.md` for
+  pixel or wide event changes).
 - Pull requests: fill in `.github/PULL_REQUEST_TEMPLATE.md`. If the
   `SnapshotReferences` submodule changed, run
   `./scripts/open-snapshot-submodule-pr.sh` first and add the PR link it

@@ -31,6 +31,23 @@ enum DataClearingPixels {
 
     /// A burn request arrived while another burn was still running, so `FireExecutor.burn` dropped it.
     case burnDropped(trigger: String, scope: String, elapsed: ElapsedBucket)
+
+    /// The user tapped the settings button on the Fire Button's confirmation sheet.
+    case confirmationSettingsTapped(source: String)
+
+    /// The user turned the Duck.ai chats toggle in Data Clearing settings on or off.
+    case aiChatsToggled(enabled: Bool, source: SettingsSource)
+
+    /// The user opened Fireproof Sites from Data Clearing settings.
+    case fireproofSitesOpened(source: SettingsSource)
+
+    /// How the user reached Data Clearing settings.
+    enum SettingsSource: String {
+        /// From the Settings menu.
+        case settings
+        /// Settings opened straight to Data Clearing, e.g. from a Fire sheet.
+        case deepLink
+    }
 }
 
 // MARK: - Elapsed Bucket
@@ -73,6 +90,8 @@ extension DataClearingPixels: PixelKit.Event {
         static let trigger = "trigger"
         static let scope = "scope"
         static let elapsed = "elapsed"
+        static let source = "source"
+        static let enabled = "enabled"
     }
 
     var name: String {
@@ -83,6 +102,12 @@ extension DataClearingPixels: PixelKit.Event {
             return "m_fire_user_action_before_completion"
         case .burnDropped:
             return "fire_burn-dropped"
+        case .confirmationSettingsTapped:
+            return "fire_confirmation-settings-tapped"
+        case .aiChatsToggled:
+            return "data_clearing_settings-duckai_chats_toggled"
+        case .fireproofSitesOpened:
+            return "data_clearing_settings-fireproof_sites_opened"
         }
     }
 
@@ -96,6 +121,12 @@ extension DataClearingPixels: PixelKit.Event {
                 ParameterNames.scope: scope,
                 ParameterNames.elapsed: elapsed.rawValue
             ]
+        case .confirmationSettingsTapped(let source):
+            return [ParameterNames.source: source]
+        case .aiChatsToggled(let enabled, let source):
+            return [ParameterNames.enabled: String(enabled), ParameterNames.source: source.rawValue]
+        case .fireproofSitesOpened(let source):
+            return [ParameterNames.source: source.rawValue]
         }
     }
 

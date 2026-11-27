@@ -21,32 +21,88 @@ import DesignResourcesKit
 import SwiftUI
 
 struct RedesignedFocusedSearchModulesView: View {
-    let favoritesModel: FavoritesViewModel?
-    let messagesModel: NewTabPageMessagesModel?
+    /// Set when no live page sits behind the editor (a loaded web page), so this view draws the modules itself.
+    var embeddedModules: EmbeddedModules?
+    var recentChats: SuggestionsListViewModel?
     var escapeHatch: EscapeHatchModel?
+    /// Whether the escape hatch shows here. It stays laid out while hidden, so a mode switch never animates it in.
+    var showsEscapeHatch = true
+    var syncPromo: AnyView?
+    var isAddressBarAtBottom = false
+    var contentTopInset: CGFloat = 0
+    var usesScrollableEscapeHatch = true
+    var onEscapeHatchGeometryChange: ((EmbeddedEscapeHatchGeometry?) -> Void)?
 
     var body: some View {
         GeometryReader { geometry in
             ScrollView {
                 VStack(spacing: 0) {
-                    RedesignedNewTabPageModulesView(favoritesModel: favoritesModel)
+                    if let embeddedModules {
+                        RedesignedNewTabPageModulesView(favoritesModel: embeddedModules.favoritesModel)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(height: embeddedModules.isVisible ? nil : 0)
+                            .opacity(embeddedModules.isVisible ? 1 : 0)
+                            .allowsHitTesting(embeddedModules.isVisible)
+                            .accessibilityHidden(!embeddedModules.isVisible)
+                    }
                     if let escapeHatch {
                         RedesignedEscapeHatchView(model: escapeHatch)
+                            .modifier(EmbeddedEscapeHatchGeometryReader())
                             .frame(maxWidth: .infinity)
+                            .padding(.top, hatchTopPadding)
                             .padding(.horizontal, 16)
+                            .opacity(showsEscapeHatch ? 1 : 0)
+                            .allowsHitTesting(showsEscapeHatch)
+                            .accessibilityHidden(!showsEscapeHatch)
                     }
-                    if let messagesModel {
+                    if let recentChats {
+                        VStack(spacing: FocusedChromeView.Metrics.bottomInset) {
+                            if let syncPromo {
+                                syncPromo
+                            }
+                            LegacyRecentChatsView(viewModel: recentChats, isAddressBarAtBottom: isAddressBarAtBottom, usesCardSurface: true)
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.top, FocusedChromeView.Metrics.bottomInset)
+                    }
+                    if let embeddedModules, let messagesModel = embeddedModules.messagesModel {
                         RedesignedNewTabPageMessagesView(messagesModel: messagesModel)
+                            .frame(height: embeddedModules.isVisible ? nil : 0)
+                            .opacity(embeddedModules.isVisible ? 1 : 0)
+                            .allowsHitTesting(embeddedModules.isVisible)
+                            .accessibilityHidden(!embeddedModules.isVisible)
                     }
                 }
+                .animation(nil, value: embeddedModules?.isVisible)
+                .animation(nil, value: showsEscapeHatch)
+                .animation(nil, value: recentChats != nil)
+                .modifier(FocusedContentGeometryGroup(isEnabled: usesScrollableEscapeHatch))
+                .modifier(FocusedContentTopInset(topInset: contentTopInset,
+                                                 onEscapeHatchGeometryChange: onEscapeHatchGeometryChange))
                 .padding(.leading, geometry.safeAreaInsets.leading)
                 .padding(.trailing, geometry.safeAreaInsets.trailing)
             }
+            .coordinateSpace(name: EmbeddedEscapeHatchGeometryReader.scrollSpace)
             // Clip at the page edges, not the landscape safe-area edges. The content keeps
             // its safe-area alignment while the message shadows can extend into the margins.
             .ignoresSafeArea(.container, edges: .horizontal)
+            .modifier(FocusedContentVerticalBounce(isEnabled: usesScrollableEscapeHatch))
             .scrollDismissesKeyboardIfAvailable()
         }
-        .background(Color(designSystemColor: .background))
+    }
+
+    private var hatchTopPadding: CGFloat {
+        guard embeddedModules?.isVisible == true else { return RedesignedNewTabPageModulesView.Metrics.topPadding }
+        return 0
+    }
+}
+
+extension RedesignedFocusedSearchModulesView {
+
+    /// The favorites and messages drawn inside the focused layer.
+    struct EmbeddedModules {
+        let favoritesModel: FavoritesViewModel?
+        let messagesModel: NewTabPageMessagesModel?
+        let isVisible: Bool
     }
 }

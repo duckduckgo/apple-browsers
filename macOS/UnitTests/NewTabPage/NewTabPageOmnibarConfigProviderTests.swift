@@ -25,6 +25,8 @@ import XCTest
 import PixelKit
 import PrivacyConfig
 import PrivacyConfigTestsUtils
+import Subscription
+import SubscriptionTestingUtilities
 import NewTabPage
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -1044,6 +1046,56 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         XCTAssertEqual(provider.suggestedPromptsPromptLimit, 5)
     }
 
+    // MARK: - Pasted text
+
+    @MainActor
+    func testPastedText_isOffWithoutTheFlagAndUsesTheBuiltInLimitsWithoutSettings() throws {
+        let featureFlagger = MockFeatureFlagger()
+        let privacyConfigurationManager = MockPrivacyConfigurationManager(privacyConfig: MockPrivacyConfiguration())
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: try makeStore(), aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger, privacyConfigurationManager: privacyConfigurationManager, searchPreferences: makeSearchPreferences())
+
+        XCTAssertFalse(provider.isPastedTextEnabled)
+        XCTAssertNil(provider.pastedTextLimits)
+
+        featureFlagger.enabledFeatureFlags = [.aiChatNtpPastedText]
+        XCTAssertTrue(provider.isPastedTextEnabled)
+        XCTAssertEqual(provider.pastedTextLimits, .init(pasteConversionThreshold: 4_000, maxCharacters: 16_000))
+    }
+
+    @MainActor
+    func testPastedText_limitsComeFromTheNtpPastedTextSettings() throws {
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [.aiChatNtpPastedText]
+        let privacyConfig = MockPrivacyConfiguration()
+        privacyConfig.subfeatureSettings = #"{ "pasteConversionThreshold": 2000, "maxCharacters": 8000 }"#
+        let privacyConfigurationManager = MockPrivacyConfigurationManager(privacyConfig: privacyConfig)
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: try makeStore(), aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger, privacyConfigurationManager: privacyConfigurationManager, searchPreferences: makeSearchPreferences())
+
+        XCTAssertEqual(provider.pastedTextLimits, .init(pasteConversionThreshold: 2_000, maxCharacters: 8_000))
+    }
+
+    @MainActor
+    func testPastedTextConfigPublisher_firesWhenTheFlagOrTheLimitsChange() throws {
+        let featureFlagger = MockFeatureFlagger()
+        let privacyConfig = MockPrivacyConfiguration()
+        let privacyConfigurationManager = MockPrivacyConfigurationManager(privacyConfig: privacyConfig)
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: try makeStore(), aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger, privacyConfigurationManager: privacyConfigurationManager, searchPreferences: makeSearchPreferences())
+        var changes = 0
+        let cancellable = provider.pastedTextConfigPublisher.sink { changes += 1 }
+
+        featureFlagger.triggerUpdate()
+        XCTAssertEqual(changes, 0, "An update that changes nothing is not pushed")
+
+        featureFlagger.enabledFeatureFlags = [.aiChatNtpPastedText]
+        featureFlagger.triggerUpdate()
+        XCTAssertEqual(changes, 1)
+
+        privacyConfig.subfeatureSettings = #"{ "pasteConversionThreshold": 2000, "maxCharacters": 8000 }"#
+        featureFlagger.triggerUpdate()
+        XCTAssertEqual(changes, 2, "New limits are pushed while the flag stays on")
+        cancellable.cancel()
+    }
+
     @MainActor
     func testShowSuggestedPrompts_isFalseOnceFivePromptsWereSent() throws {
         let featureFlagger = MockFeatureFlagger()
@@ -1339,6 +1391,334 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
                                         notificationCenter: terms.notificationCenter)
     }
 
+    // MARK: - New chat default
+
+    private func makeNewChatDefaultProvider(persistor: AIChatPreferencesPersisting,
+                                            modelsLoaded: Bool = true,
+                                            userTier: AIChatUserTier? = .free,
+                                            storage: DuckAiNativeStorageHandling? = nil,
+                                            burnerStorage: DuckAiNativeStorageHandling? = nil,
+                                            windowControllersManager: WindowControllersManagerMock? = nil) throws -> NewTabPageOmnibarConfigProvider {
+        let flagger = flaggerWithReasoningOn()
+        flagger.featuresStub[FeatureFlag.aiChatNewChatDefaultModel.rawValue] = true
+        let models = [makeModel(id: "luna", supportedReasoningEffort: [.none, .high]),
+                      makeModel(id: "terra", supportedReasoningEffort: [.none, .high])]
+        let newChatDefaults = AIChatNewChatDefaultSource()
+        newChatDefaults.userTier = userTier
+        if modelsLoaded {
+            newChatDefaults.update(models: models, serverDefault: .model(id: "terra", reasoningEffort: AIChatReasoningEffort.none))
+        }
+        return NewTabPageOmnibarConfigProvider(
+            keyValueStore: try makeStore(),
+            aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(),
+            featureFlagger: flagger,
+            aiChatPreferencesPersistor: persistor,
+            searchPreferences: makeSearchPreferences(),
+            windowControllersManager: windowControllersManager ?? WindowControllersManagerMock(),
+            duckAiStorageHandlerProvider: { $0.isBurner ? burnerStorage : storage },
+            availableModelsProvider: { models },
+            newChatDefaults: newChatDefaults,
+            firePixel: { _ in }
+        )
+    }
+
+    func testWhenBuiltLikeTheNewTabPage_ThenTierAppliesBeforeModelsLoadAndServerDefaultAfter() async throws {
+        let modelsService = NewChatDefaultModelsService()
+        modelsService.result = .failure(URLError(.notConnectedToInternet))
+        let (modelsProvider, configProvider) = try makeNewTabPageNewChatDefaultComposition(storage: DuckAiNativeMemoryStorageHandler(),
+                                                                                           modelsService: modelsService,
+                                                                                           userTier: .plus)
+
+        _ = await modelsProvider.fetchAIModelSections()
+        XCTAssertEqual(configProvider.selectedModelId, "gpt-5.6-terra")
+
+        modelsService.result = .success(AIChatModelsResponse(models: newChatDefaultRemoteModels,
+                                                             newChatDefault: .model(id: "gpt-6-luna", reasoningEffort: nil)))
+        _ = await modelsProvider.fetchAIModelSections()
+        XCTAssertEqual(configProvider.selectedModelId, "gpt-6-luna")
+    }
+
+    func testWhenBuiltLikeTheNewTabPage_ThenOverLimitDefaultApplies() async throws {
+        let storage = DuckAiNativeMemoryStorageHandler()
+        try storage.putEntry(key: DuckAiNativeStorageReservedEntryKeys.usageLimits.rawValue, value: """
+        {"notice": {"id": "weeklyReachedDegraded", "window": "weekly", "resetsAt": "2030-01-01T00:00:00Z"}, \
+        "newChatDefault": {"modelId": "gpt-5.6-terra"}}
+        """)
+        let modelsService = NewChatDefaultModelsService()
+        modelsService.result = .success(AIChatModelsResponse(models: newChatDefaultRemoteModels,
+                                                             newChatDefault: .model(id: "gpt-6-luna", reasoningEffort: nil)))
+        let (modelsProvider, configProvider) = try makeNewTabPageNewChatDefaultComposition(storage: storage, modelsService: modelsService)
+
+        _ = await modelsProvider.fetchAIModelSections()
+        configProvider.refreshUsageLimits(requestingWebView: nil)
+
+        XCTAssertEqual(configProvider.selectedModelId, "gpt-5.6-terra")
+    }
+
+    func testWhenBuiltLikeTheNewTabPage_ThenUserDefaultModelApplies() async throws {
+        let storage = DuckAiNativeMemoryStorageHandler()
+        try storage.putUserDefaultModel("gpt-5.6-terra")
+        let modelsService = NewChatDefaultModelsService()
+        modelsService.result = .success(AIChatModelsResponse(models: newChatDefaultRemoteModels,
+                                                             newChatDefault: .model(id: "gpt-6-luna", reasoningEffort: nil)))
+        let (modelsProvider, configProvider) = try makeNewTabPageNewChatDefaultComposition(storage: storage, modelsService: modelsService)
+
+        _ = await modelsProvider.fetchAIModelSections()
+        configProvider.refreshUsageLimits(requestingWebView: nil)
+
+        XCTAssertEqual(configProvider.selectedModelId, "gpt-5.6-terra")
+    }
+
+    private var newChatDefaultRemoteModels: [AIChatRemoteModel] {
+        ["gpt-6-luna", "gpt-5.6-terra"].map {
+            AIChatRemoteModel(id: $0, name: $0, provider: "openai", entityHasAccess: true, supportsImageUpload: false,
+                              supportedTools: [], accessTier: ["free", "plus", "pro"])
+        }
+    }
+
+    /// Mirrors `NewTabPageActionsManager`: the config provider shares the models provider's new-chat default source.
+    private func makeNewTabPageNewChatDefaultComposition(
+        storage: DuckAiNativeStorageHandling,
+        modelsService: AIChatModelsProviding,
+        userTier: TierName? = nil
+    ) throws -> (NewTabPageOmnibarModelsProvider, NewTabPageOmnibarConfigProvider) {
+        let flagger = flaggerWithReasoningOn()
+        flagger.featuresStub[FeatureFlag.aiChatNewChatDefaultModel.rawValue] = true
+        let subscriptionManager = SubscriptionManagerMock()
+        if let userTier {
+            subscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(status: .autoRenewable, tier: userTier))
+        }
+        let modelsProvider = NewTabPageOmnibarModelsProvider(modelsService: modelsService,
+                                                             subscriptionManager: subscriptionManager,
+                                                             featureFlagger: flagger)
+        let configProvider = NewTabPageOmnibarConfigProvider(
+            keyValueStore: try makeStore(),
+            aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(),
+            featureFlagger: flagger,
+            aiChatPreferencesPersistor: MockAIChatPreferencesPersisting(),
+            searchPreferences: makeSearchPreferences(),
+            windowControllersManager: WindowControllersManagerMock(),
+            duckAiStorageHandlerProvider: { _ in storage },
+            userTierProvider: { [weak modelsProvider] in modelsProvider?.lastResolvedUserTier ?? .free },
+            availableModelsProvider: { [weak modelsProvider] in modelsProvider?.lastFetchedModels ?? [] },
+            newChatDefaults: modelsProvider.newChatDefaults,
+            firePixel: { _ in }
+        )
+        return (modelsProvider, configProvider)
+    }
+
+    func testWhenNewChatDefaultIsOnAndNothingPicked_ThenDefaultModelAndEffortAreSelected() throws {
+        let persistor = MockAIChatPreferencesPersisting()
+        persistor.selectedModelId = "luna"
+        persistor.selectedReasoningEffort = AIChatReasoningEffort.high.rawValue
+        let provider = try makeNewChatDefaultProvider(persistor: persistor)
+
+        XCTAssertEqual(provider.selectedModelId, "terra")
+        XCTAssertEqual(provider.selectedReasoningEffort, AIChatReasoningEffort.none.rawValue)
+    }
+
+    func testWhenUserDefaultIsSet_ThenNewChatUsesItsOwnEffortAndReportsUserDefault() throws {
+        let storage = try DuckAiNativeStorageHandler(.memory())
+        try storage.putUserDefaultModel("luna")
+        let provider = try makeNewChatDefaultProvider(persistor: MockAIChatPreferencesPersisting(), storage: storage)
+
+        provider.refreshUsageLimits(requestingWebView: nil)
+
+        XCTAssertNil(provider.selectedReasoningEffort)
+        XCTAssertEqual(provider.newChatModelPixelParameters(sentModelId: "luna", sentReasoningEffort: nil)?.parameters["model_source"], "user_default")
+    }
+
+    func testWhenUserDefaultChanges_ThenOpenPagesAreToldToRefreshOnMain() async throws {
+        let storage = try DuckAiNativeStorageHandler(.memory())
+        let provider = try makeNewChatDefaultProvider(persistor: MockAIChatPreferencesPersisting(), storage: storage)
+        let refreshed = expectation(description: "pages told to refresh")
+        let cancellable = provider.usageLimitsPublisher.sink {
+            XCTAssertTrue(Thread.isMainThread)
+            refreshed.fulfill()
+        }
+
+        DispatchQueue.global().async { try? storage.putUserDefaultModel("luna") }
+
+        await fulfillment(of: [refreshed], timeout: 1)
+        XCTAssertEqual(provider.selectedModelId, "luna")
+        cancellable.cancel()
+    }
+
+    func testWhenUserDefaultChangesAfterAPick_ThenPagesStartOnTheNewDefault() async throws {
+        let storage = try DuckAiNativeStorageHandler(.memory())
+        let provider = try makeNewChatDefaultProvider(persistor: MockAIChatPreferencesPersisting(), storage: storage)
+        provider.selectedModelId = "luna"
+        let pickEnded = expectation(description: "pick ended")
+        let cancellable = provider.selectedModelIdPublisher.filter { $0 == nil }.sink { _ in pickEnded.fulfill() }
+
+        try storage.putUserDefaultModel("terra")
+
+        await fulfillment(of: [pickEnded], timeout: 1)
+        XCTAssertEqual(provider.selectedModelId, "terra")
+        XCTAssertEqual(provider.newChatModelPixelParameters(sentModelId: "terra", sentReasoningEffort: nil)?.parameters["model_source"], "user_default")
+        cancellable.cancel()
+    }
+
+    func testWhenAnotherTabShowsTheNewTabPageAfterAPick_ThenThePickEnds() async throws {
+        let (windowControllersManager, tabsChanged, tabs) = makeWindowWithNewTabPage()
+        let provider = try makeNewChatDefaultProvider(persistor: MockAIChatPreferencesPersisting(), windowControllersManager: windowControllersManager)
+        provider.selectedModelId = "luna"
+        let pickEnded = expectation(description: "pick ended")
+        let cancellable = provider.selectedModelIdPublisher.filter { $0 == nil }.sink { _ in pickEnded.fulfill() }
+
+        tabs.append(tab: Tab(content: .newtab))
+        tabsChanged.send()
+
+        await fulfillment(of: [pickEnded], timeout: 1)
+        XCTAssertEqual(provider.selectedModelId, "terra")
+        cancellable.cancel()
+    }
+
+    func testWhenTabsChangeWithoutShowingAnotherNewTabPage_ThenThePickStays() async throws {
+        let (windowControllersManager, tabsChanged, tabs) = makeWindowWithNewTabPage()
+        let provider = try makeNewChatDefaultProvider(persistor: MockAIChatPreferencesPersisting(), windowControllersManager: windowControllersManager)
+        provider.selectedModelId = "luna"
+
+        tabs.append(tab: Tab(content: .none), selected: false)
+        tabsChanged.send()
+        await Task.yield()
+
+        XCTAssertEqual(provider.selectedModelId, "luna")
+    }
+
+    func testWhenReturningToTheSameNewTabPageAfterAnotherTab_ThenThePickStays() async throws {
+        let (windowControllersManager, tabsChanged, tabs) = makeWindowWithNewTabPage()
+        let provider = try makeNewChatDefaultProvider(persistor: MockAIChatPreferencesPersisting(), windowControllersManager: windowControllersManager)
+        provider.selectedModelId = "luna"
+
+        tabs.append(tab: Tab(content: .none))
+        tabsChanged.send()
+        await Task.yield()
+        tabs.select(at: .unpinned(0))
+        tabsChanged.send()
+        await Task.yield()
+
+        XCTAssertEqual(provider.selectedModelId, "luna")
+    }
+
+    private func makeWindowWithNewTabPage() -> (WindowControllersManagerMock, PassthroughSubject<Void, Never>, TabCollectionViewModel) {
+        let windowControllersManager = WindowControllersManagerMock()
+        let tabsChanged = PassthroughSubject<Void, Never>()
+        let tabs = TabCollectionViewModel(tabCollection: TabCollection(tabs: [Tab(content: .newtab)]), windowControllersManager: windowControllersManager)
+        windowControllersManager.tabsChanged = tabsChanged.eraseToAnyPublisher()
+        windowControllersManager.customAllTabCollectionViewModels = [tabs]
+        return (windowControllersManager, tabsChanged, tabs)
+    }
+
+    func testWhenUserDefaultIsSet_ThenItAppliesOutsideDuckAiModeFromRegularStorage() throws {
+        let storage = try DuckAiNativeStorageHandler(.memory())
+        try storage.putUserDefaultModel("luna")
+        let burnerStorage = try DuckAiNativeStorageHandler(.memory())
+        try burnerStorage.putUserDefaultModel("terra")
+
+        let provider = try makeNewChatDefaultProvider(persistor: MockAIChatPreferencesPersisting(), storage: storage, burnerStorage: burnerStorage)
+
+        XCTAssertEqual(provider.selectedModelId, "luna")
+    }
+
+    func testWhenNewChatDefaultIsOnAndModelsHaveNotLoaded_ThenLocalTierDefaultModelAndEffortAreSelected() throws {
+        let provider = try makeNewChatDefaultProvider(persistor: MockAIChatPreferencesPersisting(), modelsLoaded: false)
+
+        XCTAssertEqual(provider.selectedModelId, "gpt-6-luna")
+        XCTAssertEqual(provider.selectedReasoningEffort, AIChatReasoningEffort.none.rawValue)
+    }
+
+    func testWhenNewChatDefaultIsOnAndPaidUserModelsHaveNotLoaded_ThenPaidLocalDefaultIsSelected() throws {
+        let provider = try makeNewChatDefaultProvider(persistor: MockAIChatPreferencesPersisting(), modelsLoaded: false, userTier: .plus)
+
+        XCTAssertEqual(provider.selectedModelId, "gpt-5.6-terra")
+        XCTAssertEqual(provider.selectedReasoningEffort, AIChatReasoningEffort.none.rawValue)
+    }
+
+    func testWhenNewChatDefaultIsOnAndTierIsNotKnownBeforeModelsLoad_ThenNoModelOrEffortIsSelected() throws {
+        let provider = try makeNewChatDefaultProvider(persistor: MockAIChatPreferencesPersisting(), modelsLoaded: false, userTier: nil)
+
+        XCTAssertNil(provider.selectedModelId)
+        XCTAssertNil(provider.selectedReasoningEffort)
+    }
+
+    func testWhenNewChatDefaultIsOnAndModelPicked_ThenGlobalPreferencesAreNotWritten() throws {
+        let persistor = MockAIChatPreferencesPersisting()
+        let provider = try makeNewChatDefaultProvider(persistor: persistor)
+
+        provider.selectedModelId = "luna"
+        provider.selectedReasoningEffort = AIChatReasoningEffort.high.rawValue
+
+        XCTAssertEqual(provider.selectedModelId, "luna")
+        XCTAssertEqual(provider.selectedReasoningEffort, AIChatReasoningEffort.high.rawValue)
+        XCTAssertNil(persistor.selectedModelId)
+        XCTAssertNil(persistor.selectedReasoningEffort)
+    }
+
+    func testWhenNewChatDefaultIsOnAndOtherModelPicked_ThenDefaultEffortNoLongerApplies() throws {
+        let provider = try makeNewChatDefaultProvider(persistor: MockAIChatPreferencesPersisting())
+
+        provider.selectedModelId = "luna"
+
+        XCTAssertNil(provider.selectedReasoningEffort)
+    }
+
+    func testWhenNewChatDefaultIsOnAndChatSubmitted_ThenPickResetsToDefault() throws {
+        let provider = try makeNewChatDefaultProvider(persistor: MockAIChatPreferencesPersisting())
+        provider.selectedModelId = "luna"
+        provider.selectedReasoningEffort = AIChatReasoningEffort.high.rawValue
+
+        provider.chatSubmitted()
+
+        XCTAssertEqual(provider.selectedModelId, "terra")
+        XCTAssertEqual(provider.selectedReasoningEffort, AIChatReasoningEffort.none.rawValue)
+    }
+
+    func testWhenNewChatDefaultIsOnAndWebEchoesDefault_ThenItIsNotStoredAsPick() throws {
+        let provider = try makeNewChatDefaultProvider(persistor: MockAIChatPreferencesPersisting())
+        var emissions: [String?] = []
+        let cancellable = provider.selectedModelIdPublisher.sink { emissions.append($0) }
+
+        provider.selectedModelId = "terra"
+
+        XCTAssertTrue(emissions.isEmpty)
+        cancellable.cancel()
+    }
+
+    func testWhenNewChatDefaultIsOn_ThenSubmitPixelParametersReportModelSource() throws {
+        let provider = try makeNewChatDefaultProvider(persistor: MockAIChatPreferencesPersisting())
+
+        XCTAssertEqual(provider.newChatModelPixelParameters(sentModelId: "terra", sentReasoningEffort: "none")?.parameters,
+                       ["model_source": "default", "model_id": "terra", "reasoning_effort": "none"])
+        provider.selectedModelId = "luna"
+        XCTAssertEqual(provider.newChatModelPixelParameters(sentModelId: "luna", sentReasoningEffort: nil)?.parameters,
+                       ["model_source": "picked", "model_id": "luna"])
+        XCTAssertNil(provider.newChatModelPixelParameters(sentModelId: nil, sentReasoningEffort: "none"))
+    }
+
+    func testWhenNewChatDefaultIsOnAndImageGenerationSubmitted_ThenPixelOmitsModelSource() throws {
+        let provider = try makeNewChatDefaultProvider(persistor: MockAIChatPreferencesPersisting())
+
+        XCTAssertEqual(provider.newChatModelPixelParameters(sentModelId: "terra", sentReasoningEffort: nil, isImageGeneration: true)?.parameters,
+                       ["model_id": "terra"])
+    }
+
+    func testWhenNewChatDefaultIsOff_ThenSubmitPixelHasNoModelParameters() throws {
+        let provider = try makeProvider(persistor: MockAIChatPreferencesPersisting())
+
+        XCTAssertNil(provider.newChatModelPixelParameters(sentModelId: "luna", sentReasoningEffort: "high"))
+    }
+
+    func testWhenNewChatDefaultIsOffAndChatSubmitted_ThenPersistedPickIsKept() throws {
+        let persistor = MockAIChatPreferencesPersisting()
+        let provider = try makeProvider(persistor: persistor, availableModelsProvider: { [self] in [makeModel(id: "luna")] })
+        provider.selectedModelId = "luna"
+
+        provider.chatSubmitted()
+
+        XCTAssertEqual(persistor.selectedModelId, "luna")
+        XCTAssertEqual(provider.selectedModelId, "luna")
+    }
 }
 
 // MARK: - Mocks
@@ -1383,4 +1763,11 @@ private final class MockAIChatExcessProvider: NewTabPageOmnibarAiChatsProviding 
         NewTabPageDataModel.AiChatsData(chats: [])
     }
 
+}
+
+@MainActor
+private final class NewChatDefaultModelsService: AIChatModelsProviding {
+    var result: Result<AIChatModelsResponse, Error> = .success(AIChatModelsResponse(models: []))
+
+    func fetchModels() async throws -> AIChatModelsResponse { try result.get() }
 }

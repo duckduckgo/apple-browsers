@@ -83,7 +83,7 @@ final class DuckAiNativeStorageContainerMigrationTests: XCTestCase {
         let oldURL = sandbox.appendingPathComponent("old/DuckAi")
         let newURL = sandbox.appendingPathComponent("new/DuckAi")
         // Simulate completed migration: migrated flag set, oldURL absent.
-        try? keyValueStore.set(true, forKey: migratedKey)
+        keyValueStore.set(true, forKey: migratedKey)
 
         migrate(from: oldURL, to: newURL)
 
@@ -308,7 +308,7 @@ final class DuckAiNativeStorageContainerMigrationTests: XCTestCase {
     func testWhenMigratedAndProtectedDataIsUnavailableThenProceedsAsNoOpWithoutDeferring() throws {
         let oldURL = sandbox.appendingPathComponent("old/DuckAi")
         let newURL = sandbox.appendingPathComponent("new/DuckAi")
-        try? keyValueStore.set(true, forKey: migratedKey)
+        keyValueStore.set(true, forKey: migratedKey)
 
         let outcome = migrate(from: oldURL, to: newURL, isProtectedDataAvailable: { false })
 
@@ -336,8 +336,8 @@ final class DuckAiNativeStorageContainerMigrationTests: XCTestCase {
         try FileManager.default.createDirectory(at: oldURL, withIntermediateDirectories: true)
         try Data("user".utf8).write(to: oldURL.appendingPathComponent("chats.db"))
         // Simulate the post-gaveUp state: attempts pegged at the cap, no migrated flag.
-        try? keyValueStore.set(3, forKey: attemptsKey)
-        try? keyValueStore.set(3, forKey: protectionAttemptsKey)
+        keyValueStore.set(3, forKey: attemptsKey)
+        keyValueStore.set(3, forKey: protectionAttemptsKey)
 
         migrate(from: oldURL, to: newURL, maxAttempts: 3)
 
@@ -350,8 +350,8 @@ final class DuckAiNativeStorageContainerMigrationTests: XCTestCase {
     func testWhenAttemptsAreAtCapWithMigratedFlagThenBudgetIsNotReset() throws {
         let oldURL = sandbox.appendingPathComponent("old/DuckAi")
         let newURL = sandbox.appendingPathComponent("new/DuckAi")
-        try? keyValueStore.set(true, forKey: migratedKey)
-        try? keyValueStore.set(3, forKey: attemptsKey)
+        keyValueStore.set(true, forKey: migratedKey)
+        keyValueStore.set(3, forKey: attemptsKey)
 
         migrate(from: oldURL, to: newURL, maxAttempts: 3)
 
@@ -365,7 +365,7 @@ final class DuckAiNativeStorageContainerMigrationTests: XCTestCase {
     func testWhenMigratedAndOldStillExistsThenMigrationIsNoOpAndOldIsPreserved() throws {
         let oldURL = sandbox.appendingPathComponent("old/DuckAi")
         let newURL = sandbox.appendingPathComponent("new/DuckAi")
-        try? keyValueStore.set(true, forKey: migratedKey)
+        keyValueStore.set(true, forKey: migratedKey)
         try FileManager.default.createDirectory(at: oldURL, withIntermediateDirectories: true)
         try Data("preserved".utf8).write(to: oldURL.appendingPathComponent("chats.db"))
 

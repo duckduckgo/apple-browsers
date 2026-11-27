@@ -26,6 +26,8 @@ import Persistence
 /// Only available to internal users
 public protocol UpdatesDebugSettingsPersistor {
     var forceUpdateAvailable: Bool { get set }
+    var forcedUpdatePromptStage: UpdatePromptStage? { get set }
+    var appStoreMetadataBaseURL: String? { get set }
 
     func reset()
 }
@@ -34,6 +36,8 @@ public final class UpdatesDebugSettingsUserDefaultsPersistor: UpdatesDebugSettin
 
     public enum Key: String {
         case forceUpdateAvailable = "updates.debug.force-update-available"
+        case forcedUpdatePromptStage = "updates.debug.forced-update-prompt-stage"
+        case appStoreMetadataBaseURL = "updates.debug.app-store-metadata-base-url"
     }
 
     private let keyValueStore: KeyValueStoring
@@ -47,8 +51,20 @@ public final class UpdatesDebugSettingsUserDefaultsPersistor: UpdatesDebugSettin
         set { keyValueStore.set(newValue, forKey: Key.forceUpdateAvailable.rawValue) }
     }
 
+    public var forcedUpdatePromptStage: UpdatePromptStage? {
+        get { (keyValueStore.object(forKey: Key.forcedUpdatePromptStage.rawValue) as? Int).flatMap(UpdatePromptStage.init(rawValue:)) }
+        set { keyValueStore.set(newValue?.rawValue, forKey: Key.forcedUpdatePromptStage.rawValue) }
+    }
+
+    public var appStoreMetadataBaseURL: String? {
+        get { keyValueStore.object(forKey: Key.appStoreMetadataBaseURL.rawValue) as? String }
+        set { keyValueStore.set(newValue, forKey: Key.appStoreMetadataBaseURL.rawValue) }
+    }
+
     public func reset() {
         forceUpdateAvailable = false
+        forcedUpdatePromptStage = nil
+        appStoreMetadataBaseURL = nil
     }
 }
 
@@ -62,6 +78,18 @@ public final class UpdatesDebugSettings {
     public var forceUpdateAvailable: Bool {
         get { persistor.forceUpdateAvailable }
         set { persistor.forceUpdateAvailable = newValue }
+    }
+
+    /// Overrides the update prompt stage while an update is available.
+    public var forcedUpdatePromptStage: UpdatePromptStage? {
+        get { persistor.forcedUpdatePromptStage }
+        set { persistor.forcedUpdatePromptStage = newValue }
+    }
+
+    /// Overrides the App Store release metadata server in Debug builds.
+    public var appStoreMetadataBaseURL: String? {
+        get { persistor.appStoreMetadataBaseURL }
+        set { persistor.appStoreMetadataBaseURL = newValue }
     }
 
     public func reset() {

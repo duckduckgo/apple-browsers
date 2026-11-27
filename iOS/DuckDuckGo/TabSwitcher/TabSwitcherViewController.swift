@@ -610,7 +610,7 @@ class TabSwitcherViewController: UIViewController {
         PixelKit.fire(Pixel.Event.tabSwitcherNewTab, options: .parameters([
             PixelParameters.browsingMode: selectedBrowsingMode.pixelParamValue
         ]))
-        dismissIfPossible(forceDismissOnEmpty: true)
+        dismissForNewTab()
         delegate.tabSwitcherDidRequestNewTab(tabSwitcher: self)
     }
 
@@ -621,7 +621,7 @@ class TabSwitcherViewController: UIViewController {
         PixelKit.fire(Pixel.Event.tabSwitcherNewTab, options: .parameters([
             PixelParameters.browsingMode: BrowsingMode.fire.pixelParamValue
         ]))
-        dismissIfPossible(forceDismissOnEmpty: true)
+        dismissForNewTab()
         delegate.tabSwitcherDidRequestNewFireTab(tabSwitcher: self, source: source)
     }
 
@@ -632,7 +632,7 @@ class TabSwitcherViewController: UIViewController {
         PixelKit.fire(Pixel.Event.tabSwitcherNewTab, options: .parameters([
             PixelParameters.browsingMode: BrowsingMode.normal.pixelParamValue
         ]))
-        dismissIfPossible(forceDismissOnEmpty: true)
+        dismissForNewTab()
         delegate.tabSwitcherDidRequestNewNormalTab(tabSwitcher: self)
     }
     
@@ -640,7 +640,7 @@ class TabSwitcherViewController: UIViewController {
         guard !isProcessingUpdates else { return }
         canUpdateCollection = false
         
-        dismissIfPossible(forceDismissOnEmpty: true)
+        dismissForNewTab()
 
         self.delegate.tabSwitcherDidRequestAIChatTab(tabSwitcher: self)
     }
@@ -649,7 +649,7 @@ class TabSwitcherViewController: UIViewController {
         guard !isProcessingUpdates else { return }
         canUpdateCollection = false
 
-        dismissIfPossible(forceDismissOnEmpty: true)
+        dismissForNewTab()
 
         delegate.tabSwitcherDidRequestNewChatFromLongPressMenu(tabSwitcher: self)
     }
@@ -686,6 +686,12 @@ class TabSwitcherViewController: UIViewController {
                                                      fireRequest: fireRequest)
     }
 
+    /// Dismisses without animation when the delegate carries the new tab in with its own transition.
+    private func dismissForNewTab() {
+        let beganTransition = delegate.tabSwitcherBeginsNewTabTransition(self)
+        dismissIfPossible(animated: !beganTransition, forceDismissOnEmpty: true)
+    }
+
     /// Dismisses the tab switcher unless fire mode requires the empty state to stay visible.
     ///
     /// Dismiss is allowed when any of these hold:
@@ -700,7 +706,15 @@ class TabSwitcherViewController: UIViewController {
         dismiss(animated: animated, completion: nil)
     }
 
+    func dismissForDataClearingSettings(completion: @escaping () -> Void) {
+        dismiss(animated: true, completion: completion, emptyFirePageFallback: tabManager.tabsModel(for: .normal).currentTab)
+    }
+
     override func dismiss(animated: Bool, completion: (() -> Void)? = nil) {
+        dismiss(animated: animated, completion: completion, emptyFirePageFallback: nil)
+    }
+
+    private func dismiss(animated: Bool, completion: (() -> Void)?, emptyFirePageFallback: Tab?) {
         // When a presented child (e.g. TipKit popover) is being dismissed, skip
         // tab-switcher teardown — only forward to super so the child is removed.
         if presentedViewController != nil {
@@ -718,12 +732,12 @@ class TabSwitcherViewController: UIViewController {
             tabManager.tabsModel(for: .normal).tabs.forEach { $0.removeObserver(normalPC) }
         }
 
-        let tabsModel = tabManager.tabsModel(for: selectedBrowsingMode)
+        let isEmptyFirePage = selectedBrowsingMode.allowsEmpty && tabsModel.isEmpty
 
-        if selectedBrowsingMode.allowsEmpty && tabsModel.isEmpty {
+        if isEmptyFirePage && emptyFirePageFallback == nil {
             tabManager.setBrowsingMode(selectedBrowsingMode, source: .tabSelection)
         } else {
-            let selectedTab = activePageController.selectedTab
+            let selectedTab = isEmptyFirePage ? emptyFirePageFallback : activePageController.selectedTab
             delegate?.tabSwitcher(self, didFinishWithSelectedTab: selectedTab)
         }
 
@@ -914,7 +928,7 @@ extension TabSwitcherViewController {
     private func openRecentChat(_ chat: AIChatSuggestion) {
         guard !isProcessingUpdates else { return }
         canUpdateCollection = false
-        dismissIfPossible(forceDismissOnEmpty: true)
+        dismissForNewTab()
         delegate.tabSwitcher(self, didRequestAIChat: chat.chatId)
     }
 

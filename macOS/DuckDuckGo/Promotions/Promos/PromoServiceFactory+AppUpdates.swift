@@ -31,7 +31,7 @@ extension PromoServiceFactory {
         dependencies.updateNotificationBridge?.updateAvailableDelegate = delegate
 
         return InternalPromo(id: updateAvailablePromoID,
-                             triggers: [.updateAvailable],
+                             triggers: [.updateAvailable, .appBecameActive],
                              initiated: .app,
                              promoType: PromoType(.featureTip, customTimeoutResult: .ignored(cooldown: .days(7))),
                              context: .global,
@@ -46,8 +46,7 @@ extension PromoServiceFactory {
         guard let bridge = dependencies.updateNotificationBridge else { return nil }
 
         let delegate = BrowserUpdatedPromoDelegate(bridge: bridge,
-                                                   windowControllersManager: dependencies.windowControllersManager,
-                                                   featureFlagger: dependencies.featureFlagger)
+                                                   windowControllersManager: dependencies.windowControllersManager)
         bridge.browserUpdatedDelegate = delegate
 
         return InternalPromo(id: browserUpdatedPromoID,

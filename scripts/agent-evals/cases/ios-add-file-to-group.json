@@ -1,0 +1,9 @@
+{
+  "covers": ["ddg-xcode-add-file skill"],
+  "prompt": "Create a new Swift file iOS/DuckDuckGo/HostnameTrimmer.swift in the iOS app target with a struct `HostnameTrimmer` whose `trim(_ host: String) -> String` drops a leading \"www.\". Make sure it compiles as part of the app. Skip building the project; it's too slow here.",
+  "max_turns": 30,
+  "graders": [
+    {"type": "skill_invoked", "skill": "ddg-xcode-add-file"},
+    {"type": "file_changed", "path": "iOS/DuckDuckGo-iOS.xcodeproj/project.pbxproj"}
+  ]
+}

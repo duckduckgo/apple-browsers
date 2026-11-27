@@ -251,6 +251,129 @@ class CrashCollectionTests: XCTestCase {
         XCTAssertEqual(reportedPixelParameters.map { $0[.terminationReason] }, ["springboard_0x8badf00d", "-1"])
     }
 
+    func testCrashPixelIncludesWatchdogDetails() {
+        let crashCollection = CrashCollection(crashReportSender: CrashReportSender(platform: .iOS, pixelEvents: nil),
+                                              crashCollectionStorage: MockKeyValueStore())
+
+        var reportedPixelParameters: [[CrashReportPixelParameter: String]] = []
+        crashCollection.start { pixelParameters, _, _ in
+            reportedPixelParameters = pixelParameters
+        }
+
+        crashCollection.crashHandler.didReceive([
+            MockPayload(mockCrashes: [
+                MockCrashDiagnostic(terminationReason: TerminationReasons.sceneCreateCPU),
+                MockCrashDiagnostic(terminationReason: nil)
+            ])
+        ])
+
+        XCTAssertEqual(reportedPixelParameters.count, 2)
+        XCTAssertEqual(reportedPixelParameters.first?[.terminationReason], "domain10_0x8badf00d")
+        XCTAssertEqual(reportedPixelParameters.first?[.watchdogEvent], "scene-create")
+        XCTAssertEqual(reportedPixelParameters.first?[.watchdogLimit], "cpu")
+        XCTAssertEqual(reportedPixelParameters.first?[.processVisibility], "background")
+        XCTAssertEqual(reportedPixelParameters.first?[.watchdogVisibility], "background")
+        XCTAssertEqual(reportedPixelParameters.last?[.watchdogEvent], "-1")
+        XCTAssertEqual(reportedPixelParameters.last?[.watchdogLimit], "-1")
+        XCTAssertEqual(reportedPixelParameters.last?[.processVisibility], "-1")
+        XCTAssertEqual(reportedPixelParameters.last?[.watchdogVisibility], "-1")
+    }
+
+    func testTerminationReasonPixelParameters_sceneUpdateWallClockInBackground() {
+        XCTAssertEqual(CrashCollection.terminationReasonPixelParameters(from: TerminationReasons.sceneUpdateWallClock), [
+            .terminationReason: "domain10_0x8badf00d",
+            .watchdogEvent: "scene-update",
+            .watchdogLimit: "wall",
+            .processVisibility: "background",
+            .watchdogVisibility: "background"
+        ])
+    }
+
+    func testTerminationReasonPixelParameters_sceneCreateCPU() {
+        XCTAssertEqual(CrashCollection.terminationReasonPixelParameters(from: TerminationReasons.sceneCreateCPU), [
+            .terminationReason: "domain10_0x8badf00d",
+            .watchdogEvent: "scene-create",
+            .watchdogLimit: "cpu",
+            .processVisibility: "background",
+            .watchdogVisibility: "background"
+        ])
+    }
+
+    func testTerminationReasonPixelParameters_processExitHasNoLimit() {
+        XCTAssertEqual(CrashCollection.terminationReasonPixelParameters(from: TerminationReasons.processExit), [
+            .terminationReason: "domain10_0x8badf00d",
+            .watchdogEvent: "process-exit",
+            .watchdogLimit: "-1",
+            .processVisibility: "unknown",
+            .watchdogVisibility: "background"
+        ])
+    }
+
+    func testTerminationReasonPixelParameters_foregroundProcessWithBackgroundWatchdog() {
+        XCTAssertEqual(CrashCollection.terminationReasonPixelParameters(from: TerminationReasons.sceneUpdateForeground), [
+            .terminationReason: "domain10_0x8badf00d",
+            .watchdogEvent: "scene-update",
+            .watchdogLimit: "wall",
+            .processVisibility: "foreground",
+            .watchdogVisibility: "background"
+        ])
+    }
+
+    func testTerminationReasonPixelParameters_namespaceFormatHasNoWatchdogDetails() {
+        XCTAssertEqual(CrashCollection.terminationReasonPixelParameters(from: "Namespace SPRINGBOARD, Code 0x8badf00d"), [
+            .terminationReason: "springboard_0x8badf00d",
+            .watchdogEvent: "-1",
+            .watchdogLimit: "-1",
+            .processVisibility: "-1",
+            .watchdogVisibility: "-1"
+        ])
+    }
+
+    func testTerminationReasonPixelParameters_withMissingReason() {
+        let expected: [CrashReportPixelParameter: String] = [
+            .terminationReason: "-1",
+            .watchdogEvent: "-1",
+            .watchdogLimit: "-1",
+            .processVisibility: "-1",
+            .watchdogVisibility: "-1"
+        ]
+        XCTAssertEqual(CrashCollection.terminationReasonPixelParameters(from: nil), expected)
+        XCTAssertEqual(CrashCollection.terminationReasonPixelParameters(from: ""), expected)
+    }
+
+    func testTerminationReasonPixelParameters_withUnrecognizedValuesReportsUnknown() {
+        let reason = "<RBSTerminateContext| domain:10 code:0x8BADF00D explanation:scene-create watchdog transgression: "
+            + "app<com.duckduckgo.mobile.ios(F1198407-B5B1-447A-88D4-BD7AF0864EFF)>:2524 exhausted disk time allowance of 9.84 seconds\n"
+            + "ProcessVisibility: Back ground 2524\n"
+            + "WatchdogEvent: app<com.duckduckgo.mobile.ios>:2524\n"
+            + "WatchdogVisibility: \n"
+            + ") reportType:CrashLog>"
+
+        XCTAssertEqual(CrashCollection.terminationReasonPixelParameters(from: reason), [
+            .terminationReason: "domain10_0x8badf00d",
+            .watchdogEvent: "unknown",
+            .watchdogLimit: "unknown",
+            .processVisibility: "unknown",
+            .watchdogVisibility: "unknown"
+        ])
+    }
+
+    func testTerminationReasonPixelParameters_neverIncludeIdentifiersFromTheReason() {
+        let reasons = [
+            TerminationReasons.sceneUpdateWallClock,
+            TerminationReasons.sceneCreateCPU,
+            TerminationReasons.processExit,
+            TerminationReasons.sceneUpdateForeground
+        ]
+        for reason in reasons {
+            for value in CrashCollection.terminationReasonPixelParameters(from: reason).values {
+                XCTAssertNotNil(value.range(of: #"^[a-z0-9_-]{1,32}$"#, options: .regularExpression),
+                                "Unexpected characters in pixel value: \(value)")
+                XCTAssertFalse(value.contains("duckduckgo"))
+            }
+        }
+    }
+
     func testPixelTerminationReason_keepsOnlyNamespaceAndCode() {
         XCTAssertEqual(CrashCollection.pixelTerminationReason(from: "Namespace SPRINGBOARD, Code 0x8badf00d"), "springboard_0x8badf00d")
         XCTAssertEqual(CrashCollection.pixelTerminationReason(from: "Namespace RUNNINGBOARD, Code 0xDEAD10CC"), "runningboard_0xdead10cc")
@@ -259,6 +382,12 @@ class CrashCollectionTests: XCTestCase {
             CrashCollection.pixelTerminationReason(from: "Namespace FRONTBOARD, Code 0xc51bad03, process-launch watchdog transgression for user@example.com"),
             "frontboard_0xc51bad03"
         )
+    }
+
+    func testPixelTerminationReason_keepsOnlyDomainAndCodeFromRunningBoardContext() {
+        XCTAssertEqual(CrashCollection.pixelTerminationReason(from: TerminationReasons.sceneUpdateWallClock), "domain10_0x8badf00d")
+        XCTAssertEqual(CrashCollection.pixelTerminationReason(from: "<RBSTerminateContext| domain:15 code:0xDEAD10CC>"), "domain15_0xdead10cc")
+        XCTAssertEqual(CrashCollection.pixelTerminationReason(from: "<RBSTerminateContext| domain:1 code:2>"), "domain1_2")
     }
 
     func testPixelTerminationReason_withMissingOrUnparseableReason() {
@@ -485,4 +614,60 @@ class MockCrashReportSender: CrashReportSending {
             }
         }
     }
+}
+
+/// `MXCrashDiagnostic.terminationReason` values in the RunningBoard format, taken from iOS crash reports.
+private enum TerminationReasons {
+
+    static let sceneUpdateWallClock = "<RBSTerminateContext| domain:10 code:0x8BADF00D explanation:scene-update watchdog transgression: "
+        + "app<com.duckduckgo.mobile.ios(67AB8E40-7196-467C-9E18-D4203CAE9C60)>:16525 exhausted real (wall clock) time allowance of 10.00 seconds\n"
+        + "ProcessVisibility: Background\n"
+        + "ProcessState: Running\n"
+        + "WatchdogEvent: scene-update\n"
+        + "WatchdogVisibility: Background\n"
+        + "WatchdogCPUStatistics: (\n"
+        + "\"Elapsed total CPU time (seconds): 13.750 (user 13.750, system 0.000), 67% CPU\",\n"
+        + "\"Elapsed application CPU time (seconds): 0.047, 0% CPU\"\n"
+        + ") reportType:CrashLog maxTerminationResistance:Interactive>"
+
+    static let sceneCreateCPU = "<RBSTerminateContext| domain:10 code:0x8BADF00D explanation:scene-create watchdog transgression: "
+        + "app<com.duckduckgo.mobile.ios(F1198407-B5B1-447A-88D4-BD7AF0864EFF)>:2524 exhausted CPU time allowance of 9.84 seconds\n"
+        + "ProcessVisibility: Background\n"
+        + "ProcessState: Running\n"
+        + "WatchdogEvent: scene-create\n"
+        + "WatchdogVisibility: Background\n"
+        + "WatchdogCPUStatistics: (\n"
+        + "\"Elapsed total CPU time (seconds): 59.290 (user 59.290, system 0.000), 70% CPU\",\n"
+        + "\"Elapsed application CPU time (seconds): 10.107, 12% CPU\"\n"
+        + ") reportType:CrashLog maxTerminationResistance:Interactive>"
+
+    static let processExit = "<RBSTerminateContext| domain:10 code:0x8BADF00D explanation:"
+        + "[app<com.duckduckgo.mobile.ios>:39452] Failed to terminate gracefully after 5.0s\n"
+        + "ProcessVisibility: Unknown\n"
+        + "ProcessState: Running\n"
+        + "WatchdogEvent: process-exit\n"
+        + "WatchdogVisibility: Background\n"
+        + "WatchdogCPUStatistics: (\n"
+        + "\"Elapsed total CPU time (seconds): 6.830 (user 5.750, system 1.080), 19% CPU\",\n"
+        + "\"Elapsed application CPU time (seconds): 0.002, 0% CPU\"\n"
+        + ")\n"
+        + "ThermalInfo: (\n"
+        + "\"Thermal Level:   0\",\n"
+        + "\"Thermal State:   nominal\"\n"
+        + ") reportType:CrashLog maxTerminationResistance:Interactive>"
+
+    static let sceneUpdateForeground = "<RBSTerminateContext| domain:10 code:0x8BADF00D explanation:scene-update watchdog transgression: "
+        + "app<com.duckduckgo.mobile.ios(0380D8F2-B88D-4075-8089-EA2A845C62D9)>:64253 exhausted real (wall clock) time allowance of 10.00 seconds\n"
+        + "ProcessVisibility: Foreground\n"
+        + "ProcessState: Running\n"
+        + "WatchdogEvent: scene-update\n"
+        + "WatchdogVisibility: Background\n"
+        + "WatchdogCPUStatistics: (\n"
+        + "\"Elapsed total CPU time (seconds): 40.250 (user 23.790, system 16.460), 67% CPU\",\n"
+        + "\"Elapsed application CPU time (seconds): 3.777, 6% CPU\"\n"
+        + ")\n"
+        + "ThermalInfo: (\n"
+        + "\"Thermal Level:   9\",\n"
+        + "\"Thermal State:   serious\"\n"
+        + ") reportType:CrashLog"
 }

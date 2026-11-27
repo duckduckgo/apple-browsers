@@ -7,10 +7,10 @@
 // Swift owns the saved choices, dialogs, and OS authorization. It records a short-lived
 // approval before replying allow. We then call WebKit, and TabViewController consumes that
 // approval in the later WKUIDelegate callback. A bypass reply restores WebKit's
-// flow when the feature is off or the native handler selects the Duck.ai exception.
+// flow on iOS 15 or the native handler selects the Duck.ai exception.
 //
 // Keep message fields in sync with MediaCaptureUserScript.swift. Verify changes with
-// MediaCaptureUserScriptTests in the iOS Browser scheme, including flag transitions.
+// MediaCaptureUserScriptTests in the iOS Browser scheme.
 (() => {
     // Save native methods before page scripts can replace them.
     const apply = Reflect.apply;
@@ -21,6 +21,11 @@
     const rejectPromise = Promise.reject.bind(Promise);
     const callThen = Function.prototype.call.bind(Promise.prototype.then);
     const NativeDOMException = DOMException;
+    const NativePromise = Promise;
+    const permissions = navigator.permissions;
+    const queryPermission = permissions?.query?.bind(permissions);
+    const permissionState = globalThis.PermissionStatus &&
+        apply(getOwnPropertyDescriptor, Object, [PermissionStatus.prototype, "state"])?.get;
     const mediaDevices = navigator.mediaDevices;
     const prototype = mediaDevices && apply(getPrototypeOf, Object, [mediaDevices]);
     const descriptor = prototype && apply(getOwnPropertyDescriptor, Object, [prototype, "getUserMedia"]);
@@ -46,15 +51,20 @@
     const hasNonOpaqueOrigin = origin !== "null" && origin.length > 0;
     const isSyntheticDocument = locationProtocol === "about:";
     const isTopLevel = globalThis.top === globalThis;
-    const isSameOriginAsTopLevel = (() => {
-        if (isTopLevel) {
-            return true;
+    // Swift checks that the request still belongs to the committed top-level page.
+    const ancestorOrigins = globalThis.location.ancestorOrigins;
+    const topOrigin = isTopLevel ? origin : ancestorOrigins?.[ancestorOrigins.length - 1] ?? "null";
+    // Compare with every ancestor, not only the top-level page: a frame can share the top-level
+    // origin and still sit inside a cross-origin frame (a.example → b.example → a.example).
+    // Whenever any ancestor is cross-origin, rely on WebKit's Permissions API for the whole
+    // chain's delegation. Top-level pages have no ancestors.
+    const hasCrossOriginAncestor = (() => {
+        for (let index = 0; index < (ancestorOrigins?.length ?? 0); index += 1) {
+            if (ancestorOrigins[index] !== origin) {
+                return true;
+            }
         }
-        try {
-            return globalThis.top.location.origin === origin;
-        } catch (_) {
-            return false;
-        }
+        return false;
     })();
     // WebKit owns each document's effective sandbox restrictions, including after navigation.
     // An allow-same-origin sandbox may request media; opaque origins are marked ineligible.
@@ -69,7 +79,7 @@
     // applies on the next navigation. Parse the local rules before page scripts can replace
     // the methods they use; only the inherited policy check waits for the first request.
     const embeddingFrame = (() => {
-        if (hasPolicyIntrospection || !isSameOriginAsTopLevel || isTopLevel) {
+        if (hasPolicyIntrospection || hasCrossOriginAncestor || isTopLevel) {
             return null;
         }
         try {
@@ -92,7 +102,7 @@
         }
     })();
     const localPolicyAllows = (feature) => {
-        if (!isSameOriginAsTopLevel) {
+        if (hasCrossOriginAncestor) {
             return false;
         }
         if (isTopLevel) {
@@ -180,6 +190,25 @@
         }
     };
     apply(defineProperty, Object, [globalThis, inheritedPolicyProperty, { value: policyAllows }]);
+    // A cross-origin frame can't read its iframe's allow attribute, but WebKit's Permissions API
+    // reports "denied" for a feature the embedding pages didn't delegate to it. Resolve only a
+    // promise made with the saved constructor: the page can change how derived promises are built.
+    const delegationAllows = (features) => new NativePromise(resolve => {
+        const check = (index) => {
+            if (index === features.length) {
+                resolve(true);
+                return;
+            }
+            try {
+                callThen(queryPermission({ name: features[index] }),
+                    status => apply(permissionState, status, []) === "denied" ? resolve(false) : check(index + 1),
+                    () => resolve(false));
+            } catch (_) {
+                resolve(false);
+            }
+        };
+        check(0);
+    });
     let nextRequestID = 0;
 
     const permissionDenied = () => new NativeDOMException("Permission denied", "NotAllowedError");
@@ -206,22 +235,21 @@
             return apply(nativeGetUserMedia, this, [capturedConstraints]);
         }
 
-        // Send ineligible requests too: Swift checks rollback before denying custom-flow requests.
+        // Send ineligible requests too: Swift returns them to WebKit when site permissions is off.
         const isEligibleContext = this === mediaDevices && hasNonOpaqueOrigin && (isDuckAIHost || (isSecureContext &&
             !isSyntheticDocument &&
-            (!video || policyAllows("camera")) &&
-            (!audio || policyAllows("microphone"))));
+            (hasCrossOriginAncestor || ((!video || policyAllows("camera")) &&
+                (!audio || policyAllows("microphone"))))));
 
         nextRequestID += 1;
+        const requestID = `${nonce}:${nextRequestID}`;
+        const post = isEligible => postMessage({ capability, requestID, isEligible, topOrigin, video, audio });
         let bridgePromise;
         try {
-            bridgePromise = postMessage({
-                capability,
-                requestID: `${nonce}:${nextRequestID}`,
-                isEligible: isEligibleContext,
-                video,
-                audio
-            });
+            bridgePromise = !isEligibleContext || !hasCrossOriginAncestor || isDuckAIHost
+                ? post(isEligibleContext)
+                : callThen(delegationAllows(video && audio ? ["camera", "microphone"] : [video ? "camera" : "microphone"]),
+                    post);
         } catch (_) {
             return rejectPromise(permissionDenied());
         }

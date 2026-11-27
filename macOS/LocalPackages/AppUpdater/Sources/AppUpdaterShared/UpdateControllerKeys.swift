@@ -47,6 +47,10 @@ public enum UpdateControllerStorageKeys: String, StorageKeyDescribing {
     case updatePromptClockStartDate = "updates.prompt-clock.start-date"
     case updatePromptClockInstalledVersion = "updates.prompt-clock.installed-version"
 
+    // Update prompt attribution
+    case updatePromptClickedSurface = "updates.prompt-attribution.clicked-surface"
+    case updatePromptClickedDate = "updates.prompt-attribution.clicked-date"
+
 }
 
 /// StoringKeys conforming struct for typed access to UpdateController settings
@@ -76,6 +80,10 @@ public struct UpdateControllerSettings: StoringKeys {
     // Update prompt clock
     public let updatePromptClockStartDate = StorageKey<Date>(UpdateControllerStorageKeys.updatePromptClockStartDate, assertionHandler: { _ in })
     public let updatePromptClockInstalledVersion = StorageKey<String>(UpdateControllerStorageKeys.updatePromptClockInstalledVersion, assertionHandler: { _ in })
+
+    // Update prompt attribution
+    public let updatePromptClickedSurface = StorageKey<String>(UpdateControllerStorageKeys.updatePromptClickedSurface, assertionHandler: { _ in })
+    public let updatePromptClickedDate = StorageKey<Date>(UpdateControllerStorageKeys.updatePromptClickedDate, assertionHandler: { _ in })
 
     public init() {}
 }

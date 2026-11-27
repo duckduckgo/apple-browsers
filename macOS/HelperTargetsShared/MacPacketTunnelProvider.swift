@@ -522,10 +522,9 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
         APIRequest.Headers.setUserAgent(UserAgent.duckDuckGoUserAgent(systemVersion: trimmedOSVersion))
         NetworkProtectionLastVersionRunStore(userDefaults: defaults).lastExtensionVersionRun = AppVersion.shared.versionAndBuildNumber
         let settings = VPNSettings(defaults: defaults) // Note, settings here is not yet populated with the startup options
-        let buildType = StandardApplicationBuildType()
 
         let wideEvent = WideEvent(
-            useMockRequests: buildType.isDebugBuild || buildType.isReviewBuild || buildType.isAlphaBuild,
+            isDevMode: !BuildFlags.isProductionBuild,
             featureFlagProvider: WideEventFeatureFlagProvider(settings: settings)
         )
         self.wideEvent = wideEvent
@@ -533,8 +532,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
         let sessionHealth = DefaultVPNSessionHealthInstrumentation(
             wideEvent: wideEvent,
             extensionType: { Self.isAppex ? .app : .system }(),
-            processStartedAt: processStartedAt,
-            isTelemetryEnabled: { settings.sessionHealthTelemetryEnabled })
+            processStartedAt: processStartedAt)
 
         // MARK: - Subscription configuration
 
@@ -543,7 +541,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
         // platforms-related operations are performed.
         let subscriptionEnvironment = SubscriptionEnvironment(serviceEnvironment: serviceEnvironment, purchasePlatform: .stripe)
 
-        Logger.networkProtection.debug("Subscription ServiceEnvironment: \(subscriptionEnvironment.serviceEnvironment.rawValue, privacy: .public)")
+        Logger.networkProtection.log("VPN extension created with the saved VPN environment: \(settings.selectedEnvironment.rawValue, privacy: .public)")
 
         let notificationCenter: NetworkProtectionNotificationCenter = DistributedNotificationCenter.default()
         let controllerErrorStore = NetworkProtectionTunnelErrorStore(notificationCenter: notificationCenter)
@@ -551,8 +549,9 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
 
         // MARK: - Subscription
         let subscriptionUserDefaults = UserDefaults(suiteName: MacPacketTunnelProvider.subscriptionsAppGroup)!
-        let authService = DefaultOAuthService(baseURL: subscriptionEnvironment.authEnvironment.url,
-                                              apiService: APIServiceFactory.makeAPIServiceForAuthV2(withUserAgent: UserAgent.duckDuckGoUserAgent()))
+        let authService = EnvironmentResolvingOAuthService(apiService: APIServiceFactory.makeAPIServiceForAuthV2(withUserAgent: UserAgent.duckDuckGoUserAgent())) {
+            settings.selectedEnvironment == .production ? .production : .staging
+        }
         let tokenStore = NetworkProtectionKeychainTokenStore(keychainType: Bundle.keychainType,
                                                                  serviceName: Self.tokenContainerServiceName,
                                                                  errorEventsHandler: debugEvents)
@@ -571,8 +570,9 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
                                             authService: authService,
                                             refreshEventMapping: authV2RefreshInstrumentation.eventMapping)
 
-        let subscriptionEndpointService = DefaultSubscriptionEndpointService(apiService: APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: UserAgent.duckDuckGoUserAgent()),
-                                                                                 baseURL: subscriptionEnvironment.serviceEnvironment.url)
+        let subscriptionEndpointService = DefaultSubscriptionEndpointService(apiService: APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: UserAgent.duckDuckGoUserAgent())) {
+            settings.selectedEnvironment == .production ? SubscriptionEnvironment.ServiceEnvironment.production.url : SubscriptionEnvironment.ServiceEnvironment.staging.url
+        }
         let pixelHandler = SubscriptionPixelHandler(source: .systemExtension, pixelKit: PixelKit.shared)
         let subscriptionManager = DefaultSubscriptionManager(oAuthClient: authClient,
                                                                userDefaults: subscriptionUserDefaults,
@@ -581,7 +581,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
                                                                pixelHandler: pixelHandler,
                                                                initForPurchase: false,
                                                                wideEvent: self.wideEvent,
-                                                               isAuthV2WideEventEnabled: { return subscriptionEnvironment.serviceEnvironment == .production },
+                                                               isAuthV2WideEventEnabled: { settings.selectedEnvironment == .production },
                                                                authV2TokenRefreshInstrumentation: authV2RefreshInstrumentation)
 
         let entitlementsCheck: (() async -> Result<Bool, Error>) = {
@@ -614,6 +614,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
                    wireGuardInterface: DefaultWireGuardInterface(),
                    keychainType: Bundle.keychainType,
                    tokenHandlerProvider: subscriptionManager,
+                   tokenSource: .fromOptions,
                    debugEvents: debugEvents,
                    providerEvents: Self.packetTunnelProviderEvents(loopDetector: loopDetector),
                    settings: settings,
@@ -643,7 +644,6 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
 
         // macOS-specific options
         try loadVPNSettings(from: options)
-        try await loadTokenContainer(from: options)
     }
 
     private func loadVPNSettings(from options: StartupOptions) throws {
@@ -655,35 +655,6 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
         case .reset:
             // VPN settings are required - if we're in reset case, it means they were missing or invalid
             throw TunnelError.settingsMissing
-        }
-    }
-
-    private func loadTokenContainer(from options: StartupOptions) async throws {
-        let tokenHandler = tokenHandlerProvider
-        Logger.networkProtection.log("Load token container")
-        switch options.tokenContainer {
-        case .set(let newTokenContainer):
-            Logger.networkProtection.log("Set new token container")
-            do {
-                try await tokenHandler.adoptToken(newTokenContainer)
-            } catch {
-                Logger.networkProtection.fault("Error adopting token container: \(error, privacy: .public)")
-                throw TunnelError.startingTunnelWithoutAuthToken(internalError: error)
-            }
-        case .useExisting:
-            Logger.networkProtection.log("Use existing token container")
-            do {
-                try await tokenHandler.getToken()
-            } catch {
-                Logger.networkProtection.fault("Error loading token container: \(error, privacy: .public)")
-                throw TunnelError.startingTunnelWithoutAuthToken(internalError: error)
-            }
-        case .reset:
-            Logger.networkProtection.log("Reset token")
-            // This case should in theory not be possible, but it's ideal to have this in place
-            // in case an error in the controller on the client side allows it.
-            try await tokenHandler.removeToken()
-            throw TunnelError.tokenReset
         }
     }
 

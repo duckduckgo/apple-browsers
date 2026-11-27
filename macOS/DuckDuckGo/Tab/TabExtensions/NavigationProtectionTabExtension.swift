@@ -19,18 +19,21 @@
 import BrowserServicesKit
 import Combine
 import Common
+import FeatureFlags_macOS
 import FoundationExtensions
 import Foundation
 import DDGNavigation
 import WebKit
 import PixelKit
+import PrivacyConfig
 
 final class NavigationProtectionTabExtension {
 
     private let contentBlocking: AnyContentBlocking
     private let webTrackingProtectionPreferences: WebTrackingProtectionPreferences
+    private let featureFlagger: FeatureFlagger
 
-    private static let debugEvents = EventMapping<AMPProtectionDebugEvents> { event, _, _, _ in
+    static let debugEvents = EventMapping<AMPProtectionDebugEvents> { event, _, _, _ in
         switch event {
         case .ampBlockingRulesCompilationFailed:
             PixelKit.fire(GeneralPixel.ampBlockingRulesCompilationFailed)
@@ -40,7 +43,8 @@ final class NavigationProtectionTabExtension {
     lazy var linkProtection: LinkProtection = {
         LinkProtection(privacyManager: contentBlocking.privacyConfigurationManager,
                        contentBlockingManager: contentBlocking.contentBlockingManager,
-                       errorReporting: Self.debugEvents)
+                       errorReporting: Self.debugEvents,
+                       isFastTrackingParameterFilterEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.fastTrackingParameterFilter) })
     }()
 
     lazy var referrerTrimming: ReferrerTrimming = {
@@ -49,9 +53,10 @@ final class NavigationProtectionTabExtension {
                          tld: contentBlocking.tld)
     }()
 
-    init(contentBlocking: AnyContentBlocking, webTrackingProtectionPreferences: WebTrackingProtectionPreferences) {
+    init(contentBlocking: AnyContentBlocking, webTrackingProtectionPreferences: WebTrackingProtectionPreferences, featureFlagger: FeatureFlagger) {
         self.contentBlocking = contentBlocking
         self.webTrackingProtectionPreferences = webTrackingProtectionPreferences
+        self.featureFlagger = featureFlagger
     }
 
     private func resetNavigation() {

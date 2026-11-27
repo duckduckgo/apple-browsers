@@ -52,6 +52,7 @@ struct SettingsAIFeaturesView: View {
                 viewModel.onRequestDismissSettings?()
             }.foregroundColor(Color(designSystemColor: .textPrimary))) : AnyView(EmptyView()))
         .onAppear {
+            viewModel.localModelAccessSettingsViewModel?.refresh()
             PixelKit.fire(Pixel.Event.aiChatSettingsDisplayed,
                           frequency: .dailyAndCount,
                           options: .parameters(viewModel.featureDiscovery.addToParams([:], forFeature: .aiChat)))
@@ -124,11 +125,22 @@ private struct SettingsAINativeFeaturesView: AIFeaturesSettingsRowProviding {
                 autoSendContentRow
                 keyboardAnimationRow
                 manageShortcutsRow
+                if let service = viewModel.browserToolsService, !service.catalog.enabledTools.isEmpty {
+                    NavigationLink(destination: SettingsBrowserAccessView(service: service).environmentObject(viewModel)) {
+                        SettingsCellView(label: UserText.settingsBrowserAccessTitle)
+                    }
+                    .accessibilityIdentifier("Settings.AIFeatures.BrowserAccess")
+                }
                 duckAISettingsRow
             } header: {
                 Text(UserText.settingsDuckAiSectionHeader)
             }
             .listRowBackground(Color(designSystemColor: .surfaceTertiary))
+
+            if let localModelAccess = viewModel.localModelAccessSettingsViewModel {
+                LocalModelAccessSettingsSection(model: localModelAccess,
+                                                isPad: UIDevice.current.userInterfaceIdiom == .pad)
+            }
         }
 
         // Always shown: the button disables all AI while any is on, then greys out

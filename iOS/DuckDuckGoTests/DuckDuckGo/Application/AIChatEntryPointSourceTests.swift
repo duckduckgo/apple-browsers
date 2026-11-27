@@ -21,6 +21,7 @@ import Foundation
 import Testing
 @testable import Core
 @testable import DuckDuckGo
+@_spi(Testing) import PixelKit
 
 @Suite("AI Chat Entry Point Source")
 struct AIChatEntryPointSourceTests {
@@ -127,6 +128,7 @@ struct AIChatEntryPointSourceTests {
         #expect(AIChatEntryPointSource.browsingMenuWebpage.rawValue == "browsing_menu_webpage")
         #expect(AIChatEntryPointSource.browsingMenuDuckAI.rawValue == "browsing_menu_duckai")
         #expect(AIChatEntryPointSource.duckAINewChat.rawValue == "duck_ai_new_chat")
+        #expect(AIChatEntryPointSource.swipeUpNewChat.rawValue == "swipe_up_new_chat")
     }
 
     // MARK: - In-page navigations
@@ -213,5 +215,26 @@ struct AIChatEntryPointSourceTests {
                                          version: DuckAIPromptWideEventData.metadata.version,
                                          path: ["feature", "data", "ext", "prompt", "origin"])
         #expect(Self.entrySourceValues.subtracting(values).isEmpty)
+    }
+
+    // MARK: - Entry pixel
+
+    @available(iOS 16, *)
+    @Test("The entry pixel adds extra parameters without overriding its own", .timeLimit(.minutes(1)))
+    func entryPixelMergesAdditionalParameters() throws {
+        let pixelFiring = PixelKitMock()
+
+        AIChatEntryPointPixel.fire(source: .swipeUpNewChat, duckAIEnabled: true, toggleEnabled: false,
+                                   opensNewTab: true, hasPrompt: false, voice: false,
+                                   additionalParameters: ["was_used_before": "1", PixelParameters.source: "other"],
+                                   pixelFiring: pixelFiring)
+
+        let call = try #require(pixelFiring.actualFireCalls.first)
+        #expect(pixelFiring.actualFireCalls.count == 1)
+        #expect(call.pixel.name == "aichat_entry_point")
+        #expect(call.frequency == .dailyAndCount)
+        #expect(call.additionalParameters?[PixelParameters.source] == "swipe_up_new_chat")
+        #expect(call.additionalParameters?["was_used_before"] == "1")
+        #expect(call.additionalParameters?["opens_new_tab"] == "true")
     }
 }

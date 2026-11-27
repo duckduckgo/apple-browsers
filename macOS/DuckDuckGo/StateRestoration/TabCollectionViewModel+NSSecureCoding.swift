@@ -30,11 +30,15 @@ extension TabCollectionViewModel: NSSecureCoding {
         guard let tabCollection = coder.decodeObject(of: TabCollection.self, forKey: NSSecureCodingKeys.tabCollection) else {
             return nil
         }
-        let index = coder.decodeIfPresent(at: NSSecureCodingKeys.selectionIndex) ?? 0
+
+        // Restoration may have dropped tabs, so the saved index can point past the end
+        let decodedIndex = coder.decodeIfPresent(at: NSSecureCodingKeys.selectionIndex) ?? 0
+        let selectionIndex = min(decodedIndex, max(tabCollection.tabs.count - 1, 0))
+
         // Burner tabs aren't stored
         let burnerMode = BurnerMode.regular
         self.init(tabCollection: tabCollection,
-                  selectionIndex: .unpinned(index),
+                  selectionIndex: .unpinned(selectionIndex),
                   burnerMode: burnerMode)
     }
 

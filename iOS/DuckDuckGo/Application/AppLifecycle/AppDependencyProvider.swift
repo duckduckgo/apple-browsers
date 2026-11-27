@@ -39,17 +39,16 @@ import Networking
 import Configuration
 import Network
 import FeatureFlags_iOS
-import Persistence
 
 protocol DependencyProvider {
-    var appSessionInfo: AppSessionInfo? { get }
-
     var appSettings: AppSettings { get }
     var variantManager: VariantManager { get }
     var internalUserDecider: InternalUserDecider { get }
     var featureFlagger: FeatureFlagger { get }
     var isSitePermissionsEnabled: Bool { get }
+    var isDuckAIAndInputLiquidGlassFeatureEnabledForCurrentLaunch: Bool { get }
     var findInPageImplementation: FindInPageImplementation { get }
+    var segmentSkipSegmentsProvider: SegmentSkipSegmentsProvider { get }
     var configurationURLProvider: CustomConfigurationURLProviding { get }
     var contentScopeExperimentsManager: ContentScopeExperimentsManaging { get }
     var storageCache: StorageCache { get }
@@ -79,57 +78,22 @@ protocol DependencyProvider {
     var subscriptionOnboardingSession: SubscriptionOnboardingSessionStateManaging { get }
 }
 
-/// Captures launch time and version change once per app session.
-struct AppSessionInfo {
-    enum VersionChange {
-        case updated
-        case downgraded
-    }
-
-    let appVersionChange: VersionChange?
-    let launchDate: Date
-
-    private enum Key: String {
-        case previousVersion = "app-session.previous-app-version"
-    }
-
-    init(keyValueStore: any KeyValueStoring, version: String, launchDate: Date = Date()) {
-        let previousVersion = try? keyValueStore.object(forKey: Key.previousVersion.rawValue) as? String
-        let change: VersionChange?
-        if let previousVersion, !previousVersion.isEmpty, !version.isEmpty {
-            switch version.compare(previousVersion, options: .numeric) {
-            case .orderedDescending: change = .updated
-            case .orderedAscending: change = .downgraded
-            case .orderedSame: change = nil
-            }
-        } else {
-            change = nil
-        }
-        if !version.isEmpty {
-            try? keyValueStore.set(version, forKey: Key.previousVersion.rawValue)
-        }
-        self.appVersionChange = change
-        self.launchDate = launchDate
-    }
-}
-
-extension DependencyProvider {
-    var appSessionInfo: AppSessionInfo? { nil }
-}
-
 /// Provides dependencies for objects that are not directly instantiated
 /// through `init` call (e.g. ViewControllers created from Storyboards).
+///
+/// Legacy dependency container. Do not add new consumers.
+/// Inject the specific dependencies through initializers instead.
 final class AppDependencyProvider: DependencyProvider {
-    let appSessionInfo: AppSessionInfo? = AppSessionInfo(
-        keyValueStore: UserDefaults.standard, version: AppVersion().versionAndBuildNumber)
-
     static var shared: DependencyProvider = AppDependencyProvider()
     let appSettings: AppSettings = AppUserDefaults()
     let variantManager: VariantManager = DefaultVariantManager()
     let internalUserDecider: InternalUserDecider = ContentBlocking.shared.privacyConfigurationManager.internalUserDecider
     let featureFlagger: FeatureFlagger
     let isSitePermissionsEnabled: Bool
+    let isDuckAIAndInputLiquidGlassFeatureEnabledForCurrentLaunch: Bool
     let findInPageImplementation: FindInPageImplementation
+    /// One instance for the app, so every tab and Duck Player share the segments cache.
+    let segmentSkipSegmentsProvider = SegmentSkipSegmentsProvider()
     let configurationURLProvider: CustomConfigurationURLProviding
     let contentScopeExperimentsManager: ContentScopeExperimentsManaging
 
@@ -148,7 +112,6 @@ final class AppDependencyProvider: DependencyProvider {
     var tokenHandlerProvider: any SubscriptionTokenHandling
     let subscriptionExpirationReminderScheduler: SubscriptionExpirationReminderScheduling
     let subscriptionOnboardingSession: SubscriptionOnboardingSessionStateManaging = SubscriptionOnboardingSessionState()
-    static let deadTokenRecoverer = DeadTokenRecoverer()
 
     let vpnFeatureVisibility: DefaultNetworkProtectionVisibility
     let networkProtectionTunnelController: NetworkProtectionTunnelController
@@ -168,11 +131,7 @@ final class AppDependencyProvider: DependencyProvider {
     let internalFeedbackTabCountProvider = InternalFeedbackTabCountProvider()
     lazy var syncAutoRestoreDecisionManager: SyncAutoRestoreDecisionManaging = SyncAutoRestoreDecisionManager(featureFlagger: featureFlagger)
 
-    static func sitePermissionsEnabledAtLaunch(featureFlagger: FeatureFlagger,
-                                               isSupportedOSProvider: () -> Bool = isSitePermissionsSupportedOS) -> Bool {
-        isSupportedOSProvider() && featureFlagger.isFeatureOn(.sitePermissions)
-    }
-
+    /// Site permissions requires iOS 16; iOS 15 keeps WebKit's own permission flow.
     private static func isSitePermissionsSupportedOS() -> Bool {
         if #available(iOS 16.0, *) {
             true
@@ -229,6 +188,8 @@ final class AppDependencyProvider: DependencyProvider {
         )
         let experimentManager = ExperimentCohortsManager(store: ExperimentsDataStore(), fireCohortAssigned: PixelKit.fireExperimentEnrollmentPixel(subfeatureID:experiment:))
 
+        let launchOptionsHandler = LaunchOptionsHandler()
+        let isUITesting = launchOptionsHandler.isUITesting
         var featureFlagger: FeatureFlagger
 
         if [.unitTests, .integrationTests, .xcPreviews].contains(AppVersion.runType) {
@@ -240,7 +201,7 @@ final class AppDependencyProvider: DependencyProvider {
             let defaultFeatureFlagger = DefaultFeatureFlagger(internalUserDecider: internalUserDecider,
                                                               privacyConfigManager: ContentBlocking.shared.privacyConfigurationManager,
                                                               localOverrides: featureFlaggerOverrides,
-                                                              allowOverrides: { [internalUserDecider, isUITesting=LaunchOptionsHandler().isUITesting] in
+                                                              allowOverrides: { [internalUserDecider] in
                                                                   internalUserDecider.isInternalUser || isUITesting
                                                               },
                                                               experimentManager: experimentManager,
@@ -249,7 +210,7 @@ final class AppDependencyProvider: DependencyProvider {
 
             // Applied after DefaultFeatureFlagger.init, which clears local overrides for non-internal users.
             // Writing overrides afterwards keeps them intact for UI test mode where allowOverrides also returns true.
-            LaunchOptionsHandler().applyUITestOverrides(
+            launchOptionsHandler.applyUITestOverrides(
                 featureFlagOverrideStore: featureFlagOverrideStore,
                 configRolloutStore: .standard
             )
@@ -257,8 +218,8 @@ final class AppDependencyProvider: DependencyProvider {
             featureFlagger = defaultFeatureFlagger
         }
 
-        // Injected scripts survive in loaded and cached documents, so every entry point uses the same launch-time value.
-        isSitePermissionsEnabled = Self.sitePermissionsEnabledAtLaunch(featureFlagger: featureFlagger)
+        isSitePermissionsEnabled = Self.isSitePermissionsSupportedOS()
+        isDuckAIAndInputLiquidGlassFeatureEnabledForCurrentLaunch = featureFlagger.isFeatureOn(.duckAIAndInputLiquidGlass)
         findInPageImplementation = FindInPageImplementation(featureFlagger: featureFlagger)
 
         // Configure PixelKit Experiments
@@ -266,13 +227,8 @@ final class AppDependencyProvider: DependencyProvider {
                                         eventTracker: ExperimentEventTracker(store: UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults()))
 
         self.wideEvent = WideEvent(
-            useMockRequests: {
-#if DEBUG || REVIEW || ALPHA
-                true
-#else
-                false
-#endif
-            }(),
+            useMockRequests: isUITesting || AppVersion.runType != .normal,
+            isDevMode: !BuildFlags.isProductionBuild,
             featureFlagProvider: WideEventFeatureFlagAdapter(featureFlagger: featureFlagger)
         )
         configurationURLProvider = ConfigurationURLProvider(defaultProvider: AppConfigurationURLProvider(featureFlagger: featureFlagger), internalUserDecider: internalUserDecider, store: CustomConfigurationURLStorage(defaults: UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults()))
@@ -298,6 +254,10 @@ final class AppDependencyProvider: DependencyProvider {
                           frequency: .legacyDailyAndCount,
                           options: .parameters(parameters))
         }
+        let backupTokenStorage = SubscriptionTokenKeychainStorage(keychainManager: keychainManager,
+                                                                  userDefaults: subscriptionUserDefaults,
+                                                                  field: .backupTokenContainer,
+                                                                  errorEventsHandler: pixelHandler.backupKeychainErrorHandler())
 
         // Init V2 classes for migration
         let authEnvironment: OAuthEnvironment = subscriptionEnvironment.serviceEnvironment == .production ? .production : .staging
@@ -315,7 +275,11 @@ final class AppDependencyProvider: DependencyProvider {
 
         let authClient = DefaultOAuthClient(tokensStorage: tokenStorageV2,
                                             authService: authService,
-                                            refreshEventMapping: authV2RefreshInstrumentation.eventMapping)
+                                            refreshEventMapping: authV2RefreshInstrumentation.eventMapping,
+                                            backupStorage: backupTokenStorage,
+                                            isBackupEnabled: { featureFlagger.isFeatureOn(.authBackupToken) },
+                                            backupUserDefaults: subscriptionUserDefaults,
+                                            backupEventMapping: pixelHandler.backupEventMapping())
         vpnSettings.alignTo(subscriptionEnvironment: subscriptionEnvironment)
         dbpSettings.alignTo(subscriptionEnvironment: subscriptionEnvironment)
 
@@ -327,15 +291,16 @@ final class AppDependencyProvider: DependencyProvider {
         apiServiceForSubscription.authorizationRefresherCallback = { _ in
 
             guard let tokenContainer = try? tokenStorageV2.getTokenContainer() else {
+                Logger.subscriptionTokensManagement.error("Unauthorized response, but no current token can be read to refresh")
                 throw OAuthClientError.internalError("Missing refresh token")
             }
 
             if tokenContainer.decodedAccessToken.isExpired() {
-                Logger.OAuth.debug("Refreshing tokens")
+                Logger.subscriptionTokensManagement.log("Unauthorized response with an expired access token, refreshing it")
                 let tokens = try await authClient.getTokens(policy: .localForceRefresh, trigger: .backend)
                 return tokens.accessToken
             } else {
-                Logger.general.debug("Trying to refresh valid token, using the old one")
+                Logger.subscriptionTokensManagement.log("Unauthorized response with an unexpired access token, retrying with it")
                 return tokenContainer.accessToken
             }
         }
@@ -363,14 +328,19 @@ final class AppDependencyProvider: DependencyProvider {
                                                                },
                                                                wideEvent: wideEvent,
                                                                isAuthV2WideEventEnabled: isAuthV2WideEventEnabled,
-                                                               authV2TokenRefreshInstrumentation: authV2RefreshInstrumentation)
+                                                               authV2TokenRefreshInstrumentation: authV2RefreshInstrumentation,
+                                                               isStripeProductsByPlanCountryEnabled: {
+            featureFlagger.isFeatureOn(.stripeProductsByPlanCountry)
+                                                               })
         self.tokenHandlerProvider = subscriptionManager
         let restoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
                                                      storePurchaseManager: storePurchaseManager,
                                                      pendingTransactionHandler: pendingTransactionHandler)
-        subscriptionManager.tokenRecoveryHandler = {
-            try await Self.deadTokenRecoverer.attemptRecoveryFromPastPurchase(purchasePlatform: subscriptionManager.currentEnvironment.purchasePlatform, restoreFlow: restoreFlow)
-        }
+        let backupRecovery = BackupTokenRecovery(oAuthClient: authClient, pixelHandler: pixelHandler)
+        let appStoreRecovery = AppStoreTokenRecovery(purchasePlatform: subscriptionManager.currentEnvironment.purchasePlatform,
+                                                     restoreFlow: restoreFlow)
+        subscriptionManager.tokenRecoveryCoordinator = TokenRecoveryCoordinator(invalidTokenStrategies: [backupRecovery, appStoreRecovery],
+                                                                                missingTokenStrategies: [backupRecovery])
 
         self.subscriptionManager = subscriptionManager
         tokenHandler = subscriptionManager

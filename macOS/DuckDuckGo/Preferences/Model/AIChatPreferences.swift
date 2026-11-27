@@ -35,6 +35,9 @@ final class AIChatPreferences: ObservableObject {
     private let featureFlagger: FeatureFlagger
     private let duckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging
     let promptBarPreferences: PromptBarPreferences
+    private let localModelService: AIChatLocalModelService?
+    private let confirmLocalModelTurnOn: @MainActor () async -> Bool
+    private var localModelAvailabilityCancellable: AnyCancellable?
     // Lazy: built on first use, not during early/transient inits when the store isn't ready yet.
     private lazy var serpSettings: SERPSettingsProviding = SERPSettingsProvider()
 
@@ -43,13 +46,18 @@ final class AIChatPreferences: ObservableObject {
          windowControllersManager: WindowControllersManagerProtocol = Application.appDelegate.windowControllersManager,
          featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
          duckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging = LocalDuckAIChromeButtonsVisibilityManager(),
-         promptBarPreferences: PromptBarPreferences = Application.appDelegate.promptBarPreferences) {
+         promptBarPreferences: PromptBarPreferences = Application.appDelegate.promptBarPreferences,
+         localModelService: AIChatLocalModelService? = nil,
+         confirmLocalModelTurnOn: @escaping @MainActor () async -> Bool = { NSAlert.turnOnLocalModelConfirmation().runModal() == .OK }) {
         self.storage = storage
         self.aiChatMenuConfiguration = aiChatMenuConfiguration
         self.windowControllersManager = windowControllersManager
         self.featureFlagger = featureFlagger
         self.duckAIChromeButtonsVisibilityManager = duckAIChromeButtonsVisibilityManager
         self.promptBarPreferences = promptBarPreferences
+        self.localModelService = localModelService
+        self.confirmLocalModelTurnOn = confirmLocalModelTurnOn
+        pageSummariesModel = storage.pageSummariesModel
 
         isAIFeaturesEnabled = storage.isAIFeaturesEnabled
         showShortcutOnNewTabPage = storage.showShortcutOnNewTabPage
@@ -67,6 +75,20 @@ final class AIChatPreferences: ObservableObject {
         subscribeToSERPSettingsChanges()
     }
 
+    /// Apple Intelligence can be turned on or off in System Settings while the pane is open, and the
+    /// downloadable model's download moves on. Called by the pane, because the service lives on the
+    /// main actor and this init may not.
+    @MainActor
+    func observeLocalModelAvailability() {
+        guard localModelAvailabilityCancellable == nil else { return }
+        localModelAvailabilityCancellable = localModelService?.changesPublisher
+            // A download reports progress for every megabyte; the row doesn't need more than a few updates a second.
+            .throttle(for: .milliseconds(250), scheduler: DispatchQueue.main, latest: true)
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+    }
+
     // Refresh the Search Assist / Hide AI Images pickers when the SERP changes them on the web side.
     private func subscribeToSERPSettingsChanges() {
         NotificationCenter.default.publisher(for: .serpSettingsDidReceiveWebUpdate)
@@ -78,6 +100,12 @@ final class AIChatPreferences: ObservableObject {
     }
 
     func subscribeToShowInApplicationMenuSettingsChanges() {
+        storage.pageSummariesModelPublisher
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .assign(to: \.pageSummariesModel, onWeaklyHeld: self)
+            .store(in: &cancellables)
+
         storage.isAIFeaturesEnabledPublisher
             .removeDuplicates()
             .receive(on: DispatchQueue.main)
@@ -133,6 +161,69 @@ final class AIChatPreferences: ObservableObject {
 
     var shouldShowNewTabPageToggle: Bool {
         featureFlagger.isFeatureOn(.newTabPageOmnibar)
+    }
+
+    /// Where Apple Intelligence is ready, or where the downloadable model can run instead.
+    @MainActor
+    var shouldShowLocalModelAccess: Bool {
+        guard let localModelService, featureFlagger.isFeatureOn(.aiChatLocalModels),
+              let state = localModelService.currentState else { return false }
+        return state != .unsupported
+    }
+
+    @MainActor
+    var localModelName: String {
+        localModelService?.model.name ?? ""
+    }
+
+    /// The downloadable model's install state, or nil when Settings shows Apple Intelligence.
+    @MainActor
+    var downloadableModelState: AIChatLocalModelInstallState? {
+        guard let localModelService, localModelService.activeEngineKind == .llama else { return nil }
+        return localModelService.installer?.state
+    }
+
+    @MainActor
+    var downloadableModelBytes: Int64 {
+        localModelService?.installer?.spec.bytes ?? 0
+    }
+
+    @MainActor
+    func installDownloadableModel() {
+        localModelService?.installDownloadableModel()
+    }
+
+    @MainActor
+    func cancelDownloadableModelInstall() {
+        localModelService?.cancelDownloadableModelInstall()
+    }
+
+    @MainActor
+    func uninstallDownloadableModel() {
+        localModelService?.uninstallDownloadableModel()
+    }
+
+    var isLocalModelOn: Bool {
+        pageSummariesModel == .appleIntelligence
+    }
+
+    @MainActor
+    func turnOnLocalModel() async {
+        guard await confirmLocalModelTurnOn() else { return }
+        selectLocalModel(.appleIntelligence)
+    }
+
+    @MainActor
+    func turnOffLocalModel() {
+        selectLocalModel(.duckAI)
+    }
+
+    /// The service saves the choice and sends the pixel. Setting the property as well keeps the pane
+    /// from waiting for the store's publisher; the store ignores the repeated value.
+    @MainActor
+    private func selectLocalModel(_ model: AIChatPageSummariesModel) {
+        localModelService?.select(model, source: .settings)
+        pageSummariesModel = model
     }
 
     var shouldShowDuckAiSettingsLink: Bool {
@@ -279,6 +370,10 @@ final class AIChatPreferences: ObservableObject {
         didSet { storage.shouldAutomaticallySendPageContext = shouldAutomaticallySendPageContext }
     }
 
+    @Published var pageSummariesModel: AIChatPageSummariesModel {
+        didSet { storage.pageSummariesModel = pageSummariesModel }
+    }
+
     @Published var showSearchAndDuckAIToggle: Bool {
         didSet { storage.showSearchAndDuckAIToggle = showSearchAndDuckAIToggle }
     }
@@ -298,6 +393,11 @@ final class AIChatPreferences: ObservableObject {
     @MainActor func openAIChatLink() {
         NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.settings)
         NSApp.delegateTyped.aiChatTabOpener.openNewAIChat(in: .currentTab)
+    }
+
+    /// The Duck.ai help pages until a Local Models page exists.
+    @MainActor func openLocalModelLearnMore() {
+        windowControllersManager.show(url: URL.aiChatHelpPages, source: .ui, newTab: true, selected: true)
     }
 
     @MainActor func openHideAIGeneratedImagesLearnMore() {

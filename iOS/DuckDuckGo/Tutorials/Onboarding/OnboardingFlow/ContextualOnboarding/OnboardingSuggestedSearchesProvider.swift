@@ -24,9 +24,14 @@ struct OnboardingSuggestedSearchesProvider: OnboardingSuggestionsItemsProviding 
     private static let imageSearch = "!image "
 
     private let countryAndLanguageProvider: OnboardingRegionAndLanguageProvider
+    private let tutorialSettings: TutorialSettings
 
-    init(countryAndLanguageProvider: OnboardingRegionAndLanguageProvider = Locale.current) {
+    init(
+        countryAndLanguageProvider: OnboardingRegionAndLanguageProvider = Locale.current,
+        tutorialSettings: TutorialSettings = DefaultTutorialSettings()
+    ) {
         self.countryAndLanguageProvider = countryAndLanguageProvider
+        self.tutorialSettings = tutorialSettings
     }
 
     var list: [ContextualOnboardingListItem] {
@@ -46,7 +51,9 @@ struct OnboardingSuggestedSearchesProvider: OnboardingSuggestionsItemsProviding 
 
     private var option1: ContextualOnboardingListItem {
         var search: String
-        if language == "en" {
+        if tutorialSettings.onboardingDownloadReason == .vpn {
+            search = UserText.Onboarding.ContextualOnboarding.tryASearchOptionVPN
+        } else if language == "en" {
             search = UserText.Onboarding.ContextualOnboarding.tryASearchOption1English
         } else {
             search = UserText.Onboarding.ContextualOnboarding.tryASearchOption1International

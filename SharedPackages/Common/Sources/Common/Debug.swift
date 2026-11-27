@@ -53,11 +53,18 @@ public func callingSymbol(after lastSymbolName: String? = nil) -> String {
     repeat {
         // caller for the procedure
         callingSymbolIdx += 1
-        let line = stackTrace[callingSymbolIdx].replacingOccurrences(of: Bundle.main.executableURL!.lastPathComponent, with: "DDG")
-        symbolName = String(line.split(separator: " ", maxSplits: 3)[3]).components(separatedBy: " + ")[0]
+        symbolName = stackSymbol(fromCallStackLine: stackTrace[callingSymbolIdx])
     } while stackTrace[callingSymbolIdx - 1].contains(symbolName.dropping(suffix: "To")) // skip objc wrappers
 
     return symbolName
+}
+
+/// The symbol in one `Thread.callStackSymbols` line: `<index> <module> 0x<address> <symbol> + <offset>`.
+/// Read after the address, because the module column is cut at 35 characters and a module name can contain spaces
+/// (e.g. "DuckDuckGo - verify-cmd-t-wrong-abcd.debug.dylib" shows as "DuckDuckGo - verify-cmd-t-wrong-abc").
+func stackSymbol(fromCallStackLine line: String) -> String {
+    guard let address = line.range(of: #" 0x[0-9a-fA-F]+ "#, options: .regularExpression) else { return line }
+    return line[address.upperBound...].components(separatedBy: " + ")[0]
 }
 
 #endif

@@ -2,11 +2,74 @@
 #
 # Updates the DBP broker JSONs embedded in DataBrokerProtectionCore, installing
 # only the brokers listed in main_config.json's active_data_brokers.
+#
+# The apps trust embedded brokers without checking them, so nothing is written
+# unless main_config.json is signed by one of the app's production keys and every
+# installed broker matches its json_sha256 entry.
 
-DBP_BROKER_URL="https://dbp.duckduckgo.com/dbp/remote/v0?name=all.zip&type=combined"
+DBP_BROKER_URL="https://dbp.duckduckgo.com/dbp/remote/v0?name=all.zip&type=spec"
 DBP_MAIN_CONFIG_URL="https://dbp.duckduckgo.com/dbp/remote/v0/main_config.json"
+DBP_MAIN_CONFIG_SIGNATURE_URL="https://dbp.duckduckgo.com/dbp/remote/v0/main_config.json.sig"
 
 BROKER_JSON_DIR_RELATIVE_PATH="../../SharedPackages/DataBrokerProtectionCore/Sources/DataBrokerProtectionCore/BundleResources/JSON"
+SIGNING_KEYS_RELATIVE_PATH="../../SharedPackages/DataBrokerProtectionCore/Sources/DataBrokerProtectionCore/BundleResources/bundle-signing-keys.json"
+
+# Succeeds if signature_file is a base64 DER ECDSA signature of main_config by any of the keys, which are base64 SPKI DER, one per line.
+verifyMainConfigSignature() {
+	local main_config=$1
+	local signature_file=$2
+	local keys=$3
+
+	local work_dir key
+	work_dir=$(mktemp -d)
+	tr -d '[:space:]' < "$signature_file" | base64 -d > "${work_dir}/signature.der" 2>/dev/null
+
+	while IFS= read -r key; do
+		[[ -n "$key" ]] || continue
+		printf '%s' "$key" | base64 -d > "${work_dir}/key.der"
+		if openssl dgst -sha256 -verify "${work_dir}/key.der" -keyform DER -signature "${work_dir}/signature.der" "$main_config" >/dev/null 2>&1; then
+			rm -rf "$work_dir"
+			return 0
+		fi
+	done <<< "$keys"
+
+	rm -rf "$work_dir"
+	return 1
+}
+
+# Fails unless every active broker is in source_dir and matches its json_sha256 entry.
+verifyBrokerDigests() {
+	local source_dir=$1
+	local main_config=$2
+
+	local active_brokers
+	if ! active_brokers=$(activeBrokerFileNames "$main_config"); then
+		printf "Error: could not read active_data_brokers from %s. Aborting.\n" "$main_config"
+		return 1
+	fi
+
+	local error_found=0
+	local file_name file_path expected found
+	while IFS= read -r file_name; do
+		expected=$(jq -r --arg file_name "$file_name" '.json_sha256[$file_name] // empty' "$main_config")
+		found=0
+		# installBrokerJSONs copies every file with this name, so check them all
+		while IFS= read -r file_path; do
+			found=1
+			if [[ "$(shasum -a 256 "$file_path" | cut -d ' ' -f 1)" != "$expected" ]]; then
+				printf "Error: %s does not match its json_sha256 entry\n" "$file_path"
+				error_found=1
+			fi
+		done < <(find "$source_dir" -name "$file_name")
+
+		if [[ $found -eq 0 ]]; then
+			printf "Error: active broker %s is missing from the archive\n" "$file_name"
+			error_found=1
+		fi
+	done <<< "$active_brokers"
+
+	return $error_found
+}
 
 activeBrokerFileNames() {
 	local main_config=$1
@@ -88,12 +151,14 @@ fetchMainConfig() {
 
 	printf "Downloading DBP main config...\n"
 	curl -fsS -L "$DBP_MAIN_CONFIG_URL" -o "$destination"
+	curl -fsS -L "$DBP_MAIN_CONFIG_SIGNATURE_URL" -o "${destination}.sig"
 }
 
 main() {
-	local script_dir target_dir
+	local script_dir target_dir signing_keys
 	script_dir=$(dirname "$(readlink -f "$0")")
 	target_dir="${script_dir}/${BROKER_JSON_DIR_RELATIVE_PATH}"
+	signing_keys=$(jq -r '.production[]' "${script_dir}/${SIGNING_KEYS_RELATIVE_PATH}")
 
 	printf "Processing DBP broker data: %s\n" "$DBP_BROKER_URL"
 
@@ -106,6 +171,16 @@ main() {
 
 	local main_config="${work_dir}/main_config.json"
 	fetchMainConfig "$main_config"
+
+	if ! verifyMainConfigSignature "$main_config" "${main_config}.sig" "$signing_keys"; then
+		printf "Error: main_config.json is not signed by any of the app's production keys. Aborting.\n"
+		exit 1
+	fi
+
+	if ! verifyBrokerDigests "$extract_dir" "$main_config"; then
+		printf "Error: broker JSONs do not match main_config.json. Aborting.\n"
+		exit 1
+	fi
 
 	installBrokerJSONs "$extract_dir" "$main_config" "$target_dir"
 

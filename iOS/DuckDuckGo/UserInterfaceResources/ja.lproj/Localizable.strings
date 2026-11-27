@@ -343,6 +343,12 @@
 /* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
 "aichat.attachment.unsupported.file.type.single" = "このファイル形式はサポートされていません。%@を添付してください。";
 
+/* accessibility label for closing the tab attachment picker without applying changes */
+"aichat.choose-tabs.close.accessibility-label" = "閉じる";
+
+/* accessibility label for applying the tab attachment selection */
+"aichat.choose-tabs.confirm.accessibility-label" = "選択したタブを添付する";
+
 /* empty state shown when no tabs match the search query */
 "aichat.choose-tabs.no-matches" = "一致するタブはありません";
 
@@ -367,8 +373,17 @@
 /* Caption shown below the input while editing a message, warning that submitting the edit replaces the existing response */
 "aichat.edit.replaceResponseDisclaimer" = "編集すると、既存の回答が新しい回答に置き換えられます。";
 
+/* Accessibility label for the close-tab button in the Duck.ai tab header */
+"aichat.header.closeTab.a11y" = "タブを閉じる";
+
 /* Title shown in the Duck.ai tab header while editing a previously sent message */
 "aichat.header.editMessage" = "メッセージを編集";
+
+/* Label shown in the Duck.ai tab header for free plan users */
+"aichat.header.freePlan" = "無料プラン";
+
+/* Label shown in the Duck.ai tab header for paid subscribers */
+"aichat.header.paidTitle" = "Duck.ai";
 
 /* Accessibility label for the Plus (+) button in the Duck.ai tab header that opens a menu of new-chat and new-tab actions */
 "aichat.header.plusMenu.a11y" = "新規";
@@ -403,6 +418,12 @@
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "新しいボイスチャット";
 
+/* Accessibility label for the chat-list / recent-chats button in the Duck.ai tab header */
+"aichat.header.recentChats.a11y" = "最近のチャット";
+
+/* Label shown in the Duck.ai tab header prompting free users to upgrade */
+"aichat.header.upgrade" = "アップグレード";
+
 /* Error toast shown when a Duck.ai chat download fails and nothing was saved. */
 "aiChat.history.download.failed.message" = "ダウンロードできませんでした。 もう一度お試しください。";
 
@@ -411,6 +432,9 @@
 
 /* Title shown when the user has no Duck.ai chat history yet. */
 "aiChat.history.emptyState.title" = "最近のチャットはありません";
+
+/* Accessibility label for the fire button that deletes every Duck.ai chat from the chats list. */
+"aiChat.history.fireAll.a11y" = "すべてのチャットを削除";
 
 /* Message of the alert shown when Duck.ai chat history fails to load. */
 "aiChat.history.loadError.message" = "Duck.aiのチャットの読み込み中に問題が発生しました。時間を置いてもう一度お試しください。";
@@ -459,6 +483,12 @@
 
 /* Multi-select toolbar button that deletes all chats when none are individually selected. */
 "aiChat.history.selection.deleteAll" = "すべて削除";
+
+/* Accessibility label for the close button of the iPad Duck.ai chats sidebar. */
+"aiChat.history.sidebar.hide.a11y" = "チャットを非表示";
+
+/* Accessibility label for the iPad Duck.ai button that opens the chats sidebar. */
+"aiChat.history.sidebar.show.a11y" = "チャットを表示";
 
 /* Accessibility label for the delete action revealed by swiping a Duck.ai chat row. */
 "aiChat.history.swipe.delete.a11y" = "チャットを削除";
@@ -567,6 +597,27 @@
 
 /* Link inside the Duck.ai Terms of Service disclaimer that opens the Duck.ai Privacy Policy and Terms of Service page */
 "aichat.termsOfService.disclaimer.link" = "プライバシーポリシーおよび利用規約";
+
+/* Accessibility label for the attachment button in the Duck.ai native input toolbar */
+"aichat.toolbar.attach.button.accessibility.label" = "添付";
+
+/* Accessibility label for the reasoning mode button in the Duck.ai native input toolbar */
+"aichat.toolbar.reasoning.button.accessibility.label" = "推論モード";
+
+/* Accessibility label for the return/new-line button in the Duck.ai native input toolbar */
+"aichat.toolbar.returnkey.button.accessibility.label" = "改行を挿入";
+
+/* Accessibility label for the stop generating button in the Duck.ai native input toolbar */
+"aichat.toolbar.stop.button.accessibility.label" = "生成を停止";
+
+/* Accessibility label for the submit button in the Duck.ai native input toolbar */
+"aichat.toolbar.submit.button.accessibility.label" = "送信";
+
+/* Accessibility label for the tools button in the unified input toolbar */
+"aichat.toolbar.tools.button.accessibility.label" = "ツール";
+
+/* Accessibility label for the button that clears the selected Duck.ai tool in unified input */
+"aichat.toolbar.tools.clear.button.accessibility.label" = "選択したツールを解除";
 
 /* Subtitle for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.subtitle" = "トーン、長さ、挙動を設定";
@@ -1579,6 +1630,21 @@
 /* Parameter is domain name (string) */
 "contextual.onboarding.browsing.one.tracker" = "*%1$@*がここでトラッキングを試行していました。それらをブロックしました！\n\n☝️ シールドをタップすると、詳細が表示されます。";
 
+/* Body of the alternative onboarding end-of-journey dialog promoting Duck.ai. */
+"contextual.onboarding.eoj-try-ai.message" = "チャットは匿名化されており、アカウントは必要ありません。 しかも無料です！";
+
+/* Primary button on the alternative onboarding end-of-journey dialog; opens Duck.ai. 'Duck.ai' is a brand name and should not be translated. */
+"contextual.onboarding.eoj-try-ai.primary-button" = "Duck.aiを試す";
+
+/* Secondary button on the alternative onboarding end-of-journey dialog; skips to the new tab page. */
+"contextual.onboarding.eoj-try-ai.secondary-button" = "スキップ";
+
+/* Title of the alternative onboarding end-of-journey dialog promoting Duck.ai. 'Duck.ai' is a brand name and should not be translated. */
+"contextual.onboarding.eoj-try-ai.title" = "Duck.aiで人気のAIとプライベートにチャット";
+
+/* Body of the onboarding end-of-journey dialog for users who chose the AI-chat download reason. 'Search' refers to the Search option of the address bar Search/Duck.ai toggle and should match its translation. 'Duck.ai' is a brand name and should not be translated. */
+"contextual.onboarding.eoj.private-ai-chat.message" = "Duck.aiとのプライベートAIチャットを開始するか、保護されたブラウジングのための検索に切り替えます。";
+
 /* Button on the last screen of the onboarding, it will dismiss the onboarding screen. */
 "contextual.onboarding.final-screen.button" = "ハイタッチ！";
 
@@ -2080,6 +2146,18 @@
 /* Navigation bar title for Duck.ai Control Center education screen */
 "duckai.control.center.education.navBar.title" = "コントロールセンターにDuck.ai Voiceショートカットを追加する";
 
+/* Button that declines using the on-device model. Duck.ai uses its cloud model instead. */
+"duckai.local-model-access.no-thanks" = "いいえ、結構です";
+
+/* Body of the pop-up asking whether Duck.ai may use the on-device model. %@ is the model's name, for example Apple Intelligence. */
+"duckai.local-model-access.prompt.message" = "ページの内容の要約など、一部のタスクで%@を使用します。 チャットの内容はデバイス内にとどまり、Duck.aiのプラン使用量も節約できます。";
+
+/* Title of the pop-up asking whether Duck.ai may use the on-device model. */
+"duckai.local-model-access.prompt.title" = "Duck.aiはプライバシー保護向上のためオンデバイスモデルの使用を求めています";
+
+/* Button that lets Duck.ai use the on-device model. */
+"duckai.local-model-access.turn-on" = "オンにする";
+
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGoのAI機能はプライベートでオプションです。データはAIのトレーニングに使用されません。";
 
@@ -2145,6 +2223,24 @@
 
 /* Used in the link to learn more about the AI features. */
 "duckai.settings.learn.more" = "詳細情報";
+
+/* Footer of the On-Device Model section in AI Features settings. It explains the toggle above it. */
+"duckai.settings.local-model-access.footer" = "オンデバイスモデルを使用すると、ページコンテンツをローカルに保持し、プランの使用量を節約できます。 オンデバイスモデルは、「ページを要約」などのアクションに使用されます。";
+
+/* Section title in AI Features settings for on-device models Duck.ai may use. */
+"duckai.settings.local-model-access.title" = "オンデバイスモデル";
+
+/* Message of the alert shown before turning on Apple Intelligence for Duck.ai page summaries, on iPad. */
+"duckai.settings.local-model-access.turn-on-confirmation.message.ipad" = "Duck.aiは、このiPadでページを要約するためにApple Intelligenceを使用します。 ページはiPad上で処理され、クラウドモデルに送信されることはなく、Duck.aiのプラン使用量も少なくなります。";
+
+/* Message of the alert shown before turning on Apple Intelligence for Duck.ai page summaries, on iPhone. */
+"duckai.settings.local-model-access.turn-on-confirmation.message.iphone" = "Duck.aiはこのiPhoneでページの要約にApple Intelligenceを使用します。 ページはこのiPhone上で処理され、クラウドモデルに送信されることはありません。また、Duck.aiプランの使用量も抑えられます。";
+
+/* Title of the alert shown before turning on Apple Intelligence for Duck.ai page summaries. */
+"duckai.settings.local-model-access.turn-on-confirmation.title" = "Apple Intelligenceをオンにしますか？";
+
+/* Title of the toggle in AI Features settings that lets Duck.ai use the on-device model. %@ is the model's name, for example Apple Intelligence. */
+"duckai.settings.local-model-access.use-model.title" = "%@を使用";
 
 /* Accessibility label for Duck.ai */
 "duckai.settings.title" = "Duck.ai";
@@ -2425,6 +2521,9 @@
 /* Suggested prompt submitted text: is a movie/show worth watching */
 "duckai.suggestion.worth-watching.prompt" = "この作品は見る価値がありますか？ネタバレなしで感想を教えてください。";
 
+/* Caption under the compose button that appears when the user pulls up past the bottom of a Duck.ai chat; releasing opens a new chat. */
+"duckai.swipe.new-chat.label" = "新しいチャット";
+
 /* Generic title sent to Duck.ai for an attached text selection rather than a full web page */
 "duckai.text-selection.context-title" = "テキストを選択";
 
@@ -2466,6 +2565,9 @@
 
 /* Text displayed when DuckPlayer is in 'Ask' mode. */
 "duckPlayer.ask.label" = "毎回確認";
+
+/* Button text to play a video in Duck Player */
+"duckplayer.floating.pill.title" = "Duck Playerで再生";
 
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "もう表示しない";
@@ -2742,6 +2844,9 @@
 
 /* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
 "escapeHatch.returnTo.withSubtitle.accessibility.label" = "%1$@、%2$@ に戻る";
+
+/* Button in the Return to module header that opens the tab switcher */
+"escapeHatch.showAllTabs.label" = "すべてのタブを表示";
 
 /* Swipe action that closes the open tab referenced by the escape hatch card */
 "escapeHatch.swipeAction.closeTab" = "タブを閉じる";
@@ -3024,6 +3129,9 @@
 
 /* No comment provided by engineer. */
 "feedback.websiteLoading.form.urlPlaceholder" = "どのウェブサイトに問題がありますか？";
+
+/* Clear Find in Page query */
+"findInPage.clear" = "検索をクリアします";
 
 /* Used to indicate number of entries found and position of the currently viewed one: e.g. 1 of 10 */
 "findinpage.count" = "%1$d / %2$d";
@@ -3320,13 +3428,31 @@
 "menuActualSize" = "原寸大";
 
 /* iPad menu bar command */
+"menuAddToDock" = "DuckDuckGoをDockに追加...";
+
+/* iPad menu bar command */
+"menuAddWidget" = "ホーム画面にウィジェットを追加...";
+
+/* iPad menu bar command */
 "menuBack" = "戻る";
+
+/* iPad menu bar title */
+"menuBookmarks" = "ブックマーク";
 
 /* iPad menu bar command */
 "menuClearTabsAndData" = "タブとデータをクリア";
 
+/* iPad Duck.ai menu bar command */
+"menuDeleteAllChats" = "すべてのチャットを削除...";
+
 /* iPad menu bar command */
 "menuDuplicateTab" = "タブを複製";
+
+/* iPad menu bar command */
+"menuExportBookmarks" = "ブックマークをエクスポート...";
+
+/* iPad menu bar submenu */
+"menuFavorites" = "お気に入り";
 
 /* iPad menu bar command */
 "menuFeedback" = "フィードバックを共有";
@@ -3335,7 +3461,13 @@
 "menuForward" = "次へ進む";
 
 /* iPad menu bar command */
+"menuHideBookmarks" = "ブックマークを隠す";
+
+/* iPad menu bar command */
 "menuHideDownloads" = "ダウンロードを非表示";
+
+/* iPad menu bar command */
+"menuHideDuckAIButton" = "Duck.aiボタンを非表示にする";
 
 /* iPad menu bar command */
 "menuHidePasswords" = "パスワードを非表示";
@@ -3344,13 +3476,31 @@
 "menuHideTabs" = "タブを非表示";
 
 /* iPad menu bar command */
+"menuImportBookmarks" = "ブックマークをインポート...";
+
+/* iPad menu bar command */
+"menuImportBookmarksAndPasswords" = "ブックマークとパスワードをインポート...";
+
+/* iPad menu bar command */
 "menuLastTab" = "最後のタブ";
+
+/* iPad Duck.ai menu bar command */
+"menuNewChat" = "新しいチャット";
+
+/* iPad Duck.ai menu bar command */
+"menuNewImageChat" = "新しい画像チャット";
 
 /* iPad menu bar command */
 "menuNewTabOnRight" = "右側に新しいタブを作成";
 
+/* iPad Duck.ai menu bar command */
+"menuNewVoiceChat" = "新しいボイスチャット";
+
 /* iPad menu bar command */
 "menuNextTab" = "次のタブを表示";
+
+/* iPad Duck.ai menu bar command */
+"menuOpenDuckAI" = "Duck.aiを開く";
 
 /* iPad menu bar command */
 "menuOpenLocation" = "場所を開く...";
@@ -3361,14 +3511,26 @@
 /* iPad menu bar command */
 "menuPrint" = "印刷...";
 
+/* iPad Duck.ai menu bar section header */
+"menuRecentChats" = "最近のチャット";
+
 /* iPad menu bar command selecting a numbered tab */
 "menuSelectTab" = "タブ%dを選択";
+
+/* iPad menu bar command */
+"menuSetDefaultBrowser" = "DuckDuckGoをデフォルトのブラウザに設定...";
 
 /* iPad menu bar command */
 "menuSettings" = "DuckDuckGoの設定...";
 
 /* iPad menu bar command */
+"menuShowBookmarks" = "ブックマークを表示";
+
+/* iPad menu bar command */
 "menuShowDownloads" = "ダウンロードを表示";
+
+/* iPad menu bar command */
+"menuShowDuckAIButton" = "Duck.aiボタンを表示する";
 
 /* iPad menu bar command */
 "menuShowPasswords" = "パスワードを表示";
@@ -3706,6 +3868,90 @@
 /* Title for the Strict Routing setting item. */
 "network.protection.vpn.strict.routing.setting.title" = "厳格なルーティングを強制する（推奨）";
 
+/* Opens the app settings from the New Tab Page customization sheet */
+"new-tab-page.customization.all-settings" = "すべての設定";
+
+/* Setting to always show the keyboard when a new tab is opened */
+"new-tab-page.customization.always-show-keyboard" = "キーボードを常に表示";
+
+/* Name of the New Tab Page section showing messages, in the customization sheet */
+"new-tab-page.customization.messages" = "メッセージ";
+
+/* Title of the sheet for customizing the New Tab Page */
+"new-tab-page.customization.title" = "新しいタブページをカスタマイズ";
+
+/* Dax greeting on the New Tab page. Refers to private AI chat. */
+"new-tab-page.dax-greeting.askMe" = "何でも聞いてみてください。";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.duckDuckHello" = "ダックダック、こんにちは。";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.friday" = "週末まであと少しです。";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.goodbyeAds" = "不気味な広告にさようなら！";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.heyThere" = "こんにちは。";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.howCanIHelp" = "今日はどのようにお手伝いできますか？";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.letsDoThis" = "始めましょう！";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.letsExplore" = "探索してみましょう。";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.monday" = "新しい週の始まり。さあ、頑張りましょう。";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.morning" = "朝日輝く、素敵な朝です。";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.newDayNewTabs" = "新しい一日、新しいタブ。";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.niceToSeeYou" = "お会いできてうれしいです。";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.nightOwl" = "かなり夜型です。";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.readyToSearchPrivately" = "プライバシーを守りながら検索する準備はできていますか？";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.readyWhenYouAre" = "準備ができたら、いつでもどうぞ。";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.stillAwake" = "眠ることはありません。";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.whatsOnYourMind" = "何を考えていますか？";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.whereShouldWeStart" = "どこから始めましょうか？";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.whereToToday" = "今日はどこへ行きますか？";
+
+/* Name field placeholder in the Add Favorite sheet */
+"new-tab-page.favorite.name" = "名前";
+
+/* Error shown when saving a favorite fails */
+"new-tab-page.favorite.save-failed" = "お気に入りを保存できませんでした。";
+
+/* URL field placeholder in the Add Favorite sheet */
+"new-tab-page.favorite.url" = "URL";
+
+/* Button that expands the New Tab Page favorites grid to show all favorites */
+"new-tab-page.favorites.see-all" = "すべて表示";
+
+/* Button that collapses the New Tab Page favorites grid to show fewer favorites */
+"new-tab-page.favorites.see-less" = "表示を減らす";
+
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "確認";
 
@@ -3784,8 +4030,41 @@
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "了解";
 
+/* The message of the onboarding dialog popup that promotes adding the DDG browser icon to the dock. */
+"onboarding.addToDock.promo.intro.message" = "すぐにアクセスできるよう、手の届きやすい場所に配置します";
+
 /* Button to change the default browser */
 "onboarding.browsers.cta" = "ブラウザを選択";
+
+/* Label for the option to set up the app to block ads and pop-ups. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.blockAds" = "広告とポップアップを\nブロックする";
+
+/* Label for the option to set up the app for private searching and browsing. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.browsePrivately" = "プライバシーを守って\n検索・閲覧";
+
+/* Label for the option to set up the app for private AI chat. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.chatWithAI" = "AIと\nプライベートにチャット";
+
+/* Heading shown above the browser comparison chart during onboarding for users who chose to search and browse privately or to chat with AI privately. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.comparison.title-generic" = "ここがぴったりの\n場所です！\n保護が有効に\nなりました。";
+
+/* Heading shown above the browser comparison chart during onboarding for users who chose to block ads and pop-ups. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.comparison.title-no-ads" = "ここがぴったりの\n場所です！\n広告ブロックが有効に\nなりました。";
+
+/* Heading shown above the browser comparison chart during onboarding for users who chose to disable AI features. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.comparison.title-no-ai" = "ここがぴったりの\n場所です！\nAI機能は\n無効です。";
+
+/* Button to continue to the next onboarding screen after choosing a reason. */
+"onboarding.downloadReason.cta" = "次へ";
+
+/* Subtitle of the onboarding screen asking why the user downloaded the app. */
+"onboarding.downloadReason.message" = "一番興味のあるものを選んで、そこから始めましょう。";
+
+/* Label for the option to set up the app without AI features in search results. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.removeAI" = "AI機能を\n無効化";
+
+/* Title of the onboarding screen asking why the user downloaded the app. */
+"onboarding.downloadReason.title" = "自分好みに設定しましょう";
 
 /* Message in the onboarding dialog popup that promotes adding the DuckDuckGo browser icon to the iPhone dock, shown during the Duck.ai onboarding flow. */
 "onboarding.duckai.addToDock.promo.message" = "日常のAIチャットやブラウジングにいつでも簡単にアクセスできるよう、すぐに使える場所に配置します。";
@@ -3814,8 +4093,8 @@
 /* Title of the dialog in the Duck.ai onboarding flow asking the user if they want to set DuckDuckGo as their default browser. */
 "onboarding.duckai.browser.title" = "DuckDuckGoをデフォルトのブラウザに設定しますか？";
 
-/* Message of the last screen of the onboarding to the browser app for the Duck.ai flow. 'Duck.ai' is a brand name and should not be translated. '[[chat_icon]]' is a placeholder and should not be translated. */
-"onboarding.duckai.contextual.end-of-journey.message" = "Duck.aiとのプライベートAIチャットを開始するか、保護されたブラウジングのための検索に切り替えます。\n\nDuck.aiはチャットアイコン[[chat_icon]]が表示されている場所ならどこからでも使えます";
+/* Message of the last screen of the onboarding to the browser app for the Duck.ai flow. */
+"onboarding.duckai.contextual.end-of-journey.message" = "Duck.aiとプライベートなAIチャットを開始したり、保護されたブラウザでの検索に切り替えたりしましょう。";
 
 /* Body text of the subscription promo shown at the end of the Duck.ai onboarding flow. Describes the paid Duck.ai subscription. 'GPT', 'Claude' are brand names and should not be translated. */
 "onboarding.duckai.contextual.subscription.message" = "また、GPTやClaudeの高度なAIモデルを備えた上限の高いチャット、セキュアなVPN、その他を含む有料サブスクリプションも提供しています。";
@@ -3940,6 +4219,84 @@
 /* Button to skip the onboarding process */
 "onboarding.intro.cta.skip" = "すでに確認しています";
 
+/* Subtitle for the accept-other-cookies option on the onboarding ad-blocking personalization screen. */
+"onboarding.personalization.adBlocking.acceptOtherCookies.subtitle" = "拒否できないCookieを受け入れることでさらに多くのポップアップを非表示にします";
+
+/* Title for the accept-other-cookies option on the onboarding ad-blocking personalization screen. */
+"onboarding.personalization.adBlocking.acceptOtherCookies.title" = "一部のCookieを受け入れる";
+
+/* Button to continue to the next onboarding screen from the ad-blocking personalization screen. */
+"onboarding.personalization.adBlocking.cta" = "次へ";
+
+/* Footer text shown above the button on the ad-blocking personalization screen, reassuring the user the choices can be changed later. */
+"onboarding.personalization.adBlocking.footer" = "後からいつでも設定で調整できます。";
+
+/* Subtitle for the reject-optional-cookies option on the onboarding ad-blocking personalization screen. */
+"onboarding.personalization.adBlocking.rejectOptionalCookies.subtitle" = "プライバシーを最大限に守り、Cookieのポップアップを閉じます";
+
+/* Title for the reject-optional-cookies option on the onboarding ad-blocking personalization screen. */
+"onboarding.personalization.adBlocking.rejectOptionalCookies.title" = "任意のCookieを拒否する";
+
+/* Title of the onboarding ad-blocking personalization screen. */
+"onboarding.personalization.adBlocking.title" = "ノイズのないインターネット。";
+
+/* Title for the YouTube ad blocking option on the onboarding ad-blocking personalization screen. 'YouTube' is a brand name and should not be translated. */
+"onboarding.personalization.adBlocking.youTubeAdBlocking.title" = "YouTubeで動画広告をブロック";
+
+/* Primary button to open new tabs with AI chat on the onboarding address bar toggle mode personalization screen. */
+"onboarding.personalization.addressBarToggle.cta.primary" = "AIチャットでタブを開く";
+
+/* Secondary button to dismiss the onboarding address bar toggle mode personalization screen. */
+"onboarding.personalization.addressBarToggle.cta.secondary" = "後で";
+
+/* Footer of the onboarding address bar toggle mode personalization screen. 'Search' refers to the Search option of the address bar Search/Duck.ai toggle and should match its translation. */
+"onboarding.personalization.addressBarToggle.footer" = "ワンタップで検索に切り替えられます";
+
+/* Title of the onboarding address bar toggle mode personalization screen. */
+"onboarding.personalization.addressBarToggle.title" = "新しいタブを開いたときにAIチャットを表示しますか？";
+
+/* Button to continue to the next onboarding screen from the AI model personalization screen. */
+"onboarding.personalization.aiModel.cta" = "次へ";
+
+/* Message of the onboarding AI model personalization screen. Duck.ai is a brand name and should not be translated */
+"onboarding.personalization.aiModel.message" = "Duck.aiなら、いつでも切り替えられます。";
+
+/* Title of the onboarding AI model personalization screen. */
+"onboarding.personalization.aiModel.title" = "まず試すAIを選択";
+
+/* Button to continue to the next onboarding screen from the AI search personalization screen. */
+"onboarding.personalization.aiSearch.cta" = "次へ";
+
+/* Subtitle for the hide AI-generated images option on the onboarding AI search personalization screen. */
+"onboarding.personalization.aiSearch.hideAIGeneratedImages.subtitle" = "画像検索結果から既知のAIスパムサイトを除外";
+
+/* Title for the hide AI-generated images option on the onboarding AI search personalization screen. */
+"onboarding.personalization.aiSearch.hideAIGeneratedImages.title" = "AI生成画像を非表示";
+
+/* Subtitle for the Search Assist option on the onboarding AI search personalization screen. */
+"onboarding.personalization.aiSearch.searchAssist.subtitle" = "検索結果にAI生成の回答を含める";
+
+/* Title for the Search Assist option on the onboarding AI search personalization screen. 'Search Assist' is a DuckDuckGo product name and should not be translated. */
+"onboarding.personalization.aiSearch.searchAssist.title" = "Search Assist";
+
+/* Title of the onboarding AI search personalization screen. */
+"onboarding.personalization.aiSearch.title" = "AIなしで検索";
+
+/* Primary button to turn Duck.ai on from the onboarding Duck.ai enabled personalization screen. 'Duck.ai' is a brand name and should not be translated. */
+"onboarding.personalization.duckAIEnabled.cta.primary" = "Duck.aiをオンにする";
+
+/* Secondary button to keep Duck.ai off from the onboarding Duck.ai enabled personalization screen. 'Duck.ai' is a brand name and should not be translated. */
+"onboarding.personalization.duckAIEnabled.cta.secondary" = "Duck.aiをオフのままにする";
+
+/* Message of the onboarding Duck.ai enabled personalization screen. 'Duck.ai' is a brand name and should not be translated. */
+"onboarding.personalization.duckAIEnabled.message" = "Duck.aiでは、チャットは当社によって匿名化され、AIのトレーニングに使用されることはありません。";
+
+/* Title of the onboarding Duck.ai enabled personalization screen. */
+"onboarding.personalization.duckAIEnabled.title" = "人気のAIとプライベートにチャットする機能を使いたいですか？";
+
+/* Title for the private search Duck.ai query onboarding screen. */
+"onboarding.personalization.duckAIQuery.privateSearch.title" = "さあ、プライベート検索を試してみましょう！";
+
 /* Button on the Privacy Pro promotion onboarding step. Tapping the button navigates to the Privacy Pro paywall. */
 "onboarding.privacypro.promo.buttons.learnMore" = "詳細情報";
 
@@ -3996,15 +4353,6 @@
 
 /* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
 "onboarding.subscription.promo.buttons.tryItForFree" = "無料でお試しください。";
-
-/* Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold). */
-"onboarding.subscription.promo.message" = "DuckDuckGoには、%2$@で利用できる安全な%1$@もあります。";
-
-/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
-"onboarding.subscription.promo.message.optional-subscription-bold" = "オプションの有料サブスクリプション";
-
-/* Bold text 'VPN + 2 more premium protections'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag. */
-"onboarding.subscription.promo.message.vpn-two-more-bold" = "VPN + プレミアム保護をさらに2つ追加";
 
 /* No comment provided by engineer. */
 "onboarding.widgets.continueButton" = "ウィジェットを追加";
@@ -4180,11 +4528,17 @@
 /* Description of too many requests error when syncing. */
 "prefrences.sync.too-many-requests.description" = "Sync & Backupは一時的に利用できません。";
 
+/* Fireproofing setting toggle label */
+"preserveLogins.askOnSignIn" = "サインイン時にサイトにFireproof機能を適用するか尋ねる";
+
 /* No comment provided by engineer. */
 "preserveLogins.domain.list.footer" = "ウェブサイトは、サインイン状態を維持するためにCookieに依存しています。サイトをFireproof設定しても、Cookieは消去されず、Fire Buttonを使用した後でもログインしたままになります。Fireproofウェブサイトで見つかったサードパーティトラッカーは引き続きブロックされます。";
 
 /* Section header above Fireproofed websites list */
 "preserveLogins.domain.list.title" = "Fireproofサイト";
+
+/* Empty Fireproof sites list */
+"preserveLogins.emptyState" = "Fireproof機能の適用サイトはまだありません";
 
 /* Alert message explaining to users that the benefit of fireproofing a site is that they will be kept signed in */
 "preserveLogins.fireproof.message" = "このサイトをFireproof設定すると、Fire Buttonを使用した後もサインイン状態が維持されます。";
@@ -4215,6 +4569,9 @@
 
 /* Confirmation button in alert */
 "preserveLogins.remove.all.ok" = "OK";
+
+/* Button to remove all Fireproof sites */
+"preserveLogins.removeAllSites" = "Fireproof機能の適用サイトをすべて削除";
 
 /* No comment provided by engineer. */
 "Previews" = "プレビュー";
@@ -4518,6 +4875,12 @@
 
 /* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
 "settings.aifeatures.hide.ai.generated.images.subtitle" = "画像検索結果から既知のAIスパムサイトが除外されます。[詳細を表示](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
+
+/* Settings screen description for the Duck.ai keyboard animation toggle */
+"settings.aifeatures.keyboard.animation.subtitle" = "Duck.aiに切り替えたときや、Duck.aiで入力したときに、キーボードの周囲にアニメーションを表示します。";
+
+/* Settings screen toggle title for the Duck.ai keyboard animation */
+"settings.aifeatures.keyboard.animation.title" = "Duck.aiのキーボードアニメーション";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "常にオン";
@@ -4907,12 +5270,6 @@
 "settings.subscription.DBP.title" = "Personal Information Removal";
 
 /* Privacy pro description subtitle in settings */
-"settings.subscription.description.no.duck.ai.row" = "登録者は、VPNとIdentity Theft Restorationを利用できます。";
-
-/* Privacy pro description subtitle in settings */
-"settings.subscription.description.no.duck.ai.us" = "登録者は、VPN、Personal Information Removal、Identity Theft Restorationを利用できます。";
-
-/* Privacy pro description subtitle in settings */
 "settings.subscription.description.row" = "登録者は、VPN、Duck.aiの高度なAIモデル、Identity Theft Restorationを利用できます。";
 
 /* Privacy pro description subtitle in settings */
@@ -4941,9 +5298,6 @@
 
 /* Call to action title for Privacy Pro settings */
 "settings.subscription.subscribe.title" = "Wi-Fiを保護して高度なAIモデルでプライベートにチャット";
-
-/* Call to action title for Privacy Pro settings */
-"settings.subscription.subscribe.title.no.ai.chat" = "Wi-Fiを保護して個人情報を安全に";
 
 /* Try DuckDuckGo Subscription Free button text */
 "settings.subscription.try.free.button" = "無料で試す";
@@ -5170,9 +5524,6 @@
 /* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
 "subscription.cancel.pending.downgrade.banner.caption" = "プランは%2$@に%1$@にダウングレードされます。";
 
-/* Change plan or cancel title */
-"subscription.change.plan" = "プランを更新するかキャンセル";
-
 /* Navigation Button for closing subscription view */
 "subscription.close" = "閉じる";
 
@@ -5206,6 +5557,9 @@
 /* Alert content for not found subscription */
 "subscription.expired.alert.message" = "このAppleアカウントに関連付けられたサブスクリプションはもうアクティブではありません。";
 
+/* Subtitle in header when the subscription has been cancelled but is still active until it expires */
+"subscription.expiring" = "まもなく期限切れ";
+
 /* FAQ Button */
 "subscription.faq" = "よくある質問とサポート";
 
@@ -5235,6 +5589,9 @@
 
 /* Header for the subscription section */
 "subscription.manage.title" = "定額制";
+
+/* Subscription status shown after the user withdrew from the subscription contract */
+"subscription.not.subscribed" = "未登録";
 
 /* Alert content for not found subscription */
 "subscription.notFound.alert.message" = "このAppleアカウントに関連付けられたサブスクリプションはありません。";
@@ -5277,6 +5634,9 @@
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "サブスクリプションを復元しています...";
+
+/* Progress view title while withdrawing from the subscription contract */
+"subscription.progress.view.withdraw.in.progress" = "解約手続き中…";
 
 /* Dismiss button on the reinstaller subscription promo. */
 "subscription.promo.reinstaller.buttons.notNow" = "後で";
@@ -5383,6 +5743,45 @@
 /* View All Plans button to see available subscription tiers */
 "subscription.view.all.plans" = "全プランを表示";
 
+/* Button that confirms withdrawal from the subscription contract */
+"subscription.withdraw.confirm.button" = "退会を確定";
+
+/* Duck.ai item in the list of features that stop working after withdrawing from the subscription contract, e.g. VPN, Personal Information Removal and advanced Duck.ai models */
+"subscription.withdraw.confirm.feature.advanced.duckai" = "高度なDuck.aiモデル";
+
+/* Second paragraph of the alert confirming withdrawal from the subscription contract. Parameter is a localized list of features, e.g. VPN, Personal Information Removal and advanced Duck.ai models. */
+"subscription.withdraw.confirm.features.message" = "%@は、確認すると利用できなくなります。";
+
+/* Message of the alert confirming withdrawal from the subscription contract. Parameters are the tier name (e.g. Plus) and the refund amount with currency. */
+"subscription.withdraw.confirm.message" = "%1$@のサブスクリプションはすぐに終了し、14日以内に元のお支払い方法に%2$@が返金されます。";
+
+/* Message of the alert confirming withdrawal from the subscription contract, used when the refund amount is unknown. Parameter is the tier name (e.g. Plus). */
+"subscription.withdraw.confirm.message.no.amount" = "%@のサブスクリプションはすぐに終了し、14日以内に元のお支払い方法に全額が返金されます。";
+
+/* Title of the alert confirming withdrawal from the subscription contract */
+"subscription.withdraw.confirm.title" = "サブスクリプションを解約しますか？";
+
+/* Button that opens the help page to complete a failed subscription withdrawal */
+"subscription.withdraw.error.button" = "ヘルプページを開く";
+
+/* Message of the alert shown when withdrawing from the subscription contract fails */
+"subscription.withdraw.error.message" = "解約を自動で処理できませんでした。 解約を完了するには、ヘルプページをご覧ください。";
+
+/* Action title that starts withdrawing from the subscription contract with a full refund */
+"subscription.withdraw.from.contract" = "解約する";
+
+/* Subtitle of the Withdraw from Contract action. Parameter is the last date the user can withdraw. */
+"subscription.withdraw.from.contract.subtitle" = "解約して全額返金を受けられるのは%@までです";
+
+/* Button that dismisses the withdrawal confirmation and keeps the subscription */
+"subscription.withdraw.keep.button" = "サブスクリプションを継続";
+
+/* Confirmation shown after withdrawing from the subscription contract. Parameter is the withdrawal date. */
+"subscription.withdrawn.info" = "%@に解約しました。";
+
+/* Shown below the withdrawal confirmation. Parameter is the refunded amount with currency. */
+"subscription.withdrawn.refund.info" = "%@の返金を処理しています。";
+
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "SwiftUIアラート";
 
@@ -5404,11 +5803,29 @@
 /* Fallback device name for confirmation dialogs */
 "sync.pairing-v2.unknown-peer-name" = "もう一方のデバイス";
 
+/* Title for a button in the Sync Promotion banner on the Bookmarks or Passwords screen that opens Sync settings to connect another device */
+"sync.promo.another-device.connect.action" = "接続";
+
+/* Message for the Sync Promotion banner on the Bookmarks or Passwords screen, shown when Sync is on but only this device is connected */
+"sync.promo.another-device.message" = "このデバイスではSync & Backupが有効になっています。";
+
+/* Title for a button in the Sync Promotion banner on the Bookmarks or Passwords screen that opens a screen with links to get DuckDuckGo on other platforms */
+"sync.promo.bookmarks.another-device.get-desktop-app.action" = "アプリを入手";
+
+/* Title for the Sync Promotion banner on the Bookmarks screen, shown when Sync is on but only this device is connected */
+"sync.promo.bookmarks.another-device.title" = "デスクトップアプリともブックマークを同期しますか？";
+
 /* Message for the Sync Promotion banner when user has bookmarks that can be synced */
 "sync.promo.bookmarks.message" = "アカウントは必要ありません。エンドツーエンドの暗号化により、お客様以外は誰もブックマークを見ることができません。当社ですらアクセスできません。";
 
+/* Message for the redesigned Sync Promotion banner on the Bookmarks screen */
+"sync.promo.bookmarks.redesign.message" = "エンドツーエンドで暗号化されています。 お客様以外は誰もブックマークを見ることができません。当社ですら見ることはできません。";
+
 /* Title for the Sync Promotion banner */
 "sync.promo.bookmarks.title" = "ブックマークを同期してバックアップ";
+
+/* Accessibility label for the close button on the Sync Promotion banner */
+"sync.promo.close.accessibility.label" = "同期プロモーションを閉じる";
 
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "同期を設定";
@@ -5422,11 +5839,20 @@
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "いいえ、結構です";
 
+/* Title for the Sync Promotion banner on the Passwords screen, shown when Sync is on but only this device is connected */
+"sync.promo.passwords.another-device.title" = "デスクトップアプリともパスワードを同期しますか？";
+
 /* Message for the Sync Promotion banner when user has passwords that can be synced */
 "sync.promo.passwords.message" = "アカウントは必要ありません。エンドツーエンドの暗号化により、お客様以外は誰もパスワードを見ることができません。当社ですらアクセスできません。";
 
+/* Message for the redesigned Sync Promotion banner on the Passwords screen */
+"sync.promo.passwords.redesign.message" = "エンドツーエンドで暗号化されています。 誰にもパスワードを見ることはできません。私たちにも見えません。";
+
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "パスワードの同期とバックアップ";
+
+/* Title for the button in the redesigned Sync Promotion banner and the Data Import summary Sync card that opens Sync settings and starts setting up Sync */
+"sync.promo.redesign.confirm.action" = "同期を開始";
 
 /* Button title to start backup */
 "sync.recovery.alternative.prompt.backup.button" = "このデバイスの同期とバックアップ";
@@ -5547,6 +5973,12 @@
 
 /* Bookmark all tabs menu item */
 "tab.switcher.bookmarkAll" = "すべてのタブをブックマーク";
+
+/* Menu item that switches the tab switcher to a grid layout */
+"tab.switcher.grid.view.menu.title" = "グリッド";
+
+/* Menu item that switches the tab switcher to a list layout */
+"tab.switcher.list.view.menu.title" = "リスト";
 
 /* Action button to hide tracker count banner */
 "tab.switcher.tracker.count.hide.action" = "隠す";

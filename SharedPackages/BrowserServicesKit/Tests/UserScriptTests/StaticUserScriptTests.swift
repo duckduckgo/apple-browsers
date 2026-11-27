@@ -23,8 +23,7 @@ import WebKit
 
 class StaticUserScriptTests: XCTestCase {
     class TestStaticUserScript: NSObject, StaticUserScript {
-        @MainActor
-        static var source: String = {
+        nonisolated static let source: String = {
             do {
                 return try TestStaticUserScript.loadJS("testUserScript", from: .module, withReplacements: ["${val}": "Test"])
             } catch {
@@ -32,13 +31,11 @@ class StaticUserScriptTests: XCTestCase {
                 return ""
             }
         }()
-        @MainActor
-        static var injectionTime: WKUserScriptInjectionTime = .atDocumentEnd
-        @MainActor
-        static var forMainFrameOnly: Bool = false
-        static var script: WKUserScript = TestStaticUserScript.makeWKUserScript()
+        nonisolated static let injectionTime: WKUserScriptInjectionTime = .atDocumentEnd
+        nonisolated static let forMainFrameOnly: Bool = false
+        static let script: WKUserScript = TestStaticUserScript.makeWKUserScript()
 
-        var messageNames: [String] = []
+        nonisolated let messageNames: [String] = []
 
         func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         }

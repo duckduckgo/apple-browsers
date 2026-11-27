@@ -22,8 +22,6 @@ import Core
 
 final class OnboardingConfiguration {
 
-    lazy var daxDialogs = DaxDialogs(entityProviding: ContentBlocking.shared.contentBlockingManager)
-
     func migrateToNewOnboarding() {
         // Hide Dax Dialogs if users already completed old onboarding.
         DaxDialogsOnboardingMigrator().migrateFromOldToNewOnboarding()
@@ -31,7 +29,7 @@ final class OnboardingConfiguration {
 
     // assign it here, because "did become active" is already too late and "viewWillAppear"
     // has already been called on the HomeViewController so won't show the home row CTA
-    func adjustDialogsForUITesting() {
+    func adjustDialogsForUITesting(daxDialogs: DaxDialogs) {
         let launchOptionsHandler = LaunchOptionsHandler()
 
         // MARK: perform first time launch logic here

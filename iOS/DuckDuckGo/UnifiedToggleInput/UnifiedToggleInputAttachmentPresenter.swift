@@ -64,6 +64,9 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
     var fileMetadataValidationMessage: ((FileMetadata) -> String?)?
     /// Supplies the UTI surface for attachment pixels. Set by the coordinator; defaults to `.addressBar`.
     var pixelSurfaceProvider: (() -> UnifiedToggleInputPixelSurface)?
+    /// Supplies the temporary `simplified_prompt_box` param for attachment pixels. Hosts without the simplified
+    /// prompt box (the iPad address bar) keep the default, `off`.
+    var simplifiedPromptBoxProvider: () -> Bool = { false }
     var isFireTabProvider: (() -> Bool)?
 
     nonisolated static func recoverFileAttachment(from metadata: FileMetadata, id: UUID = UUID()) -> AIChatFileAttachment? {
@@ -92,6 +95,7 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
 
     func makeAttachmentMenu(
         presenterProvider: @escaping () -> UIViewController?,
+        onItemSelected: @escaping (UnifiedToggleInputAttachMenuItem) -> Void,
         photoSelectionLimit: Int,
         canAttachFile: Bool,
         allowedFileTypes: [UTType],
@@ -101,14 +105,17 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
         attachedTabIds: Set<TabUID> = [],
         tabAttachmentLimit: Int = 0,
         isTabSelectionAvailable: @escaping () -> Bool = { false },
-        tabActionHandler: ((MultiTabAttachmentCandidate, Bool, TabAttachmentOrigin) -> TabAttachmentSelectionResult)? = nil
+        tabActionHandler: ((MultiTabAttachmentCandidate, Bool, TabAttachmentOrigin) -> TabAttachmentSelectionResult)? = nil,
+        isSimplified: Bool = false,
+        tools: UTIAttachMenuTools? = nil
     ) -> UIMenu? {
         let canAttachPhoto = photoSelectionLimit > 0
         let canTakePhoto = canAttachPhoto && UIImagePickerController.isSourceTypeAvailable(.camera)
         let canAttachAllowedFile = canAttachFile && !allowedFileTypes.isEmpty
         let canAttachPageContext = pageContextActionHandler != nil
         let showsTabAction = !attachableTabs.isEmpty && tabActionHandler != nil
-        guard canTakePhoto || canAttachPhoto || canAttachAllowedFile || showsPageContextAction || showsTabAction else { return nil }
+        let hasEnabledTool = tools?.menu.hasEnabledItem ?? false
+        guard canTakePhoto || canAttachPhoto || canAttachAllowedFile || showsPageContextAction || showsTabAction || hasEnabledTool else { return nil }
 
         var actions: [UIMenuElement] = [
             UIAction(
@@ -117,24 +124,27 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
                 attributes: canTakePhoto ? [] : .disabled
             ) { [weak self] _ in
                 guard canTakePhoto else { return }
+                onItemSelected(.camera)
                 guard let presenter = presenterProvider() else { return }
                 self?.presentCamera(from: presenter)
             },
             UIAction(
-                title: UserText.aiChatAttachmentOptionAttachPhoto,
+                title: isSimplified ? UserText.aiChatAttachmentOptionAddImages : UserText.aiChatAttachmentOptionAttachPhoto,
                 image: DesignSystemImages.Glyphs.Size16.image,
                 attributes: canAttachPhoto ? [] : .disabled
             ) { [weak self] _ in
                 guard canAttachPhoto else { return }
+                onItemSelected(.photoLibrary)
                 guard let presenter = presenterProvider() else { return }
                 self?.presentPhotoPicker(from: presenter, selectionLimit: photoSelectionLimit)
             },
             UIAction(
-                title: UserText.aiChatAttachmentOptionAttachFile,
+                title: isSimplified ? UserText.aiChatAttachmentOptionAddFiles : UserText.aiChatAttachmentOptionAttachFile,
                 image: DesignSystemImages.Glyphs.Size16.folder,
                 attributes: canAttachAllowedFile ? [] : .disabled
             ) { [weak self] _ in
                 guard canAttachAllowedFile else { return }
+                onItemSelected(.filePicker)
                 guard let presenter = presenterProvider() else { return }
                 self?.presentDocumentPicker(from: presenter, allowedFileTypes: allowedFileTypes)
             }
@@ -148,30 +158,69 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
                     attributes: canAttachPageContext ? [] : .disabled
                 ) { _ in
                     guard canAttachPageContext else { return }
+                    onItemSelected(.page)
                     pageContextActionHandler?()
                 }
             )
         }
 
         if showsTabAction, let tabActionHandler {
-            actions.insert(Self.makeRecentTabsSection(attachableTabs: attachableTabs,
-                                                      attachedTabIds: attachedTabIds,
-                                                      attachmentLimit: tabAttachmentLimit,
-                                                      tabActionHandler: tabActionHandler), at: 0)
-            actions.append(makeTabPickerAction(presenterProvider: presenterProvider,
-                                              attachableTabs: attachableTabs,
-                                              attachedTabIds: attachedTabIds,
-                                              attachmentLimit: tabAttachmentLimit,
-                                              isAvailable: isTabSelectionAvailable,
-                                              tabActionHandler: tabActionHandler))
+            addTabActions(to: &actions,
+                          presenterProvider: presenterProvider,
+                          attachableTabs: attachableTabs,
+                          attachedTabIds: attachedTabIds,
+                          attachmentLimit: tabAttachmentLimit,
+                          showsRecentTabs: !isSimplified,
+                          isAvailable: isTabSelectionAvailable,
+                          onItemSelected: onItemSelected,
+                          tabActionHandler: tabActionHandler)
         }
 
+        actions.append(contentsOf: Self.makeToolsSection(tools, onItemSelected: onItemSelected))
+
         return UIMenu(children: actions)
+    }
+
+    private static func makeToolsSection(_ tools: UTIAttachMenuTools?,
+                                         onItemSelected: @escaping (UnifiedToggleInputAttachMenuItem) -> Void) -> [UIMenuElement] {
+        guard let tools, !tools.menu.items.isEmpty else { return [] }
+        return [UTIToolsMenuFactory().makeAttachMenuSection(tools.menu) { identifier in
+            if let item = UnifiedToggleInputAttachMenuItem(tool: identifier) {
+                onItemSelected(item)
+            }
+            tools.onSelect(identifier)
+        }]
+    }
+
+    private func addTabActions(to actions: inout [UIMenuElement],
+                               presenterProvider: @escaping () -> UIViewController?,
+                               attachableTabs: [MultiTabAttachmentCandidate],
+                               attachedTabIds: Set<TabUID>,
+                               attachmentLimit: Int,
+                               showsRecentTabs: Bool,
+                               isAvailable: @escaping () -> Bool,
+                               onItemSelected: @escaping (UnifiedToggleInputAttachMenuItem) -> Void,
+                               tabActionHandler: @escaping (MultiTabAttachmentCandidate, Bool, TabAttachmentOrigin) -> TabAttachmentSelectionResult) {
+        if showsRecentTabs {
+            actions.insert(Self.makeRecentTabsSection(attachableTabs: attachableTabs,
+                                                      attachedTabIds: attachedTabIds,
+                                                      attachmentLimit: attachmentLimit,
+                                                      onItemSelected: onItemSelected,
+                                                      tabActionHandler: tabActionHandler), at: 0)
+        }
+        actions.append(makeTabPickerAction(presenterProvider: presenterProvider,
+                                          attachableTabs: attachableTabs,
+                                          attachedTabIds: attachedTabIds,
+                                          attachmentLimit: attachmentLimit,
+                                          isAvailable: isAvailable,
+                                          onItemSelected: onItemSelected,
+                                          tabActionHandler: tabActionHandler))
     }
 
     private static func makeRecentTabsSection(attachableTabs: [MultiTabAttachmentCandidate],
                                               attachedTabIds: Set<TabUID>,
                                               attachmentLimit: Int,
+                                              onItemSelected: @escaping (UnifiedToggleInputAttachMenuItem) -> Void,
                                               tabActionHandler: @escaping (MultiTabAttachmentCandidate, Bool, TabAttachmentOrigin) -> TabAttachmentSelectionResult) -> UIMenu {
         let reachedAttachmentLimit = attachedTabIds.count >= attachmentLimit
         let tabActions: [UIAction] = attachableTabs.prefix(recentTabsMenuItemLimit).map { candidate in
@@ -180,10 +229,13 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
                 .replacingOccurrences(of: "\n", with: " ")
                 .truncated(to: recentTabTitleCharacterLimit, position: .tail)
             let favicon = makeRecentTabMenuFavicon(for: candidate)
+            let isEnabled = isAttached || !reachedAttachmentLimit
             return UIAction(title: title,
                             image: favicon,
-                            attributes: reachedAttachmentLimit && !isAttached ? .disabled : [],
+                            attributes: isEnabled ? [] : .disabled,
                             state: isAttached ? .on : .off) { action in
+                guard isEnabled else { return }
+                onItemSelected(.recentTab)
                 guard tabActionHandler(candidate, !isAttached, .recentTabs).isSuccessful else { return }
                 action.state = action.state == .on ? .off : .on
             }
@@ -225,10 +277,13 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
                                      attachedTabIds: Set<TabUID>,
                                      attachmentLimit: Int,
                                      isAvailable: @escaping () -> Bool,
+                                     onItemSelected: @escaping (UnifiedToggleInputAttachMenuItem) -> Void,
                                      tabActionHandler: @escaping (MultiTabAttachmentCandidate, Bool, TabAttachmentOrigin) -> TabAttachmentSelectionResult) -> UIAction {
         UIAction(title: UserText.aiChatAttachmentOptionAddTabs,
                  image: DesignSystemImages.Glyphs.Size16.tabContent) { [weak self] _ in
-            guard isAvailable(), let presenter = presenterProvider() else { return }
+            guard isAvailable() else { return }
+            onItemSelected(.tabPicker)
+            guard let presenter = presenterProvider() else { return }
             self?.presentTabPicker(from: presenter,
                                    attachableTabs: attachableTabs,
                                    attachedTabIds: attachedTabIds,
@@ -323,6 +378,11 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
     /// Opens the system file picker directly (bypassing the attachment menu) for the promo "add file" CTA.
     func presentFilePicker(from presenter: UIViewController, allowedFileTypes: [UTType]) {
         presentDocumentPicker(from: presenter, allowedFileTypes: allowedFileTypes)
+    }
+
+    /// Opens the photo library directly (bypassing the attachment menu) for the new chat hint.
+    func presentPhotoLibrary(from presenter: UIViewController, selectionLimit: Int) {
+        presentPhotoPicker(from: presenter, selectionLimit: selectionLimit)
     }
 }
 
@@ -453,21 +513,22 @@ extension UnifiedToggleInputAttachmentPresenter: PHPickerViewControllerDelegate 
         let callbacks = takeCallbacks(for: picker)
         picker.dismiss(animated: true)
         callbacks.onExpandIfNeeded?()
+        // Read at pick time, so the pixel keeps its params even if the presenter is gone when the image loads.
+        let pixelParameters = imageAttachedPixelParameters(source: "photo_library")
 
         for result in results {
             let provider = result.itemProvider
             guard provider.canLoadObject(ofClass: UIImage.self) else { continue }
             let suggestedName = provider.suggestedName ?? "image"
 
-            provider.loadObject(ofClass: UIImage.self) { [weak self] object, _ in
+            provider.loadObject(ofClass: UIImage.self) { object, _ in
                 guard let picked = object as? UIImage else { return }
                 let image = AIChatImageAttachment.resizedForAttachment(picked)
 
                 Task { @MainActor in
-                    let surface = self?.pixelSurfaceProvider?() ?? .addressBar
                     PixelKit.fire(Pixel.Event.unifiedToggleInputImageAttached,
                                   frequency: .dailyAndCount,
-                                  options: .parameters(["source": "photo_library", "surface": surface.rawValue]))
+                                  options: .parameters(pixelParameters))
                     callbacks.onImagePicked?(image, suggestedName)
                 }
             }
@@ -477,6 +538,13 @@ extension UnifiedToggleInputAttachmentPresenter: PHPickerViewControllerDelegate 
 
 extension UnifiedToggleInputAttachmentPresenter: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
 
+    func imageAttachedPixelParameters(source: String) -> [String: String] {
+        typealias Keys = UnifiedToggleInputCoordinatorPixelHelper
+        var parameters = ["source": source, "surface": (pixelSurfaceProvider?() ?? .addressBar).rawValue]
+        parameters[Keys.simplifiedPromptBoxKey] = Keys.simplifiedPromptBoxValue(simplifiedPromptBoxProvider())
+        return parameters
+    }
+
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
         let callbacks = takeCallbacks(for: picker)
         picker.dismiss(animated: true)
@@ -484,7 +552,7 @@ extension UnifiedToggleInputAttachmentPresenter: UIImagePickerControllerDelegate
         guard let photo = info[.originalImage] as? UIImage else { return }
         PixelKit.fire(Pixel.Event.unifiedToggleInputImageAttached,
                       frequency: .dailyAndCount,
-                      options: .parameters(["source": "camera", "surface": (pixelSurfaceProvider?() ?? .addressBar).rawValue]))
+                      options: .parameters(imageAttachedPixelParameters(source: "camera")))
         Task {
             let image = await Task.detached { AIChatImageAttachment.resizedForAttachment(photo) }.value
             callbacks.onImagePicked?(image, "photo")

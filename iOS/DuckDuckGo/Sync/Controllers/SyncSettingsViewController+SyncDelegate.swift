@@ -18,6 +18,7 @@
 //
 
 import Core
+import DesignResourcesKit
 import UIKit
 import SwiftUI
 import SyncUI_iOS
@@ -183,10 +184,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                 try await self.syncService.createAccount(deviceName: self.deviceName, deviceType: self.deviceType)
                 var additionalParameters = self.uiVersionParameters
                 additionalParameters[PixelParameters.source] = self.source
-                try await pixelFiring?.fireAsync(Pixel.Event.syncSignupDirect, options: .parameters(additionalParameters))
-                var setupEndedParameters = self.uiVersionParameters
-                setupEndedParameters[PixelParameters.source] = "signup"
-                pixelFiring?.fire(Pixel.Event.syncSetupEndedSuccessful, options: .parameters(setupEndedParameters))
+                pixelFiring?.fire(Pixel.Event.syncSignupDirect, options: .parameters(additionalParameters))
                 optionsViewModel.syncEnabled(recoveryCode: self.recoveryCode)
                 self.enableAutoRestoreByDefaultIfNeeded()
                 await self.refreshDevicesAfterSimplifiedSyncEnable()
@@ -407,16 +405,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     }
 
     func fireOtherPlatformLinksPixel(event: SyncSettingsViewModel.PlatformLinksPixelEvent, with source: SyncSettingsViewModel.PlatformLinksPixelSource) {
-        let params = ["source": source.rawValue]
-
-        switch event {
-        case .appear:
-            pixelFiring?.fire(Pixel.Event.syncGetOtherDevices, options: .parameters(params))
-        case .copy:
-            pixelFiring?.fire(Pixel.Event.syncGetOtherDevicesCopy, options: .parameters(params))
-        case .share:
-            pixelFiring?.fire(Pixel.Event.syncGetOtherDevicesShare, options: .parameters(params))
-        }
+        PlatformLinksActions(presenter: self, pixelFiring: pixelFiring).fireOtherPlatformLinksPixel(for: event, source: source)
     }
 
     func fireAutoRestorePixel(event: SyncSettingsViewModel.AutoRestorePixelEvent) {
@@ -446,11 +435,6 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         case .signupConfirmedTapped:
             pixelFiring?.fire(Pixel.Event.settingsSyncSignupConfirmedTapped,
                               options: .parameters(uiVersionParameters))
-        case .signupAbandoned:
-            var parameters = uiVersionParameters
-            parameters[PixelParameters.source] = "signup"
-            pixelFiring?.fire(Pixel.Event.syncSetupEndedAbandoned,
-                              options: .parameters(parameters))
         case .recoverSyncedDataTapped:
             pixelFiring?.fire(Pixel.Event.settingsSyncRecoverSyncedDataTapped,
                               options: .parameters(uiVersionParameters))
@@ -657,7 +641,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         : UINavigationController(rootViewController: controller)
 
         navController.overrideUserInterfaceStyle = .dark
-        navController.view.backgroundColor = UIColor(baseColor: .gray90)
+        navController.view.backgroundColor = UIColor(singleUseColor: .syncScreenBackground)
         let transparentAppearance = UINavigationBarAppearance()
         transparentAppearance.configureWithTransparentBackground()
         navController.navigationBar.standardAppearance = transparentAppearance

@@ -22,6 +22,7 @@ import SwiftUI
 import UIKit
 import XCTest
 
+@MainActor
 public func assertImageSnapshot(
     matching view: UIView,
     strategy: SnapshotImageStrategy = .allAppearances,
@@ -66,6 +67,7 @@ public func assertImageSnapshot(
     }
 }
 
+@MainActor
 public func assertImageSnapshot(
     matching viewController: UIViewController,
     strategy: SnapshotImageStrategy = .allAppearances,
@@ -110,6 +112,7 @@ public func assertImageSnapshot(
     }
 }
 
+@MainActor
 public func assertImageSnapshot<Value: SwiftUI.View>(
     matching view: Value,
     strategy: SnapshotImageStrategy = .allAppearances,
@@ -150,6 +153,7 @@ public func assertImageSnapshot<Value: SwiftUI.View>(
     }
 }
 
+@MainActor
 private func resolvedSize(
     for view: UIView,
     configuration: SnapshotImageConfiguration,
@@ -165,6 +169,7 @@ private func resolvedSize(
     ) ?? intrinsicSize(for: view)
 }
 
+@MainActor
 private func resolvedSize(
     for viewController: UIViewController,
     configuration: SnapshotImageConfiguration,
@@ -182,6 +187,7 @@ private func resolvedSize(
     ) ?? intrinsicSize(for: viewController.view)
 }
 
+@MainActor
 private func intrinsicSize(for view: UIView) -> CGSize? {
     view.setNeedsLayout()
     view.layoutIfNeeded()
@@ -202,6 +208,7 @@ private func intrinsicSize(for view: UIView) -> CGSize? {
     return nil
 }
 
+@MainActor
 private func constrainedSize(for view: UIView, width: CGFloat) -> CGSize? {
     view.setNeedsLayout()
     view.layoutIfNeeded()
@@ -223,6 +230,7 @@ private func constrainedSize(for view: UIView, width: CGFloat) -> CGSize? {
     return nil
 }
 
+@MainActor
 private func assertSwiftUIImageSnapshot<Value: SwiftUI.View>(
     of view: Value,
     configuration: SnapshotImageConfiguration,
@@ -307,7 +315,7 @@ private func assertSwiftUIImageSnapshot<Value: SwiftUI.View>(
             column: column
         )
 
-    case .screen, .fixed:
+    case .screen, .tallScreen, .fixed:
         let snapshotSize = size.resolvedSize(
             for: configuration,
             defaultSize: SnapshotDevice.iPhoneDefault.size
@@ -430,6 +438,7 @@ private extension SnapshotDevice {
     }
 }
 
+@MainActor
 private func assertKeyWindowAvailable(
     if drawHierarchyInKeyWindow: Bool,
     fileID: StaticString,
@@ -449,6 +458,7 @@ private func assertKeyWindowAvailable(
     return false
 }
 
+@MainActor
 private var hasKeyWindow: Bool {
     let sharedApplication = NSSelectorFromString("sharedApplication")
     guard UIApplication.responds(to: sharedApplication),

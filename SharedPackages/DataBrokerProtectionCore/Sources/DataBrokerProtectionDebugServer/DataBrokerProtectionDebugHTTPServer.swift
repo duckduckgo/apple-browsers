@@ -31,9 +31,24 @@ public final class DataBrokerProtectionDebugHTTPServer {
 
     public let port: UInt16
 
+    #if DEBUG
+    public typealias PrerequisiteReader = @MainActor @Sendable () async throws -> DebugPrerequisiteResult
+    /// Set before `start()`; the prerequisites route exists only in DEBUG builds.
+    public var prerequisiteReader: PrerequisiteReader?
+    private var prerequisites: DebugPrerequisiteSnapshot?
+    public typealias BrokerJSONRefresher = @MainActor @Sendable (_ resetDelivery: Bool) async throws -> [DebugBrokerState]
+    public typealias ImmediateScanStarter = @MainActor @Sendable (_ brokerURLs: [String]) async throws -> DebugImmediateScans
+    /// Set before `start()`: re-reads bundled and remote broker JSON now, ignoring the update check's rate limit.
+    public var brokerJSONRefresher: BrokerJSONRefresher?
+    /// Set before `start()`: queues scans for these brokers now through the regular job path.
+    public var immediateScanStarter: ImmediateScanStarter?
+    private let maintenance = DebugMaintenanceOperations()
+    #endif
+    private let instanceID: String?
     private let server: DebugHTTPServer
     private let readService: DataBrokerProtectionDebugReadService
     private let logReader: DebugLogReading?
+    private let runManager: DataBrokerProtectionDebugModeRunning?
     private let logger = Logger(subsystem: "com.duckduckgo.dbp", category: "DebugHTTPServer")
 
     public var isRunning: Bool {
@@ -52,12 +67,27 @@ public final class DataBrokerProtectionDebugHTTPServer {
 
     public init(provider: DataBrokerProtectionDebugReadProviding,
                 logReader: DebugLogReading? = nil,
-                port: UInt16 = defaultPort) {
+                runManager: DataBrokerProtectionDebugModeRunning? = nil,
+                port: UInt16 = defaultPort,
+                instanceID: String? = nil) {
         self.port = port
+        self.instanceID = instanceID
         self.logReader = logReader
-        self.server = DebugHTTPServer(port: port)
+        self.runManager = runManager
+        self.server = DebugHTTPServer(port: port, loopbackOnly: true)
         self.readService = DataBrokerProtectionDebugReadService(provider: provider)
     }
+
+    #if DEBUG
+    private func makePrerequisites() -> DebugPrerequisiteSnapshot {
+        let prerequisiteReader = prerequisiteReader
+        let debugRunManager = runManager as? DebugModeRunManager
+        return DebugPrerequisiteSnapshot(instanceID: instanceID, debugRunnerReady: runManager != nil) {
+            let normal = try await prerequisiteReader?() ?? DebugPrerequisiteResult(status: .unavailable, backend: "subscription", environment: "unknown")
+            return debugRunManager?.applyingDebugPIRSettings(to: normal) ?? normal
+        }
+    }
+    #endif
 
     public func start() throws {
         registerRoutes()
@@ -66,6 +96,9 @@ public final class DataBrokerProtectionDebugHTTPServer {
     }
 
     public func stop() {
+        #if DEBUG
+        prerequisites?.stop()
+        #endif
         server.stop()
         logger.info("PIR debug server stopped")
     }
@@ -74,12 +107,31 @@ public final class DataBrokerProtectionDebugHTTPServer {
         let service = UncheckedSendable(readService)
         let logReader = logReader.map(UncheckedSendable.init)
         let hasLogReader = logReader != nil
+        let hasRunManager = runManager != nil
+        #if DEBUG
+        let prerequisites = makePrerequisites()
+        self.prerequisites = prerequisites
+        server.addRoute("/api/debug/prerequisites", method: .GET) { request in
+            guard let checkID = request.queryParameters["checkID"], UUID(uuidString: checkID) != nil else {
+                return .text("checkID must be a UUID", status: .badRequest)
+            }
+            return try Self.json(prerequisites.snapshot(checkID: checkID))
+        }
+        registerMaintenanceRoutes()
+        #endif
 
         server.addRoute("/api", method: .GET) { _ in
             let service = service.value
             var endpoints = service.defaultEndpoints()
+            #if DEBUG
+            endpoints.append(.init(path: "/api/debug/prerequisites?checkID={uuid}",
+                                   description: "Fresh correlated normal subscription check. Poll the same ID until no longer pending."))
+            #endif
             if hasLogReader {
                 endpoints.append(Self.logsEndpointDescription)
+            }
+            if hasRunManager {
+                endpoints.append(contentsOf: Self.debugModeEndpointDescriptions)
             }
             return try Self.json(try service.apiResponse(endpoints: endpoints))
         }
@@ -116,11 +168,152 @@ public final class DataBrokerProtectionDebugHTTPServer {
             }
             return try Self.json(detail)
         }
+
+        if let runManager {
+            registerDebugModeRoutes(runManager: UncheckedSendable(runManager))
+        }
+    }
+
+    private func registerDebugModeRoutes(runManager: UncheckedSendable<DataBrokerProtectionDebugModeRunning>) {
+        let instanceID = instanceID
+        server.addRoute("/api/debug/scans", method: .POST) { request in
+            if !Self.isOwned(request, instanceID: instanceID) {
+                return .text("PIR debug instance mismatch", status: .forbidden)
+            }
+            if Self.isFromWebPage(request) {
+                return Self.webPageRejection
+            }
+            return try Self.debugModeResponse {
+                try runManager.value.startScan(try DebugModeScanRequest(body: request.body))
+            }
+        }
+
+        server.addPrefixRoute("/api/debug/runs/", method: .GET) { request in
+            let runId = String(request.path.dropFirst("/api/debug/runs/".count))
+                .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+            guard let run = runManager.value.run(id: runId) else {
+                return .text("Run not found: \(runId)", status: .notFound)
+            }
+            return try Self.json(run)
+        }
+
+        server.addPrefixRoute("/api/debug/runs/", method: .POST) { request in
+            if !Self.isOwned(request, instanceID: instanceID) {
+                return .text("PIR debug instance mismatch", status: .forbidden)
+            }
+            if Self.isFromWebPage(request) {
+                return Self.webPageRejection
+            }
+            guard let action = DebugModeRunAction(path: String(request.path.dropFirst("/api/debug/runs/".count))) else {
+                return .text("Unknown run action: \(request.path)", status: .notFound)
+            }
+            return try Self.debugModeResponse {
+                switch action {
+                case .optOut(let runId, let resultId):
+                    return try runManager.value.startOptOut(runId: runId, resultId: resultId)
+                case .continueOptOut(let runId, let resultId):
+                    return try runManager.value.continueOptOut(runId: runId, resultId: resultId)
+                case .checkForEmailConfirmation(let runId):
+                    return try runManager.value.checkForEmailConfirmation(runId: runId)
+                }
+            }
+        }
+    }
+
+    #if DEBUG
+    private struct RefreshRequest: Decodable {
+        let resetDelivery: Bool?
+    }
+
+    private struct ImmediateScanRequest: Decodable {
+        let brokers: [String]
+    }
+
+    private func registerMaintenanceRoutes() {
+        let instanceID = instanceID
+        let maintenance = maintenance
+        @Sendable func guarded(_ request: HTTPRequest, _ start: () throws -> DebugMaintenanceOperations.State) throws -> HTTPResponse {
+            if !Self.isOwned(request, instanceID: instanceID) {
+                return .text("PIR debug instance mismatch", status: .forbidden)
+            }
+            if Self.isFromWebPage(request) {
+                return Self.webPageRejection
+            }
+            return try Self.json(try start(), status: .accepted)
+        }
+        if let refresher = brokerJSONRefresher {
+            server.addRoute("/api/debug/broker-json/refresh", method: .POST) { request in
+                try guarded(request) {
+                    let body = try request.body.flatMap { $0.isEmpty ? nil : try JSONDecoder().decode(RefreshRequest.self, from: $0) }
+                    let resetDelivery = body?.resetDelivery ?? false
+                    return maintenance.start(kind: "brokerJSONRefresh") { try await refresher(resetDelivery) }
+                }
+            }
+        }
+        if let starter = immediateScanStarter {
+            server.addRoute("/api/debug/scans/immediate", method: .POST) { request in
+                guard let body = request.body, let brokers = try? JSONDecoder().decode(ImmediateScanRequest.self, from: body).brokers,
+                      !brokers.isEmpty, brokers.allSatisfy({ !$0.isEmpty }) else {
+                    return .text("Body must be {\"brokers\": [\"<broker URL>\", ...]}", status: .badRequest)
+                }
+                return try guarded(request) { maintenance.start(kind: "immediateScans") { try await starter(brokers) } }
+            }
+        }
+        server.addPrefixRoute("/api/debug/maintenance/", method: .GET) { request in
+            let id = String(request.path.dropFirst("/api/debug/maintenance/".count))
+            guard let state = maintenance.state(id: id) else {
+                return .text("Maintenance operation not found: \(id)", status: .notFound)
+            }
+            return try Self.json(state)
+        }
+    }
+    #endif
+
+    static func isOwned(_ request: HTTPRequest, instanceID: String?) -> Bool {
+        guard let instanceID else { return true }
+        return request.headers.first { $0.key.caseInsensitiveCompare("X-PIR-Debug-Instance") == .orderedSame }?.value == instanceID
+    }
+
+    /// Browsers send `Origin` on every POST and pages can't remove it, so this keeps web pages from starting scans or opt-outs.
+    private static func isFromWebPage(_ request: HTTPRequest) -> Bool {
+        request.headers.keys.contains { $0.caseInsensitiveCompare("Origin") == .orderedSame }
+    }
+
+    private static let webPageRejection = HTTPResponse.text("Requests from web pages are not accepted", status: .forbidden)
+
+    private static func debugModeResponse(_ start: () throws -> DebugModeRun) throws -> HTTPResponse {
+        do {
+            return try json(try start(), status: .accepted)
+        } catch let error as DebugModeRunError {
+            let status: HTTPStatusCode
+            switch error {
+            case .invalidRequest:
+                status = .badRequest
+            case .brokerNotFound, .runNotFound, .resultNotFound:
+                status = .notFound
+            case .busy, .notAwaitingEmailConfirmation:
+                status = .conflict
+            }
+            return .text(error.localizedDescription, status: status)
+        }
     }
 
     private static let logsEndpointDescription = DebugAPIResponse.Endpoint(
         path: "/api/logs?since={iso8601}&category={category}&limit={n}",
         description: "Unified-log tail for PIR execution detail. 'since' tails new lines; 'category' filters by category; 'limit' defaults to \(DataBrokerProtectionDebugReadService.defaultLimit) and is capped at \(DataBrokerProtectionDebugReadService.maximumLimit).")
+
+    private static let debugModeEndpointDescriptions: [DebugAPIResponse.Endpoint] = [
+        .init(path: "POST /api/debug/scans",
+              description: "Starts a debug mode scan. Body: {\"broker\": stored broker url or name, or broker JSON, \"profile\": same shape as -pirProfileJSON, \"hidesWebView\": true}. hidesWebView defaults to true and applies to the whole run. The configured job timeouts always apply. Nothing is saved to the PIR database. Returns the run; one activity runs at a time."),
+        .init(path: "/api/debug/runs/{runId}",
+              description: "A debug run: its activity (omitted when idle), results with their opt-out status, scan errors and the debug mode event log."),
+        .init(path: "POST /api/debug/runs/{runId}/optouts/{resultId}",
+              description: "Starts the opt-out for a result."),
+        .init(path: "POST /api/debug/runs/{runId}/email-confirmation/check",
+              description: "Checks the email service for confirmation links of opt-outs awaiting email confirmation."),
+        .init(path: "POST /api/debug/runs/{runId}/optouts/{resultId}/continue",
+              description: "Finishes an opt-out awaiting email confirmation with its confirmation link.")
+    ]
 
     private static let iso8601 = ISO8601DateFormatter()
 
@@ -132,11 +325,11 @@ public final class DataBrokerProtectionDebugHTTPServer {
         DataBrokerProtectionDebugReadService.clampedLimit(request.queryParameters["limit"].flatMap(Int.init))
     }
 
-    private static func json<T: Encodable>(_ value: T) throws -> HTTPResponse {
+    private static func json<T: Encodable>(_ value: T, status: HTTPStatusCode = .ok) throws -> HTTPResponse {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
-        return .json(try encoder.encode(value))
+        return .json(try encoder.encode(value), status: status)
     }
 }
 

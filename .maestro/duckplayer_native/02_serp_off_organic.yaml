@@ -32,7 +32,7 @@ tags:
     file: shared/load_serp_url.yaml
 
 - runFlow:
-    file: shared/tap_serp_title.yaml
+    file: shared/tap_serp_watch_result.yaml
 
 # Validate YouTube opens
 - assertVisible: ${output.youtubeMobileDomain}

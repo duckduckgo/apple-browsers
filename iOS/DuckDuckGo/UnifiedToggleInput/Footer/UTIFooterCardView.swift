@@ -51,6 +51,17 @@ final class UTIFooterCardView: UIView {
         didSet { contentTopConstraint?.constant = Self.overlap + (isBelowAnotherCard ? 0 : Constants.contentTopGap) }
     }
 
+    /// Draws Liquid Glass, like the input card above it, instead of the flat fill. Has no effect before iOS 26.
+    var usesGlassSurface = false {
+        didSet {
+            guard oldValue != usesGlassSurface else { return }
+            glassSurfaceView.isHidden = !usesGlassSurface
+            applyColors()
+        }
+    }
+
+    private let glassSurfaceView = UIVisualEffectView(effect: nil)
+
     private let usageRing = UTIFooterUsageRingView()
     private let alertIcon = UIImageView(image: DesignSystemImages.Glyphs.Size16.alertRecolorable)
     private let infoIcon = UIImageView(image: DesignSystemImages.Glyphs.Size16.info)
@@ -218,6 +229,20 @@ private extension UTIFooterCardView {
         clipsToBounds = true
         accessibilityIdentifier = "AIChat.Footer.Card"
 
+        if #available(iOS 26, *) {
+            glassSurfaceView.effect = UIGlassEffect(style: .regular)
+        }
+        glassSurfaceView.translatesAutoresizingMaskIntoConstraints = false
+        glassSurfaceView.isHidden = true
+        glassSurfaceView.isUserInteractionEnabled = false
+        addSubview(glassSurfaceView)
+        NSLayoutConstraint.activate([
+            glassSurfaceView.topAnchor.constraint(equalTo: topAnchor),
+            glassSurfaceView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            glassSurfaceView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            glassSurfaceView.bottomAnchor.constraint(equalTo: bottomAnchor),
+        ])
+
         contentView.translatesAutoresizingMaskIntoConstraints = false
         addSubview(contentView)
 
@@ -361,7 +386,7 @@ private extension UTIFooterCardView {
     }
 
     func applyColors() {
-        backgroundColor = UIColor(designSystemColor: .surfaceSecondary)
+        backgroundColor = usesGlassSurface ? .clear : UIColor(designSystemColor: .surfaceSecondary)
         titleLabel.textColor = UIColor(designSystemColor: titleStyle == .error ? .destructivePrimary : .textPrimary)
         subtitleLabel.textColor = UIColor(designSystemColor: .textSecondary)
         alertIcon.tintColor = UIColor(designSystemColor: .icons)

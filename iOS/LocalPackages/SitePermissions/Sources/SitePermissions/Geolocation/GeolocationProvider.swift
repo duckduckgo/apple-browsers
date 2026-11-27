@@ -27,7 +27,7 @@ import Foundation
 public final class GeolocationProvider {
 
     public typealias ContextProvider = (GeolocationFrame) -> SitePermissionRequestContext?
-    public typealias PermissionRequestHandler = (SitePermissionRequestContext, @escaping (SitePermissionResolution) -> Void) -> Void
+    public typealias PermissionRequestHandler = (SitePermissionRequestContext, _ isMainFrame: Bool, @escaping (SitePermissionResolution) -> Void) -> Void
     public typealias PermissionQueryHandler = (SitePermissionRequestContext) -> SitePermissionQueryState
 
     /// Keeps the original permission context and WebKit frame so later callbacks can detect a changed page or frame.
@@ -35,14 +35,17 @@ public final class GeolocationProvider {
     private final class RetainedFrame {
         let context: SitePermissionRequestContext
         let frame: GeolocationFrame?
+        let isMainFrame: Bool
 
         init(context: SitePermissionRequestContext, frame: GeolocationFrame) {
             self.context = context
             self.frame = frame
+            isMainFrame = frame.isMainFrame
         }
 
-        init(context: SitePermissionRequestContext) {
+        init(context: SitePermissionRequestContext, isMainFrame: Bool) {
             self.context = context
+            self.isMainFrame = isMainFrame
             frame = nil
         }
     }
@@ -321,7 +324,7 @@ public final class GeolocationProvider {
             // Core Location's first report resumes the request, so the decision never uses the placeholder state.
             guard systemPermissionClient.isLocationAuthorizationReported else { return }
             request.hasRequestedPermission = true
-            requestPermission(request.retainedFrame.context) { [weak self, weak request] resolution in
+            requestPermission(request.retainedFrame.context, request.retainedFrame.isMainFrame) { [weak self, weak request] resolution in
                 request?.resolution = resolution
                 self?.refreshPermissionStatuses()
                 self?.resumeOneShot(identifier)
@@ -368,7 +371,7 @@ public final class GeolocationProvider {
         if !watch.hasRequestedPermission {
             guard systemPermissionClient.isLocationAuthorizationReported else { return }
             watch.hasRequestedPermission = true
-            requestPermission(watch.retainedFrame.context) { [weak self, weak watch] resolution in
+            requestPermission(watch.retainedFrame.context, watch.retainedFrame.isMainFrame) { [weak self, weak watch] resolution in
                 watch?.resolution = resolution
                 self?.refreshPermissionStatuses()
                 self?.resumeWatch(requestID)
@@ -576,16 +579,18 @@ public final class GeolocationProvider {
 
     // These frame-free entry points keep the location lifecycle independently testable from WebKit.
     func requestCurrentPosition(context: SitePermissionRequestContext,
+                                isMainFrame: Bool = true,
                                 options: GeolocationRequestOptions = .init()) async -> GeolocationPositionResult {
-        await requestCurrentPosition(in: RetainedFrame(context: context), options: options)
+        await requestCurrentPosition(in: RetainedFrame(context: context, isMainFrame: isMainFrame), options: options)
     }
 
     func startWatch(withID requestID: String,
                     context: SitePermissionRequestContext,
+                    isMainFrame: Bool = true,
                     options: GeolocationRequestOptions = .init(),
                     deliver: @escaping @MainActor (GeolocationPositionResult) -> Bool) {
         guard !isClosed, watches[requestID] == nil else { return }
-        let retainedFrame = RetainedFrame(context: context)
+        let retainedFrame = RetainedFrame(context: context, isMainFrame: isMainFrame)
         watches[requestID] = LocationSubscription(retainedFrame: retainedFrame, options: options, deliver: deliver)
         resumeWatch(requestID)
     }
@@ -600,7 +605,7 @@ public final class GeolocationProvider {
                          context: SitePermissionRequestContext,
                          deliver: @escaping @MainActor (GeolocationPermissionState) -> Bool) -> GeolocationPermissionState {
         guard !isClosed, permissionStatuses[statusID] == nil else { return .denied }
-        let retainedFrame = RetainedFrame(context: context)
+        let retainedFrame = RetainedFrame(context: context, isMainFrame: true)
         let status = PermissionStatus(retainedFrame: retainedFrame,
                                       initialState: .denied,
                                       deliver: deliver)

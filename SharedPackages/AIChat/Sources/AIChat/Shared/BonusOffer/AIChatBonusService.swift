@@ -62,13 +62,14 @@ public protocol AIChatBonusMessageHandling {
     /// - Throws: `AIChatBonusStoreError` when the record can't be read or written.
     func applyRedeemOutcome(_ outcome: AIChatBonusRedeemOutcome) throws
 
-    /// Marks the offer as dismissed.
+    /// Marks the offer as dismissed for `campaignName`.
     ///
     /// Handles `aiChatBonusDismiss`, which Duck.ai sends when the activation modal is closed without
-    /// claiming. Gates only Duck.ai's mini promo.
+    /// claiming. Gates only Duck.ai's in-line promo, for that campaign.
     ///
+    /// - Parameter campaignName: The campaign whose offer was dismissed, from Duck.ai.
     /// - Throws: `AIChatBonusStoreError` when the record can't be read or written.
-    func dismiss() throws
+    func dismiss(campaignName: String) throws
 
     /// Ends the boost, keeping only the campaign so this install can't claim it again.
     ///
@@ -145,8 +146,8 @@ extension AIChatBonusService: AIChatBonusMessageHandling {
         try apply { AIChatBonusRecordRules.applyRedeemOutcome(outcome, to: $0, nowMilliseconds: nowMilliseconds()) }
     }
 
-    public func dismiss() throws {
-        try apply(AIChatBonusRecordRules.dismiss)
+    public func dismiss(campaignName: String) throws {
+        try apply { AIChatBonusRecordRules.dismiss($0, campaignName: campaignName) }
     }
 
     public func end() throws {

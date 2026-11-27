@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import PixelKit
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -106,5 +107,22 @@ final class UserChurnPixelTests: XCTestCase {
         // Then
         XCTAssertEqual(pixel.parameters?.count, 1)
         XCTAssertEqual(pixel.parameters?["newDefault"], "Firefox")
+    }
+
+    // MARK: - Tests: Debug pixels
+
+    func testDebugPixelNamesAndErrors() {
+        let error = NSError(domain: "test", code: 1)
+        let pixels: [(UserChurnDebugPixel, String)] = [
+            (.readFailed(key: .wasDefaultBrowser, error: error), "user-churn_was-default-browser_read-failed_macos"),
+            (.readFailed(key: .churnedFromDefault, error: error), "user-churn_churned-from-default_read-failed_macos"),
+            (.writeFailed(key: .wasDefaultBrowser, error: error), "user-churn_was-default-browser_write-failed_macos"),
+            (.writeFailed(key: .churnedFromDefault, error: error), "user-churn_churned-from-default_write-failed_macos")
+        ]
+        for (pixel, name) in pixels {
+            XCTAssertEqual(pixel.name, name)
+            XCTAssertEqual(pixel.namePrefix, PixelKitNamePrefix.none)
+            XCTAssertEqual(pixel.error, error)
+        }
     }
 }

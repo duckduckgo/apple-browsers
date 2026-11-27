@@ -19,7 +19,7 @@
 import Foundation
 
 /// Structure storing a Set of hash prefixes ["6fe1e7c8","1d760415",...] and a revision of the set.
-struct HashPrefixSet: Codable, Equatable {
+struct HashPrefixSet: Codable, Equatable, Sendable {
 
     var revision: Int
     var set: Set<Element>

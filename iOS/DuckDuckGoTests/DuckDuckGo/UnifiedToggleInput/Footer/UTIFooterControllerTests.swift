@@ -1637,6 +1637,32 @@ final class UTIFooterControllerTests: XCTestCase {
         XCTAssertTrue(presenter.appliedMessages.last??.title.contains("Weekly usage limit reached") ?? false)
     }
 
+    /// A prompt handed over from the SERP waits behind the page's own card, so a native disclaimer would ask twice.
+    func testWhenThePageShowsItsOwnTermsCardThenTheDisclaimerStaysHiddenUntilThePageDropsIt() {
+        sut = makeSUT(viewModel: viewModel, termsOfServiceStore: termsStore)
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
+
+        sut.setTermsOfServiceShownOnPage(true)
+        XCTAssertEqual(presenter.appliedMessages.last, .some(nil))
+        XCTAssertFalse(sut.isTermsOfServiceApplicable)
+        XCTAssertFalse(sut.isTermsOfServiceInEffect)
+
+        sut.setTermsOfServiceShownOnPage(false)
+        XCTAssertEqual(presenter.appliedMessages.last, UTIFooterMessageMapper().termsOfServiceMessage())
+    }
+
+    /// Ask can't accept terms the user never saw here; the prompt reaches the page's card instead.
+    func testWhenThePageShowsItsOwnTermsCardThenAskAcceptsNothing() {
+        sut = makeSUT(viewModel: viewModel, termsOfServiceStore: termsStore)
+        sut.setTermsOfServiceShownOnPage(true)
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
+
+        XCTAssertFalse(sut.acceptTermsIfDisclaimerShown())
+        XCTAssertFalse(termsStore.hasAccepted)
+    }
+
     func test_setSuppressed_hidesTheTermsOfService() {
         sut = makeSUT(viewModel: viewModel, termsOfServiceStore: termsStore)
         sut.refresh()

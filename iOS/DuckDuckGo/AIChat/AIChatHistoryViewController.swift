@@ -23,13 +23,41 @@ import UIKit
 import DesignResourcesKit
 import DesignResourcesKitIcons
 
+/// The sidebar-only actions that live outside the chats list.
+@MainActor
+protocol AIChatHistorySidebarDelegate: AnyObject {
+    var chatHistorySidebarIsSyncEnabled: Bool { get }
+    func chatHistorySidebarDidRequestClose()
+    func chatHistorySidebarDidRequestSyncSettings()
+    func chatHistorySidebarDidRequestDuckAISettings()
+}
+
 final class AIChatHistoryViewController: UIViewController {
+
+    /// iPhone shows the list as a sheet; the iPad Duck.ai tab shows it as a column beside the chat.
+    enum Presentation {
+        case sheet
+        case sidebar
+    }
 
     private let viewModel: AIChatHistoryViewModel
     private let fireButtonAnimator: FireButtonAnimator
+    private let presentation: Presentation
     private var cancellables: Set<AnyCancellable> = []
 
-    private var isRedesignEnabled: Bool { viewModel.isRedesignEnabled }
+    weak var sidebarDelegate: AIChatHistorySidebarDelegate?
+
+    /// The chat open beside the sidebar, marked in the list.
+    var currentChatId: String? {
+        didSet {
+            guard currentChatId != oldValue, isViewLoaded, !isApplyingLocalUpdate else { return }
+            tableView.reloadData()
+        }
+    }
+
+    private var isSidebar: Bool { presentation == .sidebar }
+
+    private var isRedesignEnabled: Bool { isSidebar || viewModel.isRedesignEnabled }
 
     /// Set while a swipe-driven animation is in flight to suppress reactive reloads that
     /// would otherwise cancel the slide.
@@ -47,7 +75,7 @@ final class AIChatHistoryViewController: UIViewController {
     }
 
     private lazy var tableView: UITableView = {
-        let table = UITableView(frame: .zero, style: .insetGrouped)
+        let table = UITableView(frame: .zero, style: isSidebar ? .grouped : .insetGrouped)
         table.dataSource = self
         table.delegate = self
         table.register(AIChatHistoryCell.self, forCellReuseIdentifier: AIChatHistoryCell.reuseIdentifier)
@@ -72,11 +100,13 @@ final class AIChatHistoryViewController: UIViewController {
     }()
 
     private lazy var emptyStateHost: UIHostingController<AIChatHistoryEmptyStateView> = {
-        let host = UIHostingController(rootView: AIChatHistoryEmptyStateView(viewModel: viewModel))
+        let host = UIHostingController(rootView: AIChatHistoryEmptyStateView(viewModel: viewModel, showsOpenButton: !isSidebar))
         host.view.translatesAutoresizingMaskIntoConstraints = false
         host.view.backgroundColor = .clear
         return host
     }()
+
+    private var isShowingEmptyState: Bool { emptyStateHost.parent != nil }
 
     /// `!loadFailed` so a storage failure (which also clears the lists) routes through the
     /// load-error alert instead of being misread as a no-matches search.
@@ -84,9 +114,10 @@ final class AIChatHistoryViewController: UIViewController {
         viewModel.isEmpty && !viewModel.effectiveQuery.isEmpty && !viewModel.loadFailed
     }
 
-    init(viewModel: AIChatHistoryViewModel, fireButtonAnimator: FireButtonAnimator) {
+    init(viewModel: AIChatHistoryViewModel, fireButtonAnimator: FireButtonAnimator, presentation: Presentation = .sheet) {
         self.viewModel = viewModel
         self.fireButtonAnimator = fireButtonAnimator
+        self.presentation = presentation
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -98,7 +129,7 @@ final class AIChatHistoryViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        let backgroundColor = UIColor(designSystemColor: .background)
+        let backgroundColor = UIColor(designSystemColor: isSidebar ? .surface : .background)
         view.backgroundColor = backgroundColor
         navigationController?.view.backgroundColor = backgroundColor
         tableView.backgroundColor = backgroundColor
@@ -111,12 +142,29 @@ final class AIChatHistoryViewController: UIViewController {
         decorateBarsIfNeeded()
         bindViewModel()
 
-        viewModel.screenDidLoad()
+        // The sidebar is built once and stays in the tab, so a load is not an opening there.
+        if !isSidebar {
+            viewModel.screenDidLoad()
+        }
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setToolbarHidden(false, animated: animated)
+    }
+
+    /// Reported as the sheet starts closing, so what's underneath can move with it; a swipe counts once it's committed.
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        guard navigationController?.isBeingDismissed == true else { return }
+        guard let transition = transitionCoordinator, transition.isInteractive else {
+            viewModel.screenWillClose()
+            return
+        }
+        transition.notifyWhenInteractionChanges { [weak self] context in
+            guard !context.isCancelled else { return }
+            self?.viewModel.screenWillClose()
+        }
     }
 
     private func setupViews() {
@@ -133,7 +181,13 @@ final class AIChatHistoryViewController: UIViewController {
         if isRedesignEnabled {
             tableView.allowsMultipleSelectionDuringEditing = true
             tableView.tintColor = UIColor(designSystemColor: .accentPrimary)
-        } else {
+        }
+        if isSidebar {
+            tableView.separatorStyle = .none
+            tableView.sectionFooterHeight = 0
+        }
+        // The sidebar has room to keep search showing; the redesigned sheet reveals it on demand.
+        if !isRedesignEnabled || isSidebar {
             installSearchHeader()
         }
     }
@@ -168,7 +222,7 @@ final class AIChatHistoryViewController: UIViewController {
             target: self,
             action: #selector(doneButtonTapped)
         )
-        item.accessibilityLabel = UserText.keyCommandClose
+        item.accessibilityLabel = isSidebar ? UserText.aiChatHistorySidebarHideAccessibilityLabel : UserText.keyCommandClose
         return item
     }()
 
@@ -196,6 +250,10 @@ final class AIChatHistoryViewController: UIViewController {
         if isEditingChats {
             navigationItem.leftBarButtonItem = nil
             navigationItem.rightBarButtonItems = [makeSelectionDoneItem()]
+        } else if isSidebar {
+            navigationItem.leftBarButtonItem = closeBarButtonItem
+            // With no chats there's nothing to select or search, so the sidebar shows only the close button.
+            navigationItem.rightBarButtonItems = isShowingEmptyState ? [] : [makeOverflowMenuItem()]
         } else {
             navigationItem.leftBarButtonItem = closeBarButtonItem
             if #available(iOS 26, *) {
@@ -249,7 +307,14 @@ final class AIChatHistoryViewController: UIViewController {
             ) { [weak self] _ in
                 self?.enterSelectionMode()
             }
-            completion([selectChats, chatProtection])
+            guard self.isSidebar else {
+                completion([selectChats, chatProtection])
+                return
+            }
+            completion([
+                UIMenu(options: .displayInline, children: [selectChats]),
+                UIMenu(options: .displayInline, children: [chatProtection] + self.makeSidebarMenuActions())
+            ])
         }
         let item = UIBarButtonItem(
             image: DesignSystemImages.Glyphs.Size24.menuDotsHorizontal,
@@ -257,6 +322,24 @@ final class AIChatHistoryViewController: UIViewController {
         )
         item.accessibilityLabel = UserText.aiChatHistoryMenuAccessibilityLabel
         return item
+    }
+
+    private func makeSidebarMenuActions() -> [UIMenuElement] {
+        let isSyncEnabled = sidebarDelegate?.chatHistorySidebarIsSyncEnabled ?? false
+        let sync = UIAction(
+            title: UserText.settingsSync,
+            subtitle: isSyncEnabled ? UserText.settingsOn : UserText.settingsOff,
+            image: DesignSystemImages.Glyphs.Size16.sync
+        ) { [weak self] _ in
+            self?.sidebarDelegate?.chatHistorySidebarDidRequestSyncSettings()
+        }
+        let settings = UIAction(
+            title: UserText.actionAIChatSettings,
+            image: DesignSystemImages.Glyphs.Size16.settings
+        ) { [weak self] _ in
+            self?.sidebarDelegate?.chatHistorySidebarDidRequestDuckAISettings()
+        }
+        return [sync, settings]
     }
 
     /// Pre-iOS 26 sheets default bar button items to the system accent (blue). Match Bookmarks
@@ -318,12 +401,14 @@ final class AIChatHistoryViewController: UIViewController {
                 action: #selector(fireButtonTapped)
             )
             fire.isEnabled = isFireAllEnabled
+            fire.accessibilityLabel = UserText.aiChatHistoryFireAllAccessibilityLabel
             let newChat = makeToolbarItem(
                 title: UserText.actionNewAIChat,
                 image: DesignSystemImages.Glyphs.Size24.compose,
                 action: #selector(composeButtonTapped)
             )
-            toolbarItems = [fire, spacer, newChat]
+            // The sidebar keeps New Chat when there are no chats; fire has nothing to delete.
+            toolbarItems = isSidebar && isShowingEmptyState ? [spacer, newChat] : [fire, spacer, newChat]
         }
     }
 
@@ -408,7 +493,7 @@ final class AIChatHistoryViewController: UIViewController {
     private func showEmptyState() {
         guard emptyStateHost.parent == nil else { return }
         tableView.isHidden = true
-        navigationController?.setToolbarHidden(true, animated: false)
+        navigationController?.setToolbarHidden(!isSidebar, animated: false)
 
         addChild(emptyStateHost)
         view.addSubview(emptyStateHost.view)
@@ -419,6 +504,11 @@ final class AIChatHistoryViewController: UIViewController {
             emptyStateHost.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
         emptyStateHost.didMove(toParent: self)
+        if isSidebar {
+            removeSearchHeader()
+            configureNavigationButtons()
+            configureToolbar()
+        }
     }
 
     private func showList() {
@@ -426,6 +516,11 @@ final class AIChatHistoryViewController: UIViewController {
             emptyStateHost.willMove(toParent: nil)
             emptyStateHost.view.removeFromSuperview()
             emptyStateHost.removeFromParent()
+            if isSidebar {
+                installSearchHeader()
+                configureNavigationButtons()
+                configureToolbar()
+            }
         }
         tableView.isHidden = false
         navigationController?.setToolbarHidden(false, animated: false)
@@ -433,6 +528,10 @@ final class AIChatHistoryViewController: UIViewController {
     }
 
     @objc private func doneButtonTapped() {
+        guard !isSidebar else {
+            sidebarDelegate?.chatHistorySidebarDidRequestClose()
+            return
+        }
         dismiss(animated: true)
     }
 
@@ -450,6 +549,10 @@ final class AIChatHistoryViewController: UIViewController {
     }
 
     @objc private func fireButtonTapped(_ sender: UIBarButtonItem) {
+        presentDeleteAllChatsConfirmation(from: sender)
+    }
+
+    private func presentDeleteAllChatsConfirmation(from sender: AnyObject) {
         guard viewModel.totalChatCount > 0 else { return }
         viewModel.fireAllTapped()
         presentDeleteChatsConfirmation(count: viewModel.totalChatCount, attachPopoverTo: sender) { [weak self] in
@@ -471,7 +574,10 @@ final class AIChatHistoryViewController: UIViewController {
             }),
             browsingMode: .normal,
             onConfirm: { _ in },
-            onCancel: {}
+            onCancel: {},
+            onOpenSettings: { [weak self] in
+                self?.viewModel.openDataClearingSettings()
+            }
         )
     }
 
@@ -539,6 +645,10 @@ final class AIChatHistoryViewController: UIViewController {
 
     private func hideSearchBarIfNeeded() {
         guard tableView.tableHeaderView != nil else { return }
+        guard !isSidebar else {
+            clearSearch()
+            return
+        }
         searchBar.text = nil
         searchBar.setShowsCancelButton(false, animated: false)
         searchBar.resignFirstResponder()
@@ -630,6 +740,10 @@ extension AIChatHistoryViewController: UITableViewDataSource {
         guard let chatCell = cell as? AIChatHistoryCell else { return cell }
         chatCell.titleLabel.text = viewModel.title(forRowAt: indexPath)
         chatCell.iconImageView.image = viewModel.icon(forRowAt: indexPath)
+        if isSidebar {
+            let chatId = viewModel.chatId(forRowAt: indexPath)
+            chatCell.applySidebarAppearance(isCurrentChat: chatId != nil && chatId == currentChatId)
+        }
         return chatCell
     }
 }
@@ -806,13 +920,17 @@ extension AIChatHistoryViewController: UISearchBarDelegate {
     }
 
     func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
+        clearSearch()
+        // Redesign: cancelling hides the on-demand search bar again. The sidebar keeps it.
+        if isRedesignEnabled && !isSidebar {
+            removeSearchHeader()
+        }
+    }
+
+    fileprivate func clearSearch() {
         searchBar.text = nil
         searchBar.setShowsCancelButton(false, animated: true)
         searchBar.resignFirstResponder()
         viewModel.updateQuery("")
-        // Redesign: cancelling hides the on-demand search bar again.
-        if isRedesignEnabled {
-            removeSearchHeader()
-        }
     }
 }

@@ -20,6 +20,7 @@ import AIChat
 import AIChatDebugServer
 import DebugServer
 import AppKit
+import AppKitExtensions
 import ConcurrencyExtensions
 import os.log
 import Persistence
@@ -100,6 +101,23 @@ final class AIChatDebugMenu: NSMenu {
             NSMenuItem(title: "Reset Launcher Promo", action: #selector(resetLauncherPromo))
                 .targetting(self)
 
+            NSMenuItem(title: "Reset Local Summaries Opt-In", action: #selector(resetLocalSummaries))
+                .targetting(self)
+
+            NSMenuItem(title: "Show Local Model Access Pop-Up", action: #selector(showLocalModelAccessPrompt))
+                .targetting(self)
+
+            NSMenuItem(title: "On-Device Model Engine")
+                .submenu(LocalModelEngineDebugMenu())
+
+            NSMenuItem(title: "Delete Downloaded Model", action: #selector(deleteDownloadedModel))
+                .targetting(self)
+
+            NSMenuItem.separator()
+
+            NSMenuItem(title: "Boost Offer")
+                .submenu(AIChatBoostOfferDebugMenu())
+
             NSMenuItem.separator()
 
             storageServerMenuItem
@@ -160,6 +178,34 @@ final class AIChatDebugMenu: NSMenu {
 
     @objc private func resetLauncherPromo() {
         DuckAiLauncherPromo.resetOutcome(in: NSApp.delegateTyped.keyValueStore)
+    }
+
+    /// Back to a Mac that never set up local summaries, so the pop-up shows again whichever engine is active.
+    @MainActor
+    @objc private func resetLocalSummaries() {
+        let service = NSApp.delegateTyped.localModelService
+        service.optOut()
+        service.uninstallDownloadableModel()
+    }
+
+    /// Runs `requestAIChatLocalModelAccess` the way Duck.ai would, until Duck.ai sends it. It shows the
+    /// active engine's pop-up, Connect or Install, and nothing once that engine is set up.
+    @MainActor
+    @objc private func showLocalModelAccessPrompt() {
+        let service = NSApp.delegateTyped.localModelService
+        let prompt = NSApp.delegateTyped.localModelAccessPrompt
+        let webView = NSApp.delegateTyped.windowControllersManager.lastKeyMainWindowController?
+            .mainViewController.tabCollectionViewModel.selectedTabViewModel?.tab.webView
+        Task { @MainActor in
+            _ = try? await service.requestAccess { request in
+                await prompt.ask(from: webView, request: request)
+            }
+        }
+    }
+
+    @MainActor
+    @objc private func deleteDownloadedModel() {
+        NSApp.delegateTyped.localModelService.uninstallDownloadableModel()
     }
 
     // MARK: - Terms of Service
@@ -405,5 +451,39 @@ final class AIChatDebugMenu: NSMenu {
         } else {
             _ = callback(nil)
         }
+    }
+}
+
+/// Picks the engine for local summaries on any Mac. The downloaded model stays when switching away.
+private final class LocalModelEngineDebugMenu: NSMenu {
+
+    private let persistor = LocalModelEngineOverridePersistor()
+
+    init() {
+        super.init(title: "")
+        for engineOverride in LocalModelEngineOverride.allCases {
+            let item = NSMenuItem(title: engineOverride.title, action: #selector(select(_:)), target: self)
+            item.representedObject = engineOverride
+            item.withAccessibilityIdentifier("AIChatDebugMenu.localModelEngine.\(engineOverride.rawValue)")
+            addItem(item)
+        }
+    }
+
+    required init(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func update() {
+        let current = persistor.current
+        for item in items {
+            guard let engineOverride = item.representedObject as? LocalModelEngineOverride else { continue }
+            item.state = engineOverride == current ? .on : .off
+        }
+    }
+
+    @objc private func select(_ sender: NSMenuItem) {
+        guard let engineOverride = sender.representedObject as? LocalModelEngineOverride else { return }
+        persistor.current = engineOverride
+        update()
     }
 }

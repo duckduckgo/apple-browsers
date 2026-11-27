@@ -72,7 +72,7 @@ struct SettingsSubscriptionView: View {
     private var dataBrokerProtectionDestination: some View {
         if let vcProvider = settingsViewModel.dataBrokerProtectionViewControllerProvider {
             DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: vcProvider,
-                                                             freeScanEntryPoint: settingsViewModel.hasCompletedFreemiumScan ? .appMenuPostScan : .appMenuPreScan)
+                                                             freeScanEntryPoint: settingsViewModel.hasCompletedFreemiumScan ? .appSettingsPostScan : .appSettingsPreScan)
                 .edgesIgnoringSafeArea(.bottom)
                 // Prevent an accidental downward swipe on the web view from dismissing the
                 // whole Settings modal and losing the user's place in the free-scan flow.
@@ -137,14 +137,13 @@ struct SettingsSubscriptionView: View {
     @ViewBuilder
     private var purchaseSubscriptionView: some View {
         Group {
-            let isPaidAIChatEnabled = settingsViewModel.isPaidAIChatEnabled
-            let titleText: String = UserText.settingsSubscription(isPaidAIChatEnabled: isPaidAIChatEnabled)
+            let titleText: String = UserText.settingsSubscription()
             let subtitleText: String = {
                 switch currentStorefrontRegion {
                 case .usa:
-                    return UserText.settingsSubscriptionDescription(isPaidAIChatEnabled: isPaidAIChatEnabled, isUS: true)
+                    return UserText.settingsSubscriptionDescription(isUS: true)
                 case .restOfWorld:
-                    return UserText.settingsSubscriptionDescription(isPaidAIChatEnabled: isPaidAIChatEnabled, isUS: false)
+                    return UserText.settingsSubscriptionDescription(isUS: false)
                 }
             }()
 
@@ -235,7 +234,7 @@ struct SettingsSubscriptionView: View {
             }
         }
 
-        if subscriptionFeatures.contains(.paidAIChat) && settingsViewModel.isPaidAIChatEnabled {
+        if subscriptionFeatures.contains(.paidAIChat) {
             SettingsCellView(
                 label: UserText.settingsSubscriptionAiChatTitle,
                 image: Image(uiImage: DesignSystemImages.Color.Size24.paidAiChat),
@@ -379,7 +378,7 @@ struct SettingsSubscriptionView: View {
             }
         }
 
-        if subscriptionFeatures.contains(.paidAIChat) && settingsViewModel.isPaidAIChatEnabled {
+        if subscriptionFeatures.contains(.paidAIChat) {
             let hasAIChatEntitlement = userEntitlements.contains(.paidAIChat)
 
             NavigationLink(destination: LazyView(SubscriptionAIChatView(viewModel: settingsViewModel)), isActive: $isShowingPaidAIChat) {

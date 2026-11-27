@@ -22,12 +22,329 @@ import AIChat
 import BrowserServicesKit
 import BrowserServicesKitTestsUtils
 import Combine
+import JavaScriptCore
 import UserScript
 import WebKit
+@_spi(Testing) import WideEvent
 @testable import Core
 @testable import DuckDuckGo
 
 final class AIChatContextualWebViewControllerTests: XCTestCase {
+
+    @MainActor
+    func testBrowserToolsConfiguredWithParentFlagDisabledBecomeAvailableWithoutReplacingScript() async {
+        let fixture = BrowserToolsBridgeFixture(enabledFlags: [.aiChatBrowserToolListOpenTabs])
+        defer { fixture.cleanUp() }
+        let sut = makeAttachmentSubmissionController()
+        defer { sut.detachBrowserTools() }
+        sut.browserToolsOwner = fixture.owner
+        sut.browserToolsService = fixture.service
+        sut.browserToolsPermissionPresenter = fixture.presenter
+        var scopeCreations = 0
+        sut.browserToolScopeFactory = { [weak fixture] in
+            scopeCreations += 1
+            return fixture?.makeScope()
+        }
+        let script = AIChatUserScript(handler: fixture.handler, debugSettings: AIChatDebugSettings(userDefault: fixture.defaults))
+        sut.configureContentHandler(with: script)
+        XCTAssertNotNil(script.webView)
+        XCTAssertEqual(fixture.handler.displayMode, .contextual)
+        XCTAssertTrue(script.browserToolsService === fixture.service)
+        XCTAssertEqual(scopeCreations, 1)
+        script.webView = fixture.webView
+        XCTAssertNil(fixture.service.configuration(for: script))
+        let unavailable = await fixture.handler.executeClientTool(params: fixture.params(), source: script)
+        XCTAssertEqual(unavailable, .failure(callId: "call", error: .unavailable))
+        XCTAssertTrue(fixture.webView.permissionPrompts.isEmpty)
+        XCTAssertEqual(fixture.listings, 0)
+
+        fixture.flags.enabledFeatureFlags = [.aiChatBrowserTools, .aiChatBrowserToolListOpenTabs]
+        fixture.flags.triggerUpdate()
+        XCTAssertEqual(fixture.service.configuration(for: script)?.capabilities, [.listOpenTabs])
+        let allowed = await fixture.handler.executeClientTool(params: fixture.params(), source: script)
+        XCTAssertEqual(allowed, fixture.success)
+        XCTAssertEqual(fixture.listings, 1)
+        XCTAssertTrue(fixture.webView.permissionPrompts.isEmpty)
+    }
+
+    @MainActor
+    func testReconfiguringWithParentFlagDisabledDetachesPreviousBrowserToolsSource() async {
+        let fixture = BrowserToolsBridgeFixture()
+        defer { fixture.cleanUp() }
+        let sut = makeAttachmentSubmissionController()
+        defer { sut.detachBrowserTools() }
+        sut.browserToolsOwner = fixture.owner
+        sut.browserToolsService = fixture.service
+        sut.browserToolsPermissionPresenter = fixture.presenter
+        var scopeCreations = 0
+        sut.browserToolScopeFactory = { [weak fixture] in
+            scopeCreations += 1
+            return fixture?.makeScope()
+        }
+        let enabledScript = AIChatUserScript(handler: fixture.handler, debugSettings: AIChatDebugSettings(userDefault: fixture.defaults))
+        sut.configureContentHandler(with: enabledScript)
+        XCTAssertTrue(enabledScript.browserToolsService === fixture.service)
+        XCTAssertEqual(scopeCreations, 1)
+
+        fixture.flags.enabledFeatureFlags = [.aiChatBrowserToolListOpenTabs]
+        let disabledScript = AIChatUserScript(handler: fixture.handler, debugSettings: AIChatDebugSettings(userDefault: fixture.defaults))
+        sut.configureContentHandler(with: disabledScript)
+        XCTAssertNil(enabledScript.browserToolsService)
+        XCTAssertTrue(disabledScript.browserToolsService === fixture.service)
+        XCTAssertNotNil(disabledScript.webView)
+        XCTAssertEqual(fixture.handler.displayMode, .contextual)
+        XCTAssertEqual(scopeCreations, 2)
+        enabledScript.webView = fixture.webView
+        disabledScript.webView = fixture.webView
+        for script in [enabledScript, disabledScript] {
+            XCTAssertNil(fixture.service.configuration(for: script))
+            let unavailable = await fixture.handler.executeClientTool(params: fixture.params(), source: script)
+            XCTAssertEqual(unavailable, .failure(callId: "call", error: .unavailable))
+        }
+        XCTAssertTrue(fixture.webView.permissionPrompts.isEmpty)
+        XCTAssertEqual(fixture.listings, 0)
+    }
+
+    @MainActor
+    func testBrowserToolsCancelOnSurfaceDepartureButKeepDocumentAfterFailedNavigation() async throws {
+        let fixture = BrowserToolsBridgeFixture()
+        defer { fixture.cleanUp() }
+        let sut = makeAttachmentSubmissionController()
+        sut.browserToolsOwner = fixture.owner
+        sut.browserToolsService = fixture.service
+        sut.browserToolsPermissionPresenter = fixture.presenter
+        sut.browserToolScopeFactory = { [weak fixture] in fixture?.makeScope() }
+        sut.configureContentHandler(with: fixture.script)
+        let actualWebView = try XCTUnwrap(fixture.script.webView)
+        fixture.script.webView = fixture.webView
+        guard case .granted(_, let performExecution) = try await fixture.authorizeListing() else {
+            return XCTFail("Expected native authorization")
+        }
+        sut.viewWillDisappear(false)
+        sut.webView(actualWebView, didStartProvisionalNavigation: nil)
+        sut.webView(actualWebView, didFailProvisionalNavigation: nil, withError: NSError(domain: NSURLErrorDomain, code: NSURLErrorCancelled))
+        let retained = await performExecution { .success([:]) }
+        XCTAssertNil(retained)
+        let result = await fixture.invoke()
+        XCTAssertEqual(result, fixture.success)
+        XCTAssertEqual(fixture.listings, 1)
+    }
+
+    @MainActor
+    func testNavigationDelegateDoesNotHandleProcessTerminationWithBrowserToolsEnabledOrDisabled() throws {
+        for enabled in [false, true] {
+            let fixture = BrowserToolsBridgeFixture()
+            defer { fixture.cleanUp() }
+            fixture.flags.enabledFeatureFlags = enabled ? [.aiChatBrowserTools, .aiChatBrowserToolListOpenTabs] : [.aiChatBrowserToolListOpenTabs]
+            let sut = makeAttachmentSubmissionController()
+            defer { sut.detachBrowserTools() }
+            sut.browserToolsOwner = fixture.owner
+            sut.browserToolsService = fixture.service
+            sut.browserToolsPermissionPresenter = fixture.presenter
+            sut.browserToolScopeFactory = { [weak fixture] in fixture?.makeScope() }
+            sut.configureContentHandler(with: fixture.script)
+            let navigationDelegate = try XCTUnwrap(fixture.script.webView?.navigationDelegate)
+            XCTAssertFalse(navigationDelegate.responds(to: #selector(WKNavigationDelegate.webViewWebContentProcessDidTerminate(_:))))
+        }
+    }
+
+    @MainActor
+    func testBrowserToolsCancelGrantedListingOnlyForOwnCommitAndDetach() async throws {
+        let fixture = BrowserToolsBridgeFixture()
+        defer { fixture.cleanUp() }
+        let sut = makeAttachmentSubmissionController()
+        sut.browserToolsOwner = fixture.owner
+        sut.browserToolsService = fixture.service
+        sut.browserToolsPermissionPresenter = fixture.presenter
+        sut.browserToolScopeFactory = { [weak fixture] in fixture?.makeScope() }
+        sut.configureContentHandler(with: fixture.script)
+        let actualWebView = try XCTUnwrap(fixture.script.webView)
+        fixture.script.webView = fixture.webView
+        guard case .granted(_, let performAfterForeignCommit) = try await fixture.authorizeListing() else {
+            return XCTFail("Expected native authorization")
+        }
+        sut.webView(WKWebView(), didCommit: nil)
+        let retained = await performAfterForeignCommit { .success([:]) }
+        XCTAssertEqual(retained, .success([:]))
+        let unaffected = await fixture.invoke()
+        XCTAssertEqual(unaffected, fixture.success)
+        guard case .granted(_, let performAfterOwnCommit) = try await fixture.authorizeListing() else {
+            return XCTFail("Expected native authorization")
+        }
+        sut.webView(actualWebView, didCommit: nil)
+        let cancelled = await performAfterOwnCommit {
+            XCTFail("Replaced document must not execute")
+            return .success([:])
+        }
+        XCTAssertNil(cancelled)
+        XCTAssertEqual(fixture.listings, 1)
+        let restored = await fixture.invoke()
+        XCTAssertEqual(restored, fixture.success)
+        sut.detachBrowserTools()
+        let detached = await fixture.invoke()
+        XCTAssertEqual(detached, .failure(callId: "call", error: .unavailable))
+        let lateScript = AIChatUserScript(handler: fixture.handler, debugSettings: AIChatDebugSettings(userDefault: fixture.defaults))
+        sut.configureContentHandler(with: lateScript)
+        lateScript.webView = fixture.webView
+        XCTAssertNil(fixture.service.configuration(for: lateScript))
+        let lateInvocation = await fixture.handler.executeClientTool(params: fixture.params(), source: lateScript)
+        XCTAssertEqual(lateInvocation, .failure(callId: "call", error: .unavailable))
+
+        let freshController = makeAttachmentSubmissionController()
+        freshController.browserToolsOwner = fixture.owner
+        freshController.browserToolsService = fixture.service
+        freshController.browserToolsPermissionPresenter = fixture.presenter
+        freshController.browserToolScopeFactory = { [weak fixture] in fixture?.makeScope() }
+        let freshScript = AIChatUserScript(handler: fixture.handler, debugSettings: AIChatDebugSettings(userDefault: fixture.defaults))
+        freshController.configureContentHandler(with: freshScript)
+        freshScript.webView = fixture.webView
+        let freshInvocation = await fixture.handler.executeClientTool(params: fixture.params(), source: freshScript)
+        XCTAssertEqual(freshInvocation, fixture.success)
+        freshController.detachBrowserTools()
+    }
+
+    /// New Chat loads a new document in the same web view. The old chat's last state must not reach the input that binds
+    /// for the first prompt: it would show the stop button and end that prompt's wide event before the answer arrives.
+    @MainActor
+    func testNewDocumentDoesNotHandTheOldChatsStateToTheNextPrompt() async throws {
+        let fixture = BrowserToolsBridgeFixture(enabledFlags: [])
+        defer { fixture.cleanUp() }
+        let wideEvent = WideEventMock()
+        let instrumentation = DefaultDuckAIWideEventInstrumentation(wideEvent: wideEvent, usageContextProvider: UsageContextProvider(),
+                                                                    addressBarPosition: { nil })
+        let scope = DuckAIWideEventFlowScope.contextual(UUID())
+        let input = UnifiedToggleInputCoordinator(host: .contextualChat, isToggleEnabled: false,
+                                                  preferences: StubInputPreferences(), toggleModeStorage: StubToggleModeStorage(),
+                                                  duckAIWideEventInstrumentation: instrumentation, duckAIWideEventFlowScope: scope,
+                                                  contextualStart: .expandedPreSubmit, featureFlagger: fixture.flags)
+        let sut = makeAttachmentSubmissionController()
+        let script = AIChatUserScript(handler: fixture.handler, debugSettings: AIChatDebugSettings(userDefault: fixture.defaults))
+        sut.configureContentHandler(with: script)
+        let webView = try XCTUnwrap(script.webView)
+        input.bindToTab(script)
+        fixture.handler.isAIChatPromoVisible = true
+        _ = await fixture.handler.getResponseState(params: ["status": "streaming"], message: MockUserScriptMessage(name: "test", body: [:]))
+        XCTAssertTrue(input.viewController.isGenerating)
+
+        input.unbind()
+        sut.webView(webView, didCommit: nil)
+        instrumentation.submissionStarted(scope: scope, modelId: nil, userTier: .free, reasoningEffort: nil, entryPoint: .contextualChat,
+                                          inputMode: .keyboard, fireMode: false, isFirstPrompt: true,
+                                          frontendDeliveryPath: .contextualNativeInput, hasPageContext: false,
+                                          toolsSelected: false, attachmentsSelected: false)
+        input.bindToTab(script)
+        XCTAssertFalse(input.viewController.isGenerating)
+        XCTAssertNil(input.isAIChatPromoVisible)
+
+        _ = await fixture.handler.getResponseState(params: ["status": "ready"], message: MockUserScriptMessage(name: "test", body: [:]))
+        XCTAssertTrue(wideEvent.completions.isEmpty)
+    }
+
+    @MainActor
+    func testSheetScrollInsetsFollowItsSiblingInputDuringLayout() async throws {
+        guard #available(iOS 26, *) else { throw XCTSkip("Requires WebKit obscured content insets") }
+        for usesLiquidGlass in [false, true] {
+            let webController = makeAttachmentSubmissionController()
+            webController.loadViewIfNeeded()
+            let webView = try XCTUnwrap(webController.view.subviews.compactMap { $0 as? WKWebView }.first)
+            guard webView.responds(to: #selector(setter: WKWebView.obscuredContentInsets)) else {
+                throw XCTSkip("Runtime lacks obscured content insets")
+            }
+            let settings = MockAIChatSettingsProvider(aiChatURL: URL(string: "about:blank")!)
+            let pixels = StubContextualModePixelHandler()
+            let flagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatContextualFloatingInput])
+            let floatingInputFeature = AIChatContextualFloatingInputFeature(featureFlagger: flagger)
+            let host = AIChatContextualUTIHost(originatingURLPublisher: Empty<URL?, Never>().eraseToAnyPublisher(),
+                                               initialAttachedContext: nil, hasActiveChat: { true },
+                                               isAutoAttachEnabled: { false }, isFireTab: false,
+                                               unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true),
+                                               floatingInputFeature: floatingInputFeature)
+            let state = AIChatContextualChatSessionState(aiChatSettings: settings, pixelHandler: pixels, featureFlagger: flagger,
+                                                        floatingInputFeature: floatingInputFeature)
+            state.restoreChat(with: settings.aiChatURL)
+            let sheet = AIChatContextualSheetViewController(
+                sessionState: state,
+                aiChatSettings: settings, voiceSearchHelper: MockVoiceSearchHelper(),
+                webViewControllerFactory: { webController }, pixelHandler: pixels, featureFlagger: flagger,
+                persistentUTIHost: host, floatingInputFeature: floatingInputFeature, usesLiquidGlassHeader: usesLiquidGlass
+            )
+            let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+            defer { window.isHidden = true }
+            window.rootViewController = sheet
+            window.makeKeyAndVisible()
+            await withCheckedContinuation { continuation in
+                DispatchQueue.main.async { continuation.resume() }
+            }
+            sheet.view.setNeedsLayout()
+            sheet.view.layoutIfNeeded()
+            webController.view.layoutIfNeeded()
+            let header = try XCTUnwrap(sheet.view.subviews.first { $0.firstSubview(ofType: AIChatHeaderGlassPill.self) != nil })
+            let content = try XCTUnwrap(webController.view.superview)
+            let headerIndex = try XCTUnwrap(sheet.view.subviews.firstIndex(of: header))
+            let contentIndex = try XCTUnwrap(sheet.view.subviews.firstIndex(of: content))
+            XCTAssertEqual(headerIndex > contentIndex, usesLiquidGlass)
+            let editHeader = try XCTUnwrap(sheet.view.firstSubview(ofType: AIChatEditHeaderView.self))
+            let cancelPill = try XCTUnwrap(editHeader.firstSubview(ofType: AIChatHeaderGlassPill.self))
+            let glass = try XCTUnwrap(cancelPill.firstSubview(ofType: UIVisualEffectView.self))
+            XCTAssertEqual(cancelPill.layer.shadowOpacity, usesLiquidGlass ? 0 : 0.16)
+            XCTAssertEqual(glass.clipsToBounds, !usesLiquidGlass)
+            let input = host.mount(in: sheet)
+            let restingInset = webView.obscuredContentInsets.bottom
+            if usesLiquidGlass { XCTAssertGreaterThan(restingInset, 0) }
+            XCTAssertEqual(restingInset, usesLiquidGlass ? webController.view.bounds.maxY - input.convert(.zero, to: webController.view).y : 0,
+                           accuracy: 0.5)
+
+            input.transform = CGAffineTransform(translationX: 0, y: -120)
+            sheet.view.setNeedsLayout()
+            sheet.view.layoutIfNeeded()
+            XCTAssertEqual(webView.obscuredContentInsets.bottom, restingInset + (usesLiquidGlass ? 120 : 0), accuracy: 0.5)
+        }
+    }
+
+    @MainActor
+    func testNativeQuickActionsEndAboveInputUntilConversationIsVisible() async throws {
+        for usesLiquidGlass in [false, true] {
+            let webController = makeAttachmentSubmissionController()
+            let settings = MockAIChatSettingsProvider(aiChatURL: URL(string: "about:blank")!)
+            let pixels = StubContextualModePixelHandler()
+            let flagger = MockFeatureFlagger()
+            let floatingInputFeature = AIChatContextualFloatingInputFeature(featureFlagger: flagger)
+            let host = AIChatContextualUTIHost(originatingURLPublisher: Empty<URL?, Never>().eraseToAnyPublisher(),
+                                             initialAttachedContext: nil, hasActiveChat: { false },
+                                             isAutoAttachEnabled: { false }, isFireTab: false,
+                                             unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true),
+                                             floatingInputFeature: floatingInputFeature)
+            let state = AIChatContextualChatSessionState(aiChatSettings: settings, pixelHandler: pixels, featureFlagger: flagger,
+                                                        floatingInputFeature: floatingInputFeature)
+            state.updateUnifiedToggleInputActive(true, isImmediateContextual: true)
+            let sheet = AIChatContextualSheetViewController(
+                sessionState: state,
+                aiChatSettings: settings, voiceSearchHelper: MockVoiceSearchHelper(),
+                webViewControllerFactory: { webController }, pixelHandler: pixels, featureFlagger: flagger,
+                persistentUTIHost: host, floatingInputFeature: floatingInputFeature, usesLiquidGlassHeader: usesLiquidGlass
+            )
+            let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+            defer { window.isHidden = true }
+            window.rootViewController = sheet
+            window.makeKeyAndVisible()
+            await withCheckedContinuation { continuation in
+                DispatchQueue.main.async { continuation.resume() }
+            }
+            sheet.view.layoutIfNeeded()
+            let input = host.mount(in: sheet)
+            let nativeInput = try XCTUnwrap(sheet.children.first { $0 is AIChatContextualInputViewController })
+            XCTAssertEqual(nativeInput.view.convert(nativeInput.view.bounds, to: sheet.view).maxY, input.frame.minY, accuracy: 0.5)
+
+            state.restoreChat(with: settings.aiChatURL)
+            await withCheckedContinuation { continuation in
+                DispatchQueue.main.async { continuation.resume() }
+            }
+            sheet.view.layoutIfNeeded()
+            let extendsUnderInput = if #available(iOS 26, *) { usesLiquidGlass } else { false }
+            XCTAssertEqual(webController.view.convert(webController.view.bounds, to: sheet.view).maxY,
+                           extendsUnderInput ? sheet.view.bounds.maxY : input.frame.minY, accuracy: 0.5)
+        }
+    }
 
     @MainActor
     func testQueuedFirstPromptKeepsItsRequestUntilFrontendIsReady() async {
@@ -79,6 +396,110 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
         await fulfillment(of: [released], timeout: 1)
     }
 
+    // MARK: - Local task
+
+    /// The user script reads the mark only while a prompt is being sent, so a queued prompt has to carry it.
+    @MainActor
+    func testWhenARichSummaryIsQueuedBeforeTheFrontendIsReadyThenItIsDeliveredAsALocalTask() async {
+        let harness = makeRecordingHarness()
+        let delivered = expectation(description: "Summary delivered")
+        harness.webView.onPrompt = { _ in delivered.fulfill() }
+
+        harness.sut.submitting(localTask: .summarize) {
+            harness.sut.submitPrompt("Summarize this page.", attachments: .none, modelId: nil, tools: nil, reasoningEffort: nil)
+        }
+        XCTAssertTrue(harness.webView.prompts.isEmpty)
+        harness.sut.markFrontendAsReady()
+        await fulfillment(of: [delivered], timeout: 1)
+
+        XCTAssertEqual(harness.webView.localTasks, [.summarize])
+        withExtendedLifetime(harness) {}
+    }
+
+    @MainActor
+    func testWhenASimpleSummaryIsQueuedBeforeTheFrontendIsReadyThenItIsDeliveredAsALocalTask() async {
+        let harness = makeRecordingHarness()
+        let delivered = expectation(description: "Summary delivered")
+        harness.webView.onPrompt = { _ in delivered.fulfill() }
+
+        harness.sut.submitPrompt("Summarize this page.", localTask: .summarize)
+        XCTAssertTrue(harness.webView.prompts.isEmpty)
+        harness.sut.markFrontendAsReady()
+        await fulfillment(of: [delivered], timeout: 1)
+
+        XCTAssertEqual(harness.webView.localTasks, [.summarize])
+        withExtendedLifetime(harness) {}
+    }
+
+    @MainActor
+    func testWhenASimpleSummaryIsSubmittedAfterTheFrontendIsReadyThenItIsDeliveredAsALocalTask() async {
+        let harness = makeRecordingHarness()
+        harness.sut.markFrontendAsReady()
+        let delivered = expectation(description: "Summary delivered")
+        harness.webView.onPrompt = { _ in delivered.fulfill() }
+
+        harness.sut.submitPrompt("Summarize this page.", localTask: .summarize)
+        await fulfillment(of: [delivered], timeout: 1)
+
+        XCTAssertEqual(harness.webView.localTasks, [.summarize])
+        withExtendedLifetime(harness) {}
+    }
+
+    /// A summary leaves no mark behind for the prompt that follows it, queued or not.
+    @MainActor
+    func testWhenAPromptFollowsASummaryThenItIsNotMarkedAsALocalTask() async {
+        let harness = makeRecordingHarness()
+        let summaryDelivered = expectation(description: "Summary delivered")
+        harness.webView.onPrompt = { _ in summaryDelivered.fulfill() }
+        harness.sut.submitting(localTask: .summarize) {
+            harness.sut.submitPrompt("Summarize this page.", attachments: .none, modelId: nil, tools: nil, reasoningEffort: nil)
+        }
+        harness.sut.markFrontendAsReady()
+        await fulfillment(of: [summaryDelivered], timeout: 1)
+
+        let typedDelivered = expectation(description: "Typed prompt delivered")
+        harness.webView.onPrompt = { _ in typedDelivered.fulfill() }
+        harness.sut.submitPrompt("Summarize this page.", attachments: .none, modelId: nil, tools: nil, reasoningEffort: nil)
+        await fulfillment(of: [typedDelivered], timeout: 1)
+
+        XCTAssertEqual(harness.webView.localTasks, [.summarize, nil])
+        withExtendedLifetime(harness) {}
+    }
+
+    @MainActor
+    func testWhenATypedPromptIsQueuedBeforeTheFrontendIsReadyThenItIsNotMarkedAsALocalTask() async {
+        let harness = makeRecordingHarness()
+        let delivered = expectation(description: "Prompt delivered")
+        harness.webView.onPrompt = { _ in delivered.fulfill() }
+
+        harness.sut.submitPrompt("Summarize this page.", attachments: .none, modelId: nil, tools: nil, reasoningEffort: nil)
+        harness.sut.markFrontendAsReady()
+        await fulfillment(of: [delivered], timeout: 1)
+
+        XCTAssertEqual(harness.webView.localTasks, [nil])
+        withExtendedLifetime(harness) {}
+    }
+
+    private struct RecordingHarness {
+        let sut: AIChatContextualWebViewController
+        let script: AIChatUserScript
+        let webView: LocalTaskRecordingWebView
+        let broker: UserScriptMessageBroker
+    }
+
+    @MainActor
+    private func makeRecordingHarness() -> RecordingHarness {
+        let sut = makeAttachmentSubmissionController()
+        let script = makeTestUserScript()
+        let webView = LocalTaskRecordingWebView()
+        let broker = UserScriptMessageBroker(context: "aiChat", requiresRunInPageContentWorld: true)
+        sut.configureContentHandler(with: script)
+        script.with(broker: broker)
+        script.webView = webView
+        sut.webView(WKWebView(), didFinish: nil)
+        return RecordingHarness(sut: sut, script: script, webView: webView, broker: broker)
+    }
+
     @MainActor
     private func makeAttachmentSubmissionController(utiHost: AIChatContextualUTIHost? = nil) -> AIChatContextualWebViewController {
         AIChatContextualWebViewController(aiChatSettings: MockAIChatSettingsProvider(aiChatURL: URL(string: "about:blank")!),
@@ -90,6 +511,7 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
                                           downloadHandler: StubDownloadHandler(), getPageContext: nil,
                                           pixelHandler: StubContextualModePixelHandler(),
                                           onboardingActivationRecorder: NullSubscriptionOnboardingActivationRecorder(),
+                                          onboardingExperimentMetricStore: MockSubscriptionOnboardingExperimentMetricStore(),
                                           utiHostInstaller: { _ in utiHost })
     }
 
@@ -271,7 +693,8 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
             getPageContext: nil,
             pixelHandler: StubContextualModePixelHandler(),
             userAgentManager: stubUserAgent,
-            onboardingActivationRecorder: NullSubscriptionOnboardingActivationRecorder()
+            onboardingActivationRecorder: NullSubscriptionOnboardingActivationRecorder(),
+            onboardingExperimentMetricStore: MockSubscriptionOnboardingExperimentMetricStore()
         )
 
         sut.loadViewIfNeeded()
@@ -295,7 +718,8 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
             downloadHandler: StubDownloadHandler(),
             getPageContext: nil,
             pixelHandler: StubContextualModePixelHandler(),
-            onboardingActivationRecorder: NullSubscriptionOnboardingActivationRecorder()
+            onboardingActivationRecorder: NullSubscriptionOnboardingActivationRecorder(),
+            onboardingExperimentMetricStore: MockSubscriptionOnboardingExperimentMetricStore()
         )
 
         sut.loadViewIfNeeded()
@@ -319,7 +743,8 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
             downloadHandler: StubDownloadHandler(),
             getPageContext: nil,
             pixelHandler: StubContextualModePixelHandler(),
-            onboardingActivationRecorder: NullSubscriptionOnboardingActivationRecorder()
+            onboardingActivationRecorder: NullSubscriptionOnboardingActivationRecorder(),
+            onboardingExperimentMetricStore: MockSubscriptionOnboardingExperimentMetricStore()
         )
         let restoreURL = URL(string: "https://duck.ai/chat?native-input=true")!
 
@@ -341,7 +766,8 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
             downloadHandler: StubDownloadHandler(),
             getPageContext: nil,
             pixelHandler: StubContextualModePixelHandler(),
-            onboardingActivationRecorder: NullSubscriptionOnboardingActivationRecorder()
+            onboardingActivationRecorder: NullSubscriptionOnboardingActivationRecorder(),
+            onboardingExperimentMetricStore: MockSubscriptionOnboardingExperimentMetricStore()
         )
         let url = URL(string: "https://example.com/path")!
 
@@ -398,6 +824,58 @@ private final class StubUserAgentManager: UserAgentManaging {
     var applicationNameForUserAgent: String { "" }
 }
 
+private final class LocalTaskRecordingWebView: WKWebView {
+    private(set) var prompts: [AIChatNativePrompt] = []
+    var onPrompt: ((AIChatNativePrompt) -> Void)?
+    private let javaScriptContext = JSContext()!
+
+    var localTasks: [AIChatLocalModelTask?] {
+        prompts.map { prompt in
+            guard case .query(let query) = prompt.tool else { return nil }
+            return query.localTask
+        }
+    }
+
+    override func evaluateJavaScript(_ javaScriptString: String, completionHandler: ((Any?, Error?) -> Void)? = nil) {
+        javaScriptContext.evaluateScript("""
+            var capturedPrompt = null;
+            var navigator = { duckduckgo: { messageHandlers: {
+                submitAIChatNativePrompt: function(event) { capturedPrompt = event.params; }
+            } } };
+            """)
+        javaScriptContext.evaluateScript(javaScriptString)
+        if let error = javaScriptContext.exception {
+            XCTFail("Bridge JavaScript failed: \(error)")
+        }
+        if let object = javaScriptContext.objectForKeyedSubscript("capturedPrompt")?.toDictionary() as? [String: Any] {
+            do {
+                let data = try JSONSerialization.data(withJSONObject: object)
+                let prompt = try JSONDecoder().decode(AIChatNativePrompt.self, from: data)
+                prompts.append(prompt)
+                onPrompt?(prompt)
+            } catch {
+                XCTFail("Invalid native prompt: \(error)")
+            }
+        }
+        completionHandler?(nil, nil)
+    }
+}
+
+private final class StubInputPreferences: AIChatPreferencesPersisting {
+    var selectedReasoningEffort: String?
+    var selectedModelId: String?
+    var selectedModelShortName: String?
+    var selectedReasoningMode: AIChatReasoningMode?
+    var selectedTool: AIChatRAGTool?
+    var selectedModelIdPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
+    var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
+}
+
+private final class StubToggleModeStorage: ToggleModeStoring {
+    func save(_ mode: TextEntryMode) {}
+    func restore() -> TextEntryMode? { nil }
+}
+
 private final class StubDownloadHandler: NSObject, DownloadHandling {
     var onDownloadComplete: DownloadCompletionHandler?
 
@@ -411,6 +889,8 @@ private final class StubContextualModePixelHandler: AIChatContextualModePixelFir
     func fireSheetDismissed(hadUnsubmittedSelections: Bool) {}
     func fireSessionRestored() {}
     func fireSheetOpenedOnDeletedChat() {}
+    func fireSidebarOpened() {}
+    func fireSidebarClosed() {}
     func firePromptDepth(_ bucket: AIChatContextualPromptDepthBucket) {}
     func firePageContextOfferShown(reason: AIChatContextualPageContextOfferReason) {}
     func firePageContextOfferAccepted(reason: AIChatContextualPageContextOfferReason) {}

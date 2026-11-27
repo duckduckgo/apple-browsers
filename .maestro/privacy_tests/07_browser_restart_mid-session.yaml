@@ -104,7 +104,6 @@ tags:
     arguments:
       clearState: false
       isRunningUITests: true
-      "ff.alwaysShowKeyboardOnNewTabPage": "false"
 - assertVisible:
     text: "Pay"    
 - tapOn:

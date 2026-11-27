@@ -34,14 +34,37 @@ enum SubscriptionOnboardingLaunchFailureReason: String {
     case notPresentable
 }
 
+enum SubscriptionCancellationEntry: String {
+    case cancellation
+    case manage
+}
+
+enum SubscriptionDaysSincePurchaseBucket: String, Codable {
+    case d1
+    case d2To7 = "d2_7"
+    case d8To30 = "d8_30"
+    case d31Plus = "d31_plus"
+}
+
 enum SubscriptionPixel: PixelKit.Event {
     /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature by not sending the platform marker suffix.
     var platformSuffixPolicy: PixelKitPlatformSuffixPolicy {
         switch self {
-        case .subscriptionCancellationCancelClick,
+        case .subscriptionOnboardingStepClosed,
+                .subscriptionCancellationCancelClick,
                 .subscriptionCancellationAppStoreCancelled,
                 .subscriptionCancellationFlowLoadFailure,
-                .subscriptionCancellationFeatureInfoFailure:
+                .subscriptionCancellationFeatureInfoFailure,
+                .subscriptionWithdrawalWithdrawClick,
+                .subscriptionWithdrawalDialogShown,
+                .subscriptionWithdrawalConfirmClick,
+                .subscriptionWithdrawalKeepClick,
+                .subscriptionWithdrawalFailure,
+                .subscriptionWithdrawalEligibilityFailure,
+                .subscriptionNotificationsDeniedDialogNotNowClick,
+                .subscriptionNotificationsDeniedDialogOpenSettingsClick,
+                .subscriptionNotificationsDeniedDialogSettingsReturn,
+                .subscriptionNotificationsDeniedDialogPresentationFailure:
             return .standard
         default:
             return .legacyOmitted
@@ -53,16 +76,16 @@ enum SubscriptionPixel: PixelKit.Event {
     // Auth
     case subscriptionInvalidRefreshTokenDetected(SubscriptionPixelHandler.Source)
     case subscriptionInvalidRefreshTokenSignedOut
-    case subscriptionInvalidRefreshTokenRecovered
+    case subscriptionInvalidRefreshTokenRecovered(TokenRecoveryMethod?)
     case subscriptionAuthV2GetTokensError(AuthTokensCachePolicy, SubscriptionPixelHandler.Source, Error)
     // Pending Transaction
     case subscriptionPurchaseSuccessAfterPendingTransaction(SubscriptionPixelHandler.Source)
     case subscriptionPendingTransactionApproved(SubscriptionPixelHandler.Source)
     // KeychainManager
-    case subscriptionKeychainManagerDataAddedToTheBacklog(SubscriptionPixelHandler.Source)
-    case subscriptionKeychainManagerDeallocatedWithBacklog(SubscriptionPixelHandler.Source)
-    case subscriptionKeychainManagerDataWroteFromBacklog(SubscriptionPixelHandler.Source)
-    case subscriptionKeychainManagerFailedToWriteDataFromBacklog(SubscriptionPixelHandler.Source)
+    case subscriptionKeychainManagerDataAddedToTheBacklog(SubscriptionPixelHandler.Source, tokenType: SubscriptionKeychainTokenType?)
+    case subscriptionKeychainManagerDeallocatedWithBacklog(SubscriptionPixelHandler.Source, tokenType: SubscriptionKeychainTokenType?)
+    case subscriptionKeychainManagerDataWroteFromBacklog(SubscriptionPixelHandler.Source, tokenType: SubscriptionKeychainTokenType?)
+    case subscriptionKeychainManagerFailedToWriteDataFromBacklog(SubscriptionPixelHandler.Source, tokenType: SubscriptionKeychainTokenType?)
     // VPN Subscription Funnel Entry Points
     case subscriptionVPNToolbarImpression(isSubscriptionActive: Bool?)
     case subscriptionVPNToolbarClick(isSubscriptionActive: Bool?)
@@ -75,15 +98,28 @@ enum SubscriptionPixel: PixelKit.Event {
     case subscriptionOnboardingStepShown(step: String, entryPoint: String)
     case subscriptionOnboardingStepCompleted(step: String, entryPoint: String)
     case subscriptionOnboardingStepSkipped(step: String, entryPoint: String)
+    case subscriptionOnboardingStepClosed(step: String, entryPoint: String)
     case subscriptionOnboardingConnectionInfoFailure(Error)
     case subscriptionOnboardingAIModelsFailure(Error)
     case subscriptionOnboardingSubscriptionFailure(Error)
     case subscriptionOnboardingLaunchFailure(SubscriptionOnboardingLaunchFailureReason)
     // Subscription Cancellation Flow
     case subscriptionCancellationCancelClick
-    case subscriptionCancellationAppStoreCancelled
+    case subscriptionCancellationAppStoreCancelled(entry: SubscriptionCancellationEntry, isTrial: Bool, daysSincePurchase: SubscriptionDaysSincePurchaseBucket)
     case subscriptionCancellationFlowLoadFailure(Error)
     case subscriptionCancellationFeatureInfoFailure(entitlement: SubscriptionEntitlement)
+    // Subscription Withdrawal
+    case subscriptionWithdrawalWithdrawClick
+    case subscriptionWithdrawalDialogShown
+    case subscriptionWithdrawalConfirmClick
+    case subscriptionWithdrawalKeepClick
+    case subscriptionWithdrawalFailure(Error)
+    case subscriptionWithdrawalEligibilityFailure(Error)
+    // Notifications Denied Dialog
+    case subscriptionNotificationsDeniedDialogNotNowClick
+    case subscriptionNotificationsDeniedDialogOpenSettingsClick
+    case subscriptionNotificationsDeniedDialogSettingsReturn(notificationsPermission: String)
+    case subscriptionNotificationsDeniedDialogPresentationFailure
 
     var name: String {
         switch self {
@@ -112,6 +148,7 @@ enum SubscriptionPixel: PixelKit.Event {
         case .subscriptionOnboardingStepShown(let step, _): return "subscription_onboarding_step_shown_\(step)"
         case .subscriptionOnboardingStepCompleted(let step, _): return "subscription_onboarding_step_completed_\(step)"
         case .subscriptionOnboardingStepSkipped(let step, _): return "subscription_onboarding_step_skipped_\(step)"
+        case .subscriptionOnboardingStepClosed(let step, _): return "subscription_onboarding_step_closed_\(step)"
         case .subscriptionOnboardingConnectionInfoFailure: return "subscription_onboarding_connection-info_failure"
         case .subscriptionOnboardingAIModelsFailure: return "subscription_onboarding_ai-models_failure"
         case .subscriptionOnboardingSubscriptionFailure: return "subscription_onboarding_subscription_failure"
@@ -121,17 +158,35 @@ enum SubscriptionPixel: PixelKit.Event {
         case .subscriptionCancellationAppStoreCancelled: return "subscription_cancellation_app_store_cancelled"
         case .subscriptionCancellationFlowLoadFailure: return "subscription_cancellation_flow_load_failure"
         case .subscriptionCancellationFeatureInfoFailure: return "subscription_cancellation_feature-info_failure"
+            // Subscription Withdrawal
+        case .subscriptionWithdrawalWithdrawClick: return "subscription_withdrawal_withdraw_click"
+        case .subscriptionWithdrawalDialogShown: return "subscription_withdrawal_dialog_shown"
+        case .subscriptionWithdrawalConfirmClick: return "subscription_withdrawal_confirm_click"
+        case .subscriptionWithdrawalKeepClick: return "subscription_withdrawal_keep_click"
+        case .subscriptionWithdrawalFailure: return "subscription_withdrawal_failure"
+        case .subscriptionWithdrawalEligibilityFailure: return "subscription_withdrawal_eligibility_failure"
+            // Notifications Denied Dialog
+        case .subscriptionNotificationsDeniedDialogNotNowClick: return "subscription_notifications-denied-dialog_not-now_click"
+        case .subscriptionNotificationsDeniedDialogOpenSettingsClick: return "subscription_notifications-denied-dialog_open-settings_click"
+        case .subscriptionNotificationsDeniedDialogSettingsReturn: return "subscription_notifications-denied-dialog_settings_return"
+        case .subscriptionNotificationsDeniedDialogPresentationFailure: return "subscription_notifications-denied-dialog_presentation_failure"
         }
     }
 
     private struct SubscriptionPixelsDefaults {
         static let policyCacheKey = "policycache"
         static let sourceKey = "source"
+        static let tokenTypeKey = "token_type"
         static let platformKey = "platform"
         static let vpnSubscriptionActiveKey = "vpnSubscriptionActive"
         static let entryPointKey = "entry_point"
         static let reasonKey = "reason"
         static let entitlementKey = "entitlement"
+        static let entryKey = "entry"
+        static let freeTrialKey = "free_trial"
+        static let daysSincePurchaseKey = "days_since_purchase"
+        static let recoveryMethodKey = "recovery_method"
+        static let notificationsPermissionKey = "notifications_permission"
     }
 
     private static func vpnSubscriptionActiveValue(_ isSubscriptionActive: Bool?) -> String {
@@ -145,12 +200,17 @@ enum SubscriptionPixel: PixelKit.Event {
         switch self {
         case .subscriptionInvalidRefreshTokenDetected(let source),
                 .subscriptionPurchaseSuccessAfterPendingTransaction(let source),
-                .subscriptionPendingTransactionApproved(let source),
-                .subscriptionKeychainManagerDataAddedToTheBacklog(let source),
-                .subscriptionKeychainManagerDeallocatedWithBacklog(let source),
-                .subscriptionKeychainManagerDataWroteFromBacklog(let source),
-                .subscriptionKeychainManagerFailedToWriteDataFromBacklog(let source):
+                .subscriptionPendingTransactionApproved(let source):
             return [SubscriptionPixelsDefaults.sourceKey: source.rawValue]
+        case .subscriptionKeychainManagerDataAddedToTheBacklog(let source, let tokenType),
+                .subscriptionKeychainManagerDeallocatedWithBacklog(let source, let tokenType),
+                .subscriptionKeychainManagerDataWroteFromBacklog(let source, let tokenType),
+                .subscriptionKeychainManagerFailedToWriteDataFromBacklog(let source, let tokenType):
+            var parameters = [SubscriptionPixelsDefaults.sourceKey: source.rawValue]
+            parameters[SubscriptionPixelsDefaults.tokenTypeKey] = tokenType?.rawValue
+            return parameters
+        case .subscriptionInvalidRefreshTokenRecovered(let method):
+            return method.map { [SubscriptionPixelsDefaults.recoveryMethodKey: $0.rawValue] }
         case .subscriptionAuthV2GetTokensError(let policy, let source, _):
             return [SubscriptionPixelsDefaults.policyCacheKey: policy.description,
                     SubscriptionPixelsDefaults.sourceKey: source.rawValue]
@@ -161,12 +221,19 @@ enum SubscriptionPixel: PixelKit.Event {
             return [SubscriptionPixelsDefaults.vpnSubscriptionActiveKey: Self.vpnSubscriptionActiveValue(isSubscriptionActive)]
         case .subscriptionOnboardingStepShown(_, let entryPoint),
                 .subscriptionOnboardingStepCompleted(_, let entryPoint),
-                .subscriptionOnboardingStepSkipped(_, let entryPoint):
+                .subscriptionOnboardingStepSkipped(_, let entryPoint),
+                .subscriptionOnboardingStepClosed(_, let entryPoint):
             return [SubscriptionPixelsDefaults.entryPointKey: entryPoint]
         case .subscriptionOnboardingLaunchFailure(let reason):
             return [SubscriptionPixelsDefaults.reasonKey: reason.rawValue]
         case .subscriptionCancellationFeatureInfoFailure(let entitlement):
             return [SubscriptionPixelsDefaults.entitlementKey: entitlement.rawValue]
+        case .subscriptionCancellationAppStoreCancelled(let entry, let isTrial, let daysSincePurchase):
+            return [SubscriptionPixelsDefaults.entryKey: entry.rawValue,
+                    SubscriptionPixelsDefaults.freeTrialKey: String(isTrial),
+                    SubscriptionPixelsDefaults.daysSincePurchaseKey: daysSincePurchase.rawValue]
+        case .subscriptionNotificationsDeniedDialogSettingsReturn(let notificationsPermission):
+            return [SubscriptionPixelsDefaults.notificationsPermissionKey: notificationsPermission]
         default:
             return nil
         }
@@ -195,6 +262,7 @@ enum SubscriptionPixel: PixelKit.Event {
                 .subscriptionOnboardingStepShown,
                 .subscriptionOnboardingStepCompleted,
                 .subscriptionOnboardingStepSkipped,
+                .subscriptionOnboardingStepClosed,
                 .subscriptionOnboardingConnectionInfoFailure,
                 .subscriptionOnboardingAIModelsFailure,
                 .subscriptionOnboardingSubscriptionFailure,
@@ -202,10 +270,65 @@ enum SubscriptionPixel: PixelKit.Event {
                 .subscriptionCancellationCancelClick,
                 .subscriptionCancellationAppStoreCancelled,
                 .subscriptionCancellationFlowLoadFailure,
-                .subscriptionCancellationFeatureInfoFailure:
+                .subscriptionCancellationFeatureInfoFailure,
+                .subscriptionWithdrawalWithdrawClick,
+                .subscriptionWithdrawalDialogShown,
+                .subscriptionWithdrawalConfirmClick,
+                .subscriptionWithdrawalKeepClick,
+                .subscriptionWithdrawalFailure,
+                .subscriptionWithdrawalEligibilityFailure,
+                .subscriptionNotificationsDeniedDialogNotNowClick,
+                .subscriptionNotificationsDeniedDialogOpenSettingsClick,
+                .subscriptionNotificationsDeniedDialogSettingsReturn,
+                .subscriptionNotificationsDeniedDialogPresentationFailure:
             return [.pixelSource]
         }
     }
+}
+
+/// The AuthV2 backup token pixels: restores from the backup, its renewal and its keychain item.
+enum SubscriptionBackupTokenPixel: PixelKit.Event {
+    /// The backup restored the session, in a recovery with the associated trigger.
+    case restored(TokenRecoveryTrigger)
+    /// A backup restore was tried, in a recovery with the associated trigger, and failed or was discarded.
+    case restoreFailed(TokenRecoveryTrigger, BackupRestoreFailureReason, Error)
+    /// A new backup was stored after a refresh.
+    case renewed
+    /// Renewing the backup failed.
+    case renewalFailed(Error)
+    /// Reading, writing or deleting the backup's keychain item failed, during the client action given, or nil when the keychain storage
+    /// found the problem on its own.
+    case keychainError(TokenBackupAction?, TokenBackupStorageOperation, Error)
+
+    private static let triggerKey = "trigger"
+    private static let reasonKey = "reason"
+    private static let actionKey = "action"
+    private static let operationKey = "operation"
+
+    var name: String {
+        switch self {
+        case .restored: return "subscription_auth-backup_restored"
+        case .restoreFailed: return "subscription_auth-backup_restore_failed"
+        case .renewed: return "subscription_auth-backup_renewed"
+        case .renewalFailed: return "subscription_auth-backup_renewal_failed"
+        case .keychainError: return "subscription_auth-backup_keychain_error"
+        }
+    }
+
+    var parameters: [String: String]? {
+        switch self {
+        case .restored(let trigger):
+            return [Self.triggerKey: trigger.rawValue]
+        case .restoreFailed(let trigger, let reason, _):
+            return [Self.triggerKey: trigger.rawValue, Self.reasonKey: reason.rawValue]
+        case .keychainError(let action, let operation, _):
+            return [Self.actionKey: action?.rawValue ?? "none", Self.operationKey: operation.rawValue]
+        case .renewed, .renewalFailed:
+            return nil
+        }
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? { [.pixelSource] }
 }
 
 // This is a separate definition in order to get the correct platform and form factor suffixes, which the subscription pixels above do not have.

@@ -24,6 +24,11 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: write
+
     outputs:
       build-number: ${{ steps.update-build-number.outputs.build-number }}
 
@@ -78,6 +83,17 @@ jobs:
         echo "::notice::Using build number $next_build_number"
         echo "build-number=$next_build_number" >> $GITHUB_OUTPUT
 
+    - name: Comment on merged PRs with alpha version
+      continue-on-error: true
+      timeout-minutes: 3
+      uses: actions/github-script@v8
+      env:
+        ALPHA_VERSION: 9999.9.9-${{ steps.update-build-number.outputs.build-number }}
+      with:
+        script: |
+          const commentOnAlphaPRs = require('./.github/scripts/alpha-pr-comment.js');
+          await commentOnAlphaPRs({ github, context, core, version: process.env.ALPHA_VERSION, platform: 'macos' });
+
   dmg-release:
     name: Prepare DMG Release
 
@@ -117,6 +133,12 @@ jobs:
     steps:
       - name: Print macOS version
         run: sw_vers
+
+      - name: Check out the Sparkle key selection script
+        uses: actions/checkout@v6
+        with:
+          sparse-checkout: macOS/scripts/select_sparkle_private_key.swift
+          sparse-checkout-cone-mode: false
 
       - name: Download DMG URL artifact
         uses: actions/download-artifact@v7
@@ -158,9 +180,14 @@ jobs:
         id: appcast
         working-directory: sparkle
         env:
+          DMG_NAME: ${{ steps.fetch-dmg.outputs.dmg-name }}
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+          SPARKLE_PRIVATE_KEY_V2: ${{ secrets.SPARKLE_PRIVATE_KEY_V2 }}
         run: |
-          echo "$SPARKLE_PRIVATE_KEY" | generate_appcast --ed-key-file - \
+          # Keep the key out of this directory, which generate_appcast scans for updates
+          key_file="${RUNNER_TEMP}/sparkle_private_key"
+          "${GITHUB_WORKSPACE}/macOS/scripts/select_sparkle_private_key.swift" "${DMG_NAME}" "${key_file}"
+          generate_appcast --ed-key-file "${key_file}" \
             -o appcast-alpha.xml \
             --embed-release-notes \
             .

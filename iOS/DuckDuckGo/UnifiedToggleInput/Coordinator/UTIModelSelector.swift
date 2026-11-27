@@ -133,10 +133,21 @@ final class UTIModelSelector {
         }
     }
 
-    func updateSelectedModel(_ modelId: String) {
-        modelStore.updateSelectedModel(modelId, isNewChatContext: !environment.hasSubmittedPrompt())
+    /// - Parameter persistsSelection: When `false`, `modelId` applies to the current chat only and is not
+    ///   saved as the model that new chats start on.
+    func updateSelectedModel(_ modelId: String, persistsSelection: Bool = true) {
+        let isNewChatContext = persistsSelection && !environment.hasSubmittedPrompt()
+        modelStore.updateSelectedModel(modelId, isNewChatContext: isNewChatContext)
         callbacks.onModelsUpdated()
-        callbacks.onUserChoiceRecorded()
+        if persistsSelection {
+            callbacks.onUserChoiceRecorded()
+        }
+    }
+
+    /// Moves this chat to `modelId` without a notice, leaving the model new chats start on as the user's.
+    func switchModelForThisChat(_ modelId: String) {
+        modelStore.switchModelForThisChat(modelId)
+        callbacks.onModelsUpdated()
     }
 
     @discardableResult

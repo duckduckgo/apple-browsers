@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import AIChatTestingUtilities
 import BrowserServicesKitTestsUtils
 import Combine
 import FeatureFlags_iOS
@@ -47,6 +48,25 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
         let prompt = await dispatch(script)
 
         XCTAssertEqual(prompt, .queryPrompt("hello", autoSubmit: true, pageContext: .single(page)))
+    }
+
+    func testOnlyThePromptSubmittedAsASummaryIsMarkedForTheLocalModel() async throws {
+        let script = makeScript()
+        let delivered = expectation(description: "Both prompts dispatched")
+        delivered.expectedFulfillmentCount = 2
+        webView.onPrompt = { _ in delivered.fulfill() }
+
+        script.submitting(localTask: .summarize) {
+            script.submitPrompt("Summarize this page.", attachments: .none, modelId: nil)
+        }
+        script.submitPrompt("hello", attachments: .none, modelId: nil)
+        await fulfillment(of: [delivered], timeout: 1)
+
+        let localTasks = webView.prompts.map { prompt -> AIChatLocalModelTask? in
+            guard case .query(let query) = prompt.tool else { return nil }
+            return query.localTask
+        }
+        XCTAssertEqual(localTasks, [.summarize, nil])
     }
 
     func testEmptyContextsWithoutCurrentPageOmitsPageContext() async throws {
@@ -326,7 +346,7 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
 
     func testPendingProviderDoesNotKeepUserScriptAlive() async {
         var script: AIChatUserScript? = makeScript()
-        weak var weakScript = script
+        weak let weakScript = script
         let gate = ContextGate(started: expectation(description: "Provider started"))
         let unexpected = expectation(description: "Released script does not dispatch")
         unexpected.isInverted = true
@@ -954,7 +974,7 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
     private func makeScript() -> AIChatUserScript {
         let handler = AIChatUserScriptHandler(
             experimentalAIChatManager: ExperimentalAIChatManager(featureFlagger: featureFlagger),
-            syncHandler: MockAIChatSyncHandling(), featureFlagger: featureFlagger)
+            syncHandler: MockAIChatSyncHandling(), bonusHandler: MockAIChatBonusHandling(), featureFlagger: featureFlagger)
         let script = AIChatUserScript(handler: handler, debugSettings: MockAIChatDebugSettingsForTests())
         script.connectInitialPromptSession(initialPromptSession)
         let feature = AIChatContextualAttachMoreTabsFeature(
@@ -1119,6 +1139,8 @@ private final class MultiTabInputBox: AIChatInputBoxHandling {
     var persistedModelId: String?
     var persistedReasoningEffort: AIChatReasoningEffort?
     var isSubmitBlockedByRecoveryCard = false
+    var isTermsOfServiceShownOnPage = false
+    var isAIChatPromoVisible: Bool?
     @Published var aiChatStatus: AIChatStatusValue = .unknown
     var aiChatStatusPublisher: Published<AIChatStatusValue>.Publisher { $aiChatStatus }
     @Published var aiChatInputBoxVisibility: AIChatInputBoxVisibility = .unknown

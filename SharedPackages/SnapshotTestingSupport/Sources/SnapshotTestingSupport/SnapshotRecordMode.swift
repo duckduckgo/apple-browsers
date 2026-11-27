@@ -22,6 +22,7 @@ import SnapshotTesting
 public enum SnapshotRecordMode {
     public static let environmentVariableName = "GENERATE_SNAPSHOTS"
     public static let requireReferencesEnvironmentVariableName = "REQUIRE_SNAPSHOT_REFERENCES"
+    public static let compareEnvironmentVariableName = "COMPARE_SNAPSHOTS"
 
     public static func shouldRecord(
         record: Bool,
@@ -34,6 +35,12 @@ public enum SnapshotRecordMode {
         environment: [String: String] = ProcessInfo.processInfo.environment
     ) -> Bool {
         isEnabled(environment[requireReferencesEnvironmentVariableName])
+    }
+
+    public static func forcesComparison(
+        environment: [String: String] = ProcessInfo.processInfo.environment
+    ) -> Bool {
+        isEnabled(environment[compareEnvironmentVariableName])
     }
 
     static func snapshotTestingRecord(

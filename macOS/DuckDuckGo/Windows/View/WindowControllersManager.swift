@@ -25,7 +25,6 @@ import ConcurrencyExtensions
 import FoundationExtensions
 import History
 import os.log
-import PixelKit
 import PrivacyConfig
 import WebKit
 
@@ -115,12 +114,10 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
     init(pinnedTabsManagerProvider: PinnedTabsManagerProviding,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
          internalUserDecider: InternalUserDecider,
-         featureFlagger: FeatureFlagger,
          pinningManager: PinningManager) {
         self.pinnedTabsManagerProvider = pinnedTabsManagerProvider
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.internalUserDecider = internalUserDecider
-        self.featureFlagger = featureFlagger
         self.pinningManager = pinningManager
     }
 
@@ -133,12 +130,8 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
     /// `TabsPreferences` reference is needed to compute `shouldSwitchToNewTabWhenOpened`.
     weak var tabsPreferences: TabsPreferences?
 
-    private weak var onboardingTab: Tab?
-    private var onboardingTabCancellable: AnyCancellable?
-
-    /// Records a skip that leaves the tab where it is. Cleared once used, so the same onboarding
-    /// session is only ever recorded once.
-    private var onboardingSkipInPlaceHandler: (@MainActor () -> Void)?
+    /// The one lock on browser interaction during onboarding. Every window and menu reads it.
+    private(set) var userInteractionLock = UserInteractionLock.unlocked
 
     /// Tracks which tabs currently host an active Duck.ai voice session, so voice entry points
     /// can focus an existing tab instead of opening a new one. Lazy so the tracker can capture
@@ -148,7 +141,6 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
     var pinnedTabsManagerProvider: PinnedTabsManagerProviding
     private let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
     private let internalUserDecider: InternalUserDecider
-    private let featureFlagger: FeatureFlagger
     private let pinningManager: PinningManager
 
     /// find Main Window Controller being currently interacted with even when ⌘-clicked in background
@@ -175,12 +167,14 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
         }
 
         mainWindowControllers.append(windowController)
+        // A window opened while locked, or the first one after a relaunch, starts locked.
+        if userInteractionLock.isLocked {
+            windowController.userInteraction(lock: userInteractionLock)
+        }
         didRegisterWindowController.send(windowController)
     }
 
     func unregister(_ windowController: MainWindowController) {
-        recordOnboardingSkipIfWindowHostsOnboarding(windowController)
-
         pinnedTabsManagerProvider.cacheClosedWindowPinnedTabsIfNeeded(pinnedTabsManager: windowController.mainViewController.tabCollectionViewModel.pinnedTabsManager)
 
         guard let idx = mainWindowControllers.firstIndex(of: windowController) else {
@@ -189,19 +183,6 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
         }
         mainWindowControllers.remove(at: idx)
         didUnregisterWindowController.send(windowController)
-    }
-
-    /// Closing the window that hosts onboarding disposes of onboarding just as deliberately as
-    /// closing its tab, so it counts as a skip. Quit cleanup detaches tracking before closing windows.
-    @MainActor
-    private func recordOnboardingSkipIfWindowHostsOnboarding(_ windowController: MainWindowController) {
-        guard let onboardingTab else { return }
-        guard windowController.mainViewController.tabCollectionViewModel.indexInAllTabs(of: onboardingTab) != nil else { return }
-
-#if DEBUG
-        Logger.general.debug("Onboarding window close: owner=\(onboardingTab.uuid, privacy: .public)")
-#endif
-        recordOnboardingSkipInPlace()
     }
 
     func updateIsInInitialState() {
@@ -524,7 +505,7 @@ extension WindowControllersManager {
 
     /// Shows the Subscription feedback modal
     func showShareFeedbackModal(source: UnifiedFeedbackSource = .default) {
-        let feedbackFormViewController = UnifiedFeedbackFormViewController(source: source, featureFlagger: featureFlagger)
+        let feedbackFormViewController = UnifiedFeedbackFormViewController(source: source)
         let feedbackFormWindowController = feedbackFormViewController.wrappedInWindowController()
 
         guard let feedbackFormWindow = feedbackFormWindowController.window else {
@@ -681,10 +662,24 @@ extension WindowControllersManagerProtocol {
 
 extension WindowControllersManager: WebNotificationTabFinding {}
 
+extension WindowControllersManager {
+    /// Applies `lock` to every window; windows registered later get it too.
+    func setUserInteractionLock(_ lock: UserInteractionLock) {
+        userInteractionLock = lock
+        mainWindowControllers.forEach { $0.userInteraction(lock: lock) }
+    }
+}
+
+extension WindowControllersManager: ContextualOnboardingUILocking {
+    func setUILock(_ lock: UserInteractionLock) {
+        setUserInteractionLock(lock)
+    }
+}
+
 extension WindowControllersManager: OnboardingNavigating {
     @MainActor
     func updatePreventUserInteraction(prevent: Bool) {
-        mainWindowController?.userInteraction(prevented: prevent)
+        setUserInteractionLock(prevent ? .locked() : .unlocked)
     }
 
     @MainActor
@@ -692,85 +687,10 @@ extension WindowControllersManager: OnboardingNavigating {
         DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport()
     }
 
-    @MainActor
-    var hasOnboardingTab: Bool { onboardingTab != nil }
-
-    /// Captures the onboarding tab before the user can switch tabs while it loads.
-    @MainActor
-    func setOnboardingTab(_ tab: Tab?) {
-        onboardingTabCancellable = nil
-        onboardingSkipInPlaceHandler = nil
-        onboardingTab?.onClose = nil
-        onboardingTab = tab
-    }
-
-    @MainActor
-    func setOnboardingHandlers(onClose: @escaping @MainActor (Tab) -> Void,
-                               onSkipInPlace: @escaping @MainActor () -> Void) {
-        guard let onboardingTab else { return }
-
-        onboardingSkipInPlaceHandler = onSkipInPlace
-
-        onboardingTab.onClose = { [weak self, weak onboardingTab] in
-            guard let self, let onboardingTab, self.onboardingTab === onboardingTab else { return }
-            self.clearOnboardingTracking()
-            onClose(onboardingTab)
-        }
-
-        onboardingTabCancellable = onboardingTab.$content
-            .filter { if case .onboarding = $0 { false } else { true } }
-            .first()
-            .sink { [weak self, weak onboardingTab] _ in
-                guard let self, let onboardingTab, self.onboardingTab === onboardingTab else { return }
-#if DEBUG
-                Logger.general.debug("Onboarding content exit: owner=\(onboardingTab.uuid, privacy: .public)")
-#endif
-                self.recordOnboardingSkipInPlace()
-            }
-    }
-
-    @MainActor
-    func recordBrowsingBeforeOnboardingCompletion() {
-        guard onboardingSkipInPlaceHandler != nil, !OnboardingActionsManager.isOnboardingFinished else { return }
-        PixelKit.fire(GeneralPixel.onboardingBrowsingBeforeCompletion, frequency: .uniqueByName)
-    }
-
-    @MainActor
-    private func recordOnboardingSkipInPlace() {
-        guard let handler = onboardingSkipInPlaceHandler else { return }
-        clearOnboardingTracking()
-        handler()
-    }
-
-    // Let `.first()` finish the content subscription instead of cancelling it during delivery.
-    @MainActor
-    private func clearOnboardingTracking() {
-        onboardingSkipInPlaceHandler = nil
-        onboardingTab?.onClose = nil
-        onboardingTab = nil
-    }
-
-    /// Resolve the sender, never the selected tab: the user may have switched tabs or windows.
-    func onboardingTab(for webView: WKWebView?) -> Tab? {
-        guard let tab = tab(for: webView), case .onboarding = tab.content else { return nil }
-        return tab
-    }
-
-    func replaceOnboardingTab(_ source: Tab, with tab: Tab) -> Bool {
-        guard onboardingTab(for: source.webView) === source else { return false }
-        if onboardingTab === source {
-            setOnboardingTab(nil)
-        }
-        return replaceTab(source, with: tab)
-    }
-
-    /// Replaces the onboarding tab, falling back to the selected tab when none is tracked
-    /// (the non-async flow keeps the UI locked, so the two are the same tab there).
+    /// Replaces the onboarding tab, which is the selected one because the UI stays locked during onboarding.
     @MainActor
     func replaceTabWith(_ tab: Tab) {
-        // Capture before clearing — `setOnboardingTab(nil)` drops the reference this needs.
-        guard let tabToRemove = onboardingTab ?? selectedTab else { return }
-        setOnboardingTab(nil)
+        guard let tabToRemove = selectedTab else { return }
         replaceTab(tabToRemove, with: tab)
     }
 

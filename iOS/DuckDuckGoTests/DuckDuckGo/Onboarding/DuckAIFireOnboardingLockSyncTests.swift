@@ -53,6 +53,34 @@ final class DuckAIFireOnboardingLockSyncTests: XCTestCase {
 
     // MARK: - Helpers
 
+    func testTimeLimitCancelsPendingDuckAIFireWorkAndCompletion() {
+        for state in [DuckAIFireOnboardingState.awaitingFirstResponse, .active] {
+            let pendingTrigger = DispatchWorkItem {}
+            var context = DuckAIFireOnboardingFlowContext()
+            context.state = state
+            context.triggerWorkItem = pendingTrigger
+            context.pendingCompletionDialogMessage = "pending completion"
+            context.shouldForcePostFireAddressBarPickerRestore = true
+
+            context.cancelForTimeLimit()
+
+            XCTAssertEqual(context.state, .completed)
+            XCTAssertFalse(context.isRunning)
+            XCTAssertTrue(pendingTrigger.isCancelled)
+            XCTAssertNil(context.triggerWorkItem)
+            XCTAssertNil(context.pendingCompletionDialogMessage)
+            XCTAssertFalse(context.shouldForcePostFireAddressBarPickerRestore)
+        }
+    }
+
+    func testTimeLimitKeepsIdleFireContextAvailableForLaterLinearInterlude() {
+        var context = DuckAIFireOnboardingFlowContext()
+
+        context.cancelForTimeLimit()
+
+        XCTAssertEqual(context.state, .idle)
+    }
+
     private func makeCoordinator() -> UnifiedToggleInputCoordinator {
         UnifiedToggleInputCoordinator(
             host: .omnibar,

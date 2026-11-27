@@ -125,6 +125,37 @@ final class AuthenticationServiceTests {
         #expect(authenticationService.hasCompletedAuthentication == expectedCompletion)
     }
 
+    @MainActor
+    @available(iOS 16, macOS 13, *)
+    @Test("Locking clears isUnlocked until the next unlock, while hasCompletedAuthentication stays set", .timeLimit(.minutes(1)))
+    func lockingClearsIsUnlocked() async {
+        mockPrivacyStore.authenticationEnabled = true
+        await authenticationService.authenticate()
+        #expect(authenticationService.isUnlocked)
+
+        authenticationService.suspend()
+        mockAuthenticator.authenticationSucceeds = false
+        await authenticationService.authenticate()
+        #expect(!authenticationService.isUnlocked)
+        #expect(authenticationService.hasCompletedAuthentication)
+
+        mockAuthenticator.authenticationSucceeds = true
+        await authenticationService.authenticate()
+        #expect(authenticationService.isUnlocked)
+    }
+
+    @MainActor
+    @available(iOS 16, macOS 13, *)
+    @Test("Without App Lock, suspending keeps the app unlocked", .timeLimit(.minutes(1)))
+    func suspendWithoutAppLockKeepsUnlocked() async {
+        mockPrivacyStore.authenticationEnabled = false
+        await authenticationService.authenticate()
+
+        authenticationService.suspend()
+
+        #expect(authenticationService.isUnlocked)
+    }
+
     @Test("suspend() when authentication enabled should display blank snapshot window")
     func suspend() {
         // Given

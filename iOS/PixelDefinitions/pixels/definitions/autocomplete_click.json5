@@ -5,7 +5,7 @@
         "owners": ["brindy"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion"]
+        "parameters": ["appVersion", "resubmit_of_prompt"]
     },
     "m_autocomplete_click_website": {
         "description": "Fired when user clicks on a website in the autocomplete suggestion list.  The name of the website is not sent.",
@@ -33,7 +33,7 @@
         "owners": ["brindy"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion"]
+        "parameters": ["appVersion", "resubmit_of_prompt"]
     },
     "m_autocomplete_click_history_site": {
         "description": "Fired when user clicks on a website based history item in the autocomplete suggestion list.  No details about the history item are sent.",

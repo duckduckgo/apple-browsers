@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppUpdaterShared
 import BrokenSitePrompt
 import BrowserServicesKit
 import Cocoa
@@ -31,7 +32,6 @@ import NetworkProtectionIPC
 import NetworkProtectionUI
 import os.log
 import PageRefreshMonitor
-import Persistence
 import PixelKit
 import PrivacyConfig
 import Subscription
@@ -80,7 +80,7 @@ final class NavigationBarViewController: NSViewController {
     private(set) var buttonsTopConstraint: NSLayoutConstraint!
     private(set) var addressBarMinWidthConstraint: NSLayoutConstraint?
     private(set) var logoWidthConstraint: NSLayoutConstraint!
-    private(set) var backgroundColorView: MouseOverView!
+    private(set) var backgroundColorView: ColorView!
     private(set) var backgroundBaseColorView: ColorView!
 
     private var feedbackButton: MouseOverButton?
@@ -161,7 +161,7 @@ final class NavigationBarViewController: NSViewController {
         popovers.isDownloadsPopoverShown
     }
 
-    private var allowsUserInteraction: Bool = true
+    @Published private var allowsUserInteraction: Bool = true
     private var isAutoFillAutosaveMessageVisible: Bool = false
     private var autofillPinningPromoCompletion: ((PromoResult) -> Void)?
 
@@ -191,7 +191,8 @@ final class NavigationBarViewController: NSViewController {
     private let pixelFiring: (any PixelKitFiring)?
     private let pinningManager: PinningManager
 
-    let themeManager: ThemeManaging
+    var themeManager: ThemeManaging { appThemeManager }
+    private let appThemeManager: ThemeManager
     var themeUpdateCancellable: AnyCancellable?
 
     private var daxFadeInAnimation: DispatchWorkItem?
@@ -250,7 +251,7 @@ final class NavigationBarViewController: NSViewController {
                        adBlockingAvailability: AdBlockingAvailabilityProviding = NSApp.delegateTyped.adBlockingAvailability,
                        searchPreferences: SearchPreferences,
                        webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
-                       themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
+                       themeManager: ThemeManager = NSApp.delegateTyped.themeManager,
                        aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
                        aiChatCoordinator: AIChatCoordinating,
                        vpnUpsellToolbarButtonPromoDelegate: VPNUpsellToolbarButtonPromoDelegate = NSApp.delegateTyped.vpnUpsellToolbarButtonPromoDelegate,
@@ -325,7 +326,7 @@ final class NavigationBarViewController: NSViewController {
          adBlockingAvailability: AdBlockingAvailabilityProviding,
          searchPreferences: SearchPreferences,
          webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
-         themeManager: ThemeManaging,
+         themeManager: ThemeManager,
          aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
          aiChatCoordinator: AIChatCoordinating,
          vpnUpsellToolbarButtonPromoDelegate: VPNUpsellToolbarButtonPromoDelegate,
@@ -384,7 +385,7 @@ final class NavigationBarViewController: NSViewController {
         self.featureFlagger = featureFlagger
         self.adBlockingAvailability = adBlockingAvailability
         self.searchPreferences = searchPreferences
-        self.themeManager = themeManager
+        self.appThemeManager = themeManager
         self.aiChatMenuConfig = aiChatMenuConfig
         self.aiChatCoordinator = aiChatCoordinator
         self.defaultBrowserPreferences = defaultBrowserPreferences
@@ -528,7 +529,7 @@ final class NavigationBarViewController: NSViewController {
         backgroundBaseColorView = ColorView(frame: NSRect(origin: .zero, size: LayoutConstants.contentSize))
         let view = backgroundBaseColorView!
 
-        backgroundColorView = MouseOverView(frame: .zero)
+        backgroundColorView = ColorView(frame: .zero)
         backgroundColorView.translatesAutoresizingMaskIntoConstraints = false
 
         let windowDraggingView = WindowDraggingView()
@@ -801,14 +802,24 @@ final class NavigationBarViewController: NSViewController {
     private func setupWebExtensionButtons() {
         if #available(macOS 15.4, *) {
             let updater = WebExtensionNavigationBarUpdater(webExtensionManagerProvider: { NSApp.delegateTyped.webExtensionManager },
-                                                           themeManager: themeManager,
+                                                           themeManager: appThemeManager,
                                                            container: menuButtons,
                                                            isPrivateWindow: tabCollectionViewModel.isBurner,
-                                                           selectedTabProvider: { [weak self] in self?.tabCollectionViewModel.selectedTabViewModel?.tab })
+                                                           selectedTabProvider: { [weak self] in self?.tabCollectionViewModel.selectedTabViewModel?.tab },
+                                                           nativeMessagingAlertPresenter: makeNativeMessagingAlertPresenter())
             updater.startUpdating()
             webExtensionNavigationBarUpdater = updater
             subscribeToWebExtensionInstalls(updater: updater)
         }
+    }
+
+    @available(macOS 15.4, *)
+    private func makeNativeMessagingAlertPresenter() -> NativeMessagingAlertPresenter {
+        NativeMessagingAlertPresenter(
+            limitationProvider: { NSApp.delegateTyped.webExtensionManager },
+            alertPresenter: WebExtensionAlertPresenter(windowProvider: { [weak self] in self?.view.window }, themeManager: appThemeManager),
+            windowControllersManager: Application.appDelegate.windowControllersManager
+        )
     }
 
     /// Only the window the install started from shows the popover.
@@ -1152,6 +1163,8 @@ final class NavigationBarViewController: NSViewController {
         controlsForUserPrevention.forEach { control in
             control?.isEnabled = !prevented
         }
+        // A locked address bar shows only its text, like the welcome page.
+        addressBarViewController?.buttonsContainerView.isHidden = prevented
     }
 
     // MARK: - Setup
@@ -1394,10 +1407,7 @@ final class NavigationBarViewController: NSViewController {
             backgroundBaseColorView.backgroundColor = colorsProvider.baseBackgroundColor
             backgroundColorView.backgroundColor = colorsProvider.navigationBackgroundColor
             backgroundColorView.cornerRadius = topCornerRadius
-            backgroundColorView.maskedCorners = [
-                .layerMinXMaxYCorner,
-                .layerMaxXMaxYCorner
-            ]
+            backgroundColorView.roundedCorners = [.topLeft, .topRight]
         } else {
             backgroundBaseColorView.backgroundColor = colorsProvider.navigationBackgroundColor
             backgroundColorView.isHidden = true
@@ -1563,20 +1573,23 @@ final class NavigationBarViewController: NSViewController {
         navigationButtonsCancellables.removeAll()
         guard let selectedTabViewModel = tabCollectionViewModel.selectedTabViewModel else { return }
 
-        selectedTabViewModel.$canGoBack
+        // The navigation buttons stay disabled while the UI is locked, whatever the tab allows.
+        Publishers.CombineLatest(selectedTabViewModel.$canGoBack, $allowsUserInteraction)
+            .map { $0 && $1 }
             .removeDuplicates()
             .assign(to: \.isEnabled, onWeaklyHeld: goBackButton)
             .store(in: &navigationButtonsCancellables)
 
-        selectedTabViewModel.$canGoForward
+        Publishers.CombineLatest(selectedTabViewModel.$canGoForward, $allowsUserInteraction)
+            .map { $0 && $1 }
             .removeDuplicates()
             .assign(to: \.isEnabled, onWeaklyHeld: goForwardButton)
             .store(in: &navigationButtonsCancellables)
 
-        Publishers.CombineLatest(selectedTabViewModel.$canReload, selectedTabViewModel.$isLoading)
-            .map({
-                $0.canReload || $0.isLoading
-            } as ((canReload: Bool, isLoading: Bool)) -> Bool)
+        Publishers.CombineLatest3(selectedTabViewModel.$canReload, selectedTabViewModel.$isLoading, $allowsUserInteraction)
+            .map { canReload, isLoading, allowsUserInteraction in
+                (canReload || isLoading) && allowsUserInteraction
+            }
             .removeDuplicates()
             .assign(to: \.isEnabled, onWeaklyHeld: refreshOrStopButton)
             .store(in: &navigationButtonsCancellables)
@@ -1731,7 +1744,10 @@ final class NavigationBarViewController: NSViewController {
                                    subscriptionManager: subscriptionManager,
                                    freemiumDBPFeature: freemiumDBPFeature,
                                    dockCustomizer: dockCustomization,
-                                   defaultBrowserPreferences: defaultBrowserPreferences)
+                                   defaultBrowserPreferences: defaultBrowserPreferences,
+                                   addToDockMenuAction: AddToDockMenuAction(dockCustomization: dockCustomization,
+                                                                            featureFlagger: featureFlagger,
+                                                                            videoPresenter: Application.appDelegate.addToDockVideoPresenter))
 
         menu.actionDelegate = self
         let location = NSPoint(x: -menu.size.width + sender.bounds.width, y: sender.bounds.height + 4)
@@ -2339,37 +2355,30 @@ extension NavigationBarViewController: NSMenuDelegate {
 
     // MARK: - Address Bar Update Button
 
-    /// Shows the prominent update button to the left of the browser menu button while `moreProminentUpdates` is on
-    /// and `Debug → Updates → More Prominent Updates` enables it.
+    /// Shows the prominent update button to the left of the browser menu button at the stages that call for it.
     private func setupAddressBarUpdateButton() {
-        guard !isInPopUpWindow else { return }
+        guard !isInPopUpWindow, let updateController = Application.appDelegate.updateController else { return }
 
-        updateAddressBarUpdateButton()
-        NotificationCenter.default.publisher(for: .moreProminentUpdatesDebugSettingsDidChange)
-            .map { _ in }
-            .merge(with: featureFlagger.updatesPublisher)
+        // Must receive on main before reading the title: @Published emits before the new progress value is stored.
+        updateController.pendingUpdatePromptStagePublisher
+            .combineLatest(updateController.updateProgressPublisher)
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] in
-                self?.updateAddressBarUpdateButton()
+            .map { stage, _ in stage.showsToolbarButton ? updateController.addressBarUpdateButtonTitle : nil }
+            .removeDuplicates()
+            .sink { [weak self] title in
+                self?.addressBarUpdateButton?.removeFromSuperview()
+                self?.addressBarUpdateButton = nil
+                if let title {
+                    self?.addAddressBarUpdateButton(title: title, for: updateController)
+                }
             }
             .store(in: &cancellables)
     }
 
-    private func updateAddressBarUpdateButton() {
-        let debugSettings: any KeyedStoring<MoreProminentUpdatesDebugSettings> = UserDefaults.standard.keyedStoring()
-        if featureFlagger.isFeatureOn(.moreProminentUpdates) && debugSettings.isShowingAddressBarButton {
-            addAddressBarUpdateButton()
-        } else {
-            addressBarUpdateButton?.removeFromSuperview()
-            addressBarUpdateButton = nil
-        }
-    }
-
-    private func addAddressBarUpdateButton() {
-        guard addressBarUpdateButton == nil else { return }
-
-        let button = AddressBarUpdateButton(title: UserText.addressBarUpdateButton) {
-            Application.appDelegate.updateController?.runUpdate()
+    private func addAddressBarUpdateButton(title: String, for updateController: any UpdateController) {
+        let button = AddressBarUpdateButton(title: title) {
+            UpdateClickReporter().reportClick(on: .toolbarButton)
+            updateController.runUpdateFromPrompt()
         }.embeddedInHostingView()
 
         let index = menuButtons.arrangedSubviews.firstIndex(of: optionsButton) ?? menuButtons.arrangedSubviews.count

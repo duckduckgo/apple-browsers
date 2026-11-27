@@ -73,10 +73,14 @@ final class AIChatOmnibarController {
     @Published private(set) var activeToolMode: AIChatToolMode?
     @Published var hasImageAttachments: Bool = false
 
-    /// The last selected reasoning effort, persisted across sessions. `nil` if no selection has
-    /// been made, or the persisted raw value doesn't map to a known `AIChatReasoningEffort` case.
+    /// The picked reasoning effort, else the new-chat default's. `nil` if neither applies, or the
+    /// stored raw value doesn't map to a known `AIChatReasoningEffort` case.
     var selectedReasoningEffort: AIChatReasoningEffort? {
-        preferences.selectedReasoningEffort.flatMap(AIChatReasoningEffort.init(rawValue:))
+        pickedReasoningEffort ?? newChatDefaultReasoningEffort
+    }
+
+    private var pickedReasoningEffort: AIChatReasoningEffort? {
+        modelPick.reasoningEffort.flatMap(AIChatReasoningEffort.init(rawValue:))
     }
 
     var isImageGenerationMode: Bool { activeToolMode == .imageGeneration }
@@ -111,7 +115,10 @@ final class AIChatOmnibarController {
         origin: origin,
         windowControllersManager: Application.appDelegate.windowControllersManager
     )
-    private var preferences: AIChatPreferencesPersisting
+    private let preferences: AIChatPreferencesPersisting
+    /// Set while new chats start on the default; a pick then stays on its draft.
+    private let newChatDefaults: AIChatNewChatDefaultSource?
+    private lazy var modelPick: DuckAIModelPickStoring = makeModelPickStore()
     private var cancellables = Set<AnyCancellable>()
     private var draftStoreCancellable: AnyCancellable?
     private var isUpdatingFromSharedState = false
@@ -287,6 +294,10 @@ final class AIChatOmnibarController {
         surface.supportsSubscriptionUpsell && featureFlagger.isFeatureOn(.aiChatOmnibarSubscriptionUpsell)
     }
 
+    var allowsSubscriptionUpsell: Bool {
+        userTier.allowsSubscriptionUpsell(isPurchaseEligible: subscriptionManager.isSubscriptionPurchaseEligible)
+    }
+
     /// Whether the subscription-upsell CTA (tag + dialog primary button) should read "Try for
     /// free" rather than "Upgrade". `SubscriptionManager.isUserEligibleForFreeTrial()` reflects
     /// StoreKit's on-device introductory-offer eligibility (has this Apple ID/device already used
@@ -385,6 +396,7 @@ final class AIChatOmnibarController {
         // context even though this initializer's body is not, so the real default is resolved below.
         subscriptionUpsellPresenter: AIChatOmnibarSubscriptionUpselling? = nil,
         usageLimitsStore: DuckAiUsageLimitsStore? = nil,
+        userDefaultModelStorage: DuckAiNativeStorageHandling? = nil,
         termsOfServiceStore: DuckAiTermsOfServiceStore = DuckAiTermsOfServiceStore(),
         inputOutcomePixelFiring: DuckAiInputOutcomePixelFiring? = nil
     ) {
@@ -400,7 +412,9 @@ final class AIChatOmnibarController {
         self.suggestionsReader = suggestionsReader
         self.isBurner = isBurner
         self.preferences = preferences
-        self.modelsService = modelsService ?? AIChatModelsService(accessTokenProvider: subscriptionManager)
+        self.newChatDefaults = featureFlagger.isFeatureOn(.aiChatNewChatDefaultModel) ? AIChatNewChatDefaultSource() : nil
+        self.modelsService = modelsService ?? AIChatModelsService(baseURL: AIChatModelsService.baseURL(forChatURL: AIChatRemoteSettings().aiChatURL),
+                                                                  accessTokenProvider: subscriptionManager)
         self.subscriptionManager = subscriptionManager
         self.subscriptionUpsellPresenter = subscriptionUpsellPresenter
             ?? AIChatOmnibarSubscriptionUpsellPresenter(coordinator: Application.appDelegate.subscriptionNavigationCoordinator)
@@ -415,6 +429,12 @@ final class AIChatOmnibarController {
         subscribeToTextChangesForSuggestions()
         subscribeToToolModeChangesForDraftStore()
         setUpUsageWarnings()
+        observeNewChatDefaults(userDefaultModelStorage: userDefaultModelStorage)
+    }
+
+    private func makeModelPickStore() -> DuckAIModelPickStoring {
+        guard newChatDefaults != nil else { return PersistedModelPickStore(preferences: preferences) }
+        return DraftModelPickStore(currentDraftStore: { [weak self] in self?.draftStore })
     }
 
     /// The persisted id, matching what the warning's own suggester reasons about.
@@ -434,6 +454,7 @@ final class AIChatOmnibarController {
                 requirementsProvider: { [weak self] in self?.chatCapabilityRequirements ?? .plainText }
             ),
             isTrialEligible: { [weak self] in self?.shouldOfferFreeTrial ?? false },
+            allowsSubscriptionUpsell: { [weak self] in self?.allowsSubscriptionUpsell ?? false },
             isFireMode: { [weak self] in self?.isBurner ?? false }
         )
         usageWarningViewModel?.onAction = { [weak self] action in
@@ -446,6 +467,17 @@ final class AIChatOmnibarController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in self?.refreshUsageWarnings() }
             .store(in: &cancellables)
+    }
+
+    private func observeNewChatDefaults(userDefaultModelStorage: DuckAiNativeStorageHandling?) {
+        guard let newChatDefaults else { return }
+        newChatDefaults.defaultChanges
+            .sink { [weak self] in self?.onSelectedModelChanged?() }
+            .store(in: &cancellables)
+        if let usageLimitsStore {
+            newChatDefaults.observeOverLimitDefaults(usageLimitsStore.overLimitNewChatDefaultPublisher(receivingUpdatesOn: DispatchQueue.main))
+        }
+        newChatDefaults.observeUserDefaultModel(in: userDefaultModelStorage, receivingUpdatesOn: DispatchQueue.main)
     }
 
     /// Opens a voice chat. Focuses an existing voice session in the origin window when there is one;
@@ -556,14 +588,18 @@ final class AIChatOmnibarController {
         modelsFetchTask = Task { [weak self] in
             guard let self else { return }
             do {
-                let response = try await modelsService.fetchModels()
-                guard !Task.isCancelled else { return }
+                // Resolved before `/models` so new chats start on the tier's local default while it loads or if it fails.
                 let userTier = try await self.resolveUserTier()
+                guard !Task.isCancelled else { return }
+                self.newChatDefaults?.userTier = userTier
+                let response = try await modelsService.fetchModels()
                 guard !Task.isCancelled else { return }
                 self.hasActiveSubscription = userTier != .free
                 self.userTier = userTier
                 self.attachmentLimits = response.attachmentLimits?.limits(for: userTier)
-                self.models = response.models.map { AIChatModel(remoteModel: $0, userTier: userTier) }
+                let models = response.models.map { AIChatModel(remoteModel: $0, userTier: userTier) }
+                self.newChatDefaults?.update(models: models, serverDefault: response.newChatDefault)
+                self.models = models
                 self.clearStaleModelSelectionIfNeeded()
                 self.clearStaleReasoningEffortIfNeeded()
                 self.deactivateWebSearchIfUnsupported()
@@ -628,22 +664,51 @@ final class AIChatOmnibarController {
 
     // MARK: - Public Methods
 
-    /// The persisted model ID. Falls back to the first accessible model if the
-    /// persisted selection is no longer available or no longer accessible for the user's tier.
+    /// The selected model ID: the pick if it's still available and accessible for the user's tier,
+    /// else the new-chat default, else the first accessible model.
     var persistedModelId: String {
-        if let selectedId = preferences.selectedModelId,
+        if let selectedId = modelPick.modelId,
            models.contains(where: { $0.id == selectedId && $0.entityHasAccess }) {
             return selectedId
+        }
+        if let defaultId = newChatDefaultSelection?.modelId {
+            return defaultId
         }
         return models.first(where: { $0.entityHasAccess })?.id ?? ""
     }
 
-    /// Clears the persisted model selection if it's no longer available or accessible.
+    /// The model and effort a new chat starts on when nothing was picked; `nil` while new chats start on the last pick.
+    var newChatDefaultSelection: AIChatNewChatSelection? {
+        newChatDefaults?.selectionOrLocalDefaultBeforeModelsLoad
+    }
+
+    private var newChatDefaultReasoningEffort: AIChatReasoningEffort? {
+        newChatDefaultSelection?.reasoningEffort(onModelId: persistedModelId)
+    }
+
+    /// Before `/models` loads, only the new-chat default's own effort is known to fit the model it names.
+    private var newChatDefaultReasoningEffortBeforeModelsLoad: AIChatReasoningEffort? {
+        guard pickedReasoningEffort == nil else { return nil }
+        return newChatDefaultSelection?.reasoningEffort(onModelId: currentModelId)
+    }
+
+    /// Sent only while new chats start on the default. Every prompt from this input opens a new chat.
+    private var newChatModelPixelParameters: DuckAINewChatModelPixelParameters? {
+        guard newChatDefaults != nil else { return nil }
+        return DuckAINewChatModelPixelParameters(sentModelId: effectiveModelId,
+                                                 sentReasoningEffort: effectiveReasoningEffort?.rawValue,
+                                                 isModelPicked: modelPick.modelId != nil,
+                                                 pickedReasoningEffort: pickedReasoningEffort?.rawValue,
+                                                 newChatDefault: newChatDefaultSelection,
+                                                 isImageGeneration: isImageGenerationMode)
+    }
+
+    /// Clears the model pick if it's no longer available or accessible.
     private func clearStaleModelSelectionIfNeeded() {
-        guard let selectedId = preferences.selectedModelId else { return }
+        guard let selectedId = modelPick.modelId else { return }
         if !models.contains(where: { $0.id == selectedId && $0.entityHasAccess }) {
-            preferences.selectedModelId = nil
-            preferences.selectedModelShortName = nil
+            modelPick.modelId = nil
+            modelPick.modelShortName = nil
         }
     }
 
@@ -652,27 +717,27 @@ final class AIChatOmnibarController {
     /// models are fetched, so a stale value persisted against an older model list doesn't linger
     /// and get attached to future prompts.
     private func clearStaleReasoningEffortIfNeeded() {
-        guard let effort = selectedReasoningEffort else {
+        guard let effort = pickedReasoningEffort else {
             // Wipe any unknown raw value we couldn't decode into the enum.
-            if preferences.selectedReasoningEffort != nil {
-                preferences.selectedReasoningEffort = nil
+            if modelPick.reasoningEffort != nil {
+                modelPick.reasoningEffort = nil
             }
             return
         }
         if !selectedModelReasoningEfforts.contains(effort) {
-            preferences.selectedReasoningEffort = nil
+            modelPick.reasoningEffort = nil
         }
     }
 
-    /// The model ID to include in the prompt. Returns nil if the user has never
-    /// explicitly selected a model, so the backend uses its default.
+    /// The model ID to include in the prompt: the pick, else the new-chat default. `nil` lets
+    /// the backend choose (flag off and nothing picked, or models not loaded yet).
     var currentModelId: String? {
-        preferences.selectedModelId
+        modelPick.modelId ?? newChatDefaultSelection?.modelId
     }
 
-    /// The cached short name of the last selected model, available before models are fetched.
+    /// The cached short name of the picked model, available before models are fetched.
     var cachedModelShortName: String? {
-        preferences.selectedModelShortName
+        modelPick.modelShortName
     }
 
     /// Whether the currently selected model supports image upload.
@@ -841,9 +906,8 @@ final class AIChatOmnibarController {
         }
     }
 
-    /// Updates the selected reasoning effort and persists it for future sessions.
     func updateSelectedReasoningEffort(_ effort: AIChatReasoningEffort?) {
-        preferences.selectedReasoningEffort = effort?.rawValue
+        modelPick.reasoningEffort = effort?.rawValue
     }
 
     // MARK: - Subscription gating
@@ -962,16 +1026,16 @@ final class AIChatOmnibarController {
     /// longer accessible — submitting it would fail on the server.
     var effectiveReasoningEffort: AIChatReasoningEffort? {
         guard isReasoningEffortEnabled, !isImageGenerationMode else { return nil }
+        guard !models.isEmpty else { return newChatDefaultReasoningEffortBeforeModelsLoad }
         guard let effort = selectedReasoningEffort,
               selectedModelReasoningEfforts.contains(effort),
               isReasoningEffortAccessible(effort) else { return nil }
         return effort
     }
 
-    /// Updates the selected model ID and persists it (along with its short name) for future sessions.
     func updateSelectedModel(_ modelId: String) {
-        preferences.selectedModelId = modelId
-        preferences.selectedModelShortName = models.first(where: { $0.id == modelId })?.shortName
+        modelPick.modelId = modelId
+        modelPick.modelShortName = models.first(where: { $0.id == modelId })?.shortName
         // The newly selected model may not support the previously persisted reasoning effort.
         // Clearing here keeps stale-effort handling in one place (see `clearStaleReasoningEffortIfNeeded`).
         clearStaleReasoningEffortIfNeeded()
@@ -1310,9 +1374,11 @@ final class AIChatOmnibarController {
         draftSource.currentDraftStorePublisher
             .sink { [weak self] store in
                 guard let self else { return }
+                let previousSelection = self.selectionSnapshot
                 /// Cache the incoming store now so synchronous delegate chains driven off the same emission
                 /// (e.g. AddressBarVC → MainVC → onOmnibarActivated) read it rather than the outgoing tab's.
                 self.draftStore = store
+                self.notifySelectedModelChangedIfNeeded(since: previousSelection)
                 self.subscribeToDraftStoreText(store)
 
                 /// Restore the surface's draft. The `isUpdatingFromSharedState` guard stops the
@@ -1337,6 +1403,28 @@ final class AIChatOmnibarController {
                 }
             }
             .store(in: &cancellables)
+    }
+
+    private struct SelectionSnapshot: Equatable {
+        let modelId: String
+        let reasoningEffort: AIChatReasoningEffort?
+    }
+
+    private var selectionSnapshot: SelectionSnapshot {
+        SelectionSnapshot(modelId: persistedModelId, reasoningEffort: selectedReasoningEffort)
+    }
+
+    /// A pick kept per draft changes with the draft, so the picker labels follow the selected tab.
+    private func notifySelectedModelChangedIfNeeded(since previous: SelectionSnapshot) {
+        guard selectionSnapshot != previous else { return }
+        onSelectedModelChanged?()
+    }
+
+    private func clearModelPick(in submittedDraftStore: DuckAIPromptDraftStoring?) {
+        guard let submittedDraftStore, submittedDraftStore.aiChatModelPick != .empty else { return }
+        let previousSelection = selectionSnapshot
+        submittedDraftStore.setAIChatModelPick(.empty)
+        notifySelectedModelChangedIfNeeded(since: previousSelection)
     }
 
     private func subscribeToDraftStoreText(_ draftStore: DuckAIPromptDraftStoring?) {
@@ -1569,6 +1657,7 @@ final class AIChatOmnibarController {
             self.persistAttachmentsToActiveTab([])
             self.persistTabAttachmentsToActiveTab([])
             self.persistFileAttachmentsToActiveTab([])
+            self.clearModelPick(in: snapshotDraftStore)
             delegate?.aiChatOmnibarControllerDidSubmit(self)
         }
 
@@ -1576,7 +1665,7 @@ final class AIChatOmnibarController {
     }
 
     private func firePromptSubmissionPixels() {
-        pixelHandler.fire(.promptSubmitted)
+        pixelHandler.fire(.promptSubmitted(newChatModel: newChatModelPixelParameters))
 
         switch activeToolMode {
         case .imageGeneration:
@@ -1789,7 +1878,7 @@ extension AIChatOmnibarController {
         }
         items += rest.map { item(for: $0) }
 
-        guard !gated.isEmpty, !freeModelsOnly, !hidesGatedModels else { return items }
+        guard !gated.isEmpty, !freeModelsOnly, !hidesGatedModels, allowsSubscriptionUpsell else { return items }
         items.append(.separator)
 
         if isSubscriptionUpsellEnabled {
@@ -1811,6 +1900,7 @@ extension AIChatOmnibarController {
         for effort in pickerReasoningEfforts {
             let requiredTier = requiredTier(for: effort)
             let isGated = requiredTier != nil
+            if isGated && !allowsSubscriptionUpsell { continue }
             // Only the first gated effort heads the section.
             let sectionTitle = isGated && isSubscriptionUpsellEnabled && !titledGatedSection
                 ? AIChatPickerSectionCopy.gatedEffortsHeader(requiredTier: requiredTier, userTier: userTier, isEligibleForFreeTrial: shouldOfferFreeTrial)

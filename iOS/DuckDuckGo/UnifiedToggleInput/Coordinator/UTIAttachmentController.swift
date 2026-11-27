@@ -72,6 +72,8 @@ final class UTIAttachmentController {
         var isEditing: () -> Bool = { false }
         var isVoiceSessionActive: () -> Bool = { false }
         var pastedTextSheetMode: (AIChatPastedText) -> PastedTextSheetMode = { _ in .editable(limit: 0) }
+        var usesSimplifiedAttachMenu: () -> Bool = { false }
+        var attachMenuTools: () -> UTIAttachMenuTools? = { nil }
     }
 
     /// Coordinator-owned effects an attachment mutation triggers.
@@ -123,6 +125,9 @@ final class UTIAttachmentController {
         }
         presenter.pixelSurfaceProvider = { [weak self] in
             self?.environment.pixelSurface() ?? .addressBar
+        }
+        presenter.simplifiedPromptBoxProvider = { [weak self] in
+            self?.environment.usesSimplifiedAttachMenu() ?? false
         }
         presenter.onExpandIfNeeded = { [weak self] in
             self?.callbacks.onExpandIfNeeded()
@@ -428,6 +433,7 @@ final class UTIAttachmentController {
             presenterProvider: { [weak self] in
                 self?.environment.presenterViewController()
             },
+            onItemSelected: { [weak self] in self?.pixelReporter.reportAttachMenuItemSelected($0) },
             photoSelectionLimit: policy.canAttachImages ? policy.remainingImagesForPicker : 0,
             canAttachFile: canPresentFilePicker,
             allowedFileTypes: allowedFileUTTypes,
@@ -444,8 +450,14 @@ final class UTIAttachmentController {
             tabActionHandler: { [weak self] candidate, isAttached, source in
                 guard let self, self.pasteContextIdentity == tabSelectionContextIdentity else { return .rejected }
                 return self.setTabAttachment(candidate, isAttached: isAttached, attachmentSource: source)
-            }
+            },
+            isSimplified: environment.usesSimplifiedAttachMenu(),
+            tools: simplifiedAttachMenuTools
         )
+    }
+
+    private var simplifiedAttachMenuTools: UTIAttachMenuTools? {
+        environment.usesSimplifiedAttachMenu() ? environment.attachMenuTools() : nil
     }
 
     var canUseTabAttachments: Bool {
@@ -529,6 +541,14 @@ final class UTIAttachmentController {
         presenter.presentFilePicker(from: presenterVC, allowedFileTypes: allowedFileUTTypes)
     }
 
+    /// Opens the photo library directly, for the new chat hint. No-ops when the active chat can't take another image.
+    func presentPhotoPicker() {
+        let policy = environment.policy()
+        guard policy.canAttachImages, policy.remainingImagesForPicker > 0, !view.isGenerating(),
+              let presenterVC = environment.presenterViewController() else { return }
+        presenter.presentPhotoLibrary(from: presenterVC, selectionLimit: policy.remainingImagesForPicker)
+    }
+
     func updateAttachButtonPresentation() {
         let policy = environment.policy()
         let supportsPageContextAttachment = environment.isContextualChatState() && environment.pageContextAttachHandler() != nil && (environment.isPageContextAttachable() ?? true)
@@ -537,9 +557,11 @@ final class UTIAttachmentController {
         let hasAvailableAttachmentAction = policy.canAttachImages || canPresentFilePicker || supportsPageContextAttachment || supportsTabAttachment
         let canAttachMore = hasAvailableAttachmentAction && !view.isGenerating()
         let showsUnavailableAttachmentButton = environment.hasSelectedModel() && environment.keepsUnavailableAttachmentButtonVisible()
-        view.setImageButtonHidden(!supportsAttachments && !showsUnavailableAttachmentButton)
-        view.setImageButtonEnabled(canAttachMore)
-        view.setAttachmentMenu(supportsAttachments && canAttachMore ? makeAttachmentMenu() : nil)
+        let hasEnabledTool = simplifiedAttachMenuTools?.menu.hasEnabledItem ?? false
+        let canUseTool = hasEnabledTool && !view.isGenerating()
+        view.setImageButtonHidden(!supportsAttachments && !hasEnabledTool && !showsUnavailableAttachmentButton)
+        view.setImageButtonEnabled(canAttachMore || canUseTool)
+        view.setAttachmentMenu((supportsAttachments && canAttachMore) || canUseTool ? makeAttachmentMenu() : nil)
     }
 
     // MARK: - Validation banner

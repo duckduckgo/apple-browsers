@@ -259,6 +259,34 @@ final class YouTubeAdBlockingPreferencesTests: XCTestCase {
         XCTAssertEqual(storage().shouldHideYouTubeAdBlockingDisclosure, false)
         XCTAssertFalse(sut.isDisclosureHidden)
     }
+
+    // MARK: - Sponsor Skipping
+
+    private func makeSegmentSkipSUT(flagOn: Bool) -> YouTubeAdBlockingPreferences {
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.featuresStub[FeatureFlag.segmentSkip.rawValue] = flagOn
+        return YouTubeAdBlockingPreferences(settings: defaults.keyedStoring(),
+                                            featureFlagger: featureFlagger,
+                                            segmentSkipPreferences: SegmentSkipPreferences(store: defaults))
+    }
+
+    func testSegmentSkipAvailabilityFollowsTheFeatureFlag() {
+        XCTAssertTrue(makeSegmentSkipSUT(flagOn: true).isSegmentSkipAvailable)
+        XCTAssertFalse(makeSegmentSkipSUT(flagOn: false).isSegmentSkipAvailable)
+    }
+
+    func testSegmentSkipSettingsPersistThroughTheSharedStore() {
+        sut = makeSegmentSkipSUT(flagOn: true)
+        XCTAssertTrue(sut.segmentSkipEnabled)
+        XCTAssertEqual(sut.segmentSkipMode, .manual)
+
+        sut.segmentSkipEnabled = false
+        sut.segmentSkipMode = .auto
+
+        let shared = SegmentSkipPreferences(store: defaults)
+        XCTAssertFalse(shared.isEnabled)
+        XCTAssertEqual(shared.skipMode, .auto)
+    }
 }
 
 private final class TestAdBlockingAvailability: AdBlockingAvailabilityProviding {

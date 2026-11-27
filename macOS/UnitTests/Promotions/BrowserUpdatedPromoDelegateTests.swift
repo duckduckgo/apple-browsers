@@ -18,34 +18,28 @@
 
 import AppUpdaterShared
 import Combine
-import FeatureFlags_macOS
-import PrivacyConfig
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
 @MainActor
 final class BrowserUpdatedPromoDelegateTests: XCTestCase {
 
-    private var featureFlagger: MockFeatureFlagger!
     private var bridge: UpdateNotificationPromoBridge!
     private var windowControllersManager: WindowControllersManagerMock!
     private var sut: BrowserUpdatedPromoDelegate!
 
     override func setUp() {
         super.setUp()
-        featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.promoQueueBrowserUpdatedPromo.rawValue: true])
         bridge = UpdateNotificationPromoBridge(notificationCenter: NotificationCenter())
         windowControllersManager = WindowControllersManagerMock()
         sut = BrowserUpdatedPromoDelegate(bridge: bridge,
-                                          windowControllersManager: windowControllersManager,
-                                          featureFlagger: featureFlagger)
+                                          windowControllersManager: windowControllersManager)
     }
 
     override func tearDown() {
         sut = nil
         windowControllersManager = nil
         bridge = nil
-        featureFlagger = nil
         super.tearDown()
     }
 
@@ -57,13 +51,6 @@ final class BrowserUpdatedPromoDelegateTests: XCTestCase {
         bridge.showUpdateNotification(for: .updated)
 
         XCTAssertTrue(sut.isEligible)
-    }
-
-    func testWhenFeatureFlagOffThenNotEligibleEvenWithPendingStatus() {
-        bridge.showUpdateNotification(for: .updated)
-        featureFlagger.featuresStub = [FeatureFlag.promoQueueBrowserUpdatedPromo.rawValue: false]
-
-        XCTAssertFalse(sut.isEligible)
     }
 
     func testWhenThereIsNoKeyWindowThenShowReturnsNoChange() async {

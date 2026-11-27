@@ -154,6 +154,7 @@ final class FaviconManager: FaviconManagement {
 
     private let bookmarkManager: BookmarkManager
     private let faviconDownloader: FaviconDownloader
+    private let faviconRasterizer: FaviconRasterizer
     private let featureFlagger: FeatureFlagger
 
     /// SVG favicons rejected in this session because they render fully transparent.
@@ -172,6 +173,7 @@ final class FaviconManager: FaviconManagement {
         fireproofDomains: FireproofDomains,
         privacyConfigurationManager: PrivacyConfigurationManaging,
         featureFlagger: FeatureFlagger,
+        faviconRasterizer: FaviconRasterizer,
         imageCache: ((FaviconStoring) -> FaviconImageCaching)? = nil,
         referenceCache: ((FaviconStoring) -> FaviconReferenceCaching)? = nil
     ) {
@@ -184,6 +186,7 @@ final class FaviconManager: FaviconManagement {
         self.bookmarkManager = bookmarkManager
         self.faviconDownloader = FaviconDownloader(privacyConfigurationManager: privacyConfigurationManager)
         self.featureFlagger = featureFlagger
+        self.faviconRasterizer = faviconRasterizer
         if let imageCache {
             self.imageCache = imageCache(store)
         } else if featureFlagger.isFeatureOn(.faviconLazyImageLoading) {
@@ -431,7 +434,7 @@ final class FaviconManager: FaviconManagement {
         // Download and decode every favicon at full resolution first. We need each favicon's original
         // size to decide which ones to keep — if we downscaled during the download (capping every favicon
         // at `maxStoredFaviconPixelSize`) we could no longer tell the redundant large ones apart.
-        let (fetched, transparentSVGURLs) = await downloadFavicons(faviconLinks, webView: webView)
+        let (fetched, transparentSVGURLs) = await downloadFavicons(faviconLinks, webView: webView, rasterizer: faviconRasterizer)
         await rejectTransparentSVGFavicons(transparentSVGURLs)
 
         // With the storing improvements off, follow the pre-existing path: store every fetched favicon at
@@ -476,7 +479,8 @@ final class FaviconManager: FaviconManagement {
     /// Downloads and decodes favicons in parallel. Returns the decoded favicons and the URLs of SVG favicons
     /// that were rejected because they render fully transparent.
     private func downloadFavicons(_ faviconLinks: [FaviconUserScript.FaviconLink],
-                                  webView: WKWebView?) async -> (fetched: [FetchedFavicon], transparentSVGURLs: Set<URL>) {
+                                  webView: WKWebView?,
+                                  rasterizer: FaviconRasterizer) async -> (fetched: [FetchedFavicon], transparentSVGURLs: Set<URL>) {
         await withTaskGroup(of: FaviconDownloadResult.self) { [faviconDownloader] group in
             for faviconLink in faviconLinks {
                 let faviconUrl = faviconLink.href
@@ -488,7 +492,7 @@ final class FaviconManager: FaviconManagement {
 
                         try Task.checkCancellation()
 
-                        return .fetched(try Self.decodeFavicon(from: data, link: faviconLink))
+                        return .fetched(try await Self.decodeFavicon(from: data, link: faviconLink, rasterizer: rasterizer))
                     } catch FaviconDecodingError.transparentSVG {
                         Logger.favicons.debug("Rejected Favicon from \(faviconUrl.shortDescription): SVG renders fully transparent")
                         return .transparentSVG(faviconUrl)
@@ -534,23 +538,35 @@ final class FaviconManager: FaviconManagement {
         await imageCache.removeFavicons(withIdentifiers: identifiers)
     }
 
-    private enum FaviconDecodingError: Error {
+    enum FaviconDecodingError: Error {
         /// AppKit's SVG renderer ignores CSS, so an SVG that colors its paths only through a `<style>` rule
         /// (e.g. chatgpt.com: `fill="none"` on the root, overridden by `:root { fill: #000 }`) decodes into
         /// a fully transparent image.
         case transparentSVG
     }
 
-    private static func decodeFavicon(from data: Data, link: FaviconUserScript.FaviconLink) throws -> FetchedFavicon {
+    /// With the `faviconWebKitSVGRendering` flag on, data CoreImage can't decode (SVG, PDF) is rendered to a PNG by
+    /// WebKit first, because `NSImage(data:)` keeps a lazy vector image that CoreSVG renders later and can crash on.
+    /// With the flag off, the legacy decoding is used.
+    static func decodeFavicon(from data: Data,
+                              link: FaviconUserScript.FaviconLink,
+                              rasterizer: FaviconRasterizer) async throws -> FetchedFavicon {
         // Validate that we got actual image data
         guard !data.isEmpty else {
             throw URLError(.zeroByteResource, userInfo: [NSURLErrorKey: link.href])
         }
-        guard let image = NSImage(dataUsingCIImage: data, maxPixelSize: nil) else {
+
+        var imageData = data
+        var isRasterizedVector = false
+        if await rasterizer.isEnabled, CIImage(data: data) == nil {
+            imageData = try await rasterizer.rasterize(data)
+            isRasterizedVector = true
+        }
+        guard let image = NSImage(dataUsingCIImage: imageData, maxPixelSize: nil) else {
             throw CocoaError(.fileReadCorruptFile, userInfo: [NSURLErrorKey: link.href])
         }
 
-        let fetchedFavicon = FetchedFavicon(link: link, data: data, image: image)
+        let fetchedFavicon = FetchedFavicon(link: link, data: imageData, image: image, isRasterizedVector: isRasterizedVector)
 
         // Treat a transparent SVG as undecodable so that another favicon
         // or the `/favicon.ico` fallback gets picked instead.
@@ -562,14 +578,19 @@ final class FaviconManager: FaviconManagement {
     }
 
     /// A favicon downloaded at full resolution, retained while we decide which favicons to keep.
-    private struct FetchedFavicon: FaviconSizeRepresentable {
+    struct FetchedFavicon: FaviconSizeRepresentable {
         let link: FaviconUserScript.FaviconLink
         let data: Data
         let image: NSImage
+        /// The data was not a raster image: `data` is the PNG that WebKit rendered from it (see `FaviconRasterizer`).
+        var isRasterizedVector = false
 
         var longestSide: CGFloat { max(image.size.width, image.size.height) }
 
         var isSVG: Bool {
+            if isRasterizedVector {
+                return true
+            }
             if let type = link.type?.lowercased(), type.contains("svg") {
                 return true
             }
@@ -578,7 +599,7 @@ final class FaviconManager: FaviconManagement {
 
         /// See `FaviconDecodingError.transparentSVG`.
         var isTransparentSVG: Bool {
-            (isSVG || data.isSVGImageData) && !image.hasVisiblePixels()
+            (isSVG || data.looksLikeSVG) && !image.hasVisiblePixels()
         }
     }
 
@@ -646,7 +667,8 @@ extension FaviconManager: Bookmarks.FaviconStoring {
     }
 
     func storeFavicon(_ imageData: Data, with url: URL?, for documentURL: URL) async throws {
-        guard let image = NSImage(data: imageData) else {
+        // Flag on: SVGs are rendered with WebKit. Flag off: the legacy `NSImage(data:)`.
+        guard let image = await faviconRasterizer.storableImage(from: imageData) else {
             return
         }
 
@@ -776,15 +798,6 @@ extension NSImage {
 
         // Every 4th byte, starting at index 3, is the alpha component.
         return stride(from: 3, to: pixels.count, by: 4).contains { pixels[$0] > 0 }
-    }
-}
-
-extension Data {
-
-    /// Returns whether the data looks like an SVG document, based on its first bytes.
-    var isSVGImageData: Bool {
-        // Latin-1 decodes any byte sequence, and `<svg` is plain ASCII.
-        String(bytes: prefix(1024), encoding: .isoLatin1)?.lowercased().contains("<svg") ?? false
     }
 }
 

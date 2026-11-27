@@ -57,9 +57,7 @@ final class StatisticsLoader: DuckAIPromptAtbRefreshing {
     /// do count Duck.ai prompts as search. Remove each entry as its experiment is cleaned up; delete this
     /// once none remain.
     static let experimentsExcludedFromDuckAISearchMetric: Set<SubfeatureID> = [
-        MacOSBrowserConfigSubfeature.onboardingChromeExtension.rawValue,
-        AutoconsentSubfeature.heuristicAction.rawValue,
-        PrivacyProSubfeature.onboardingSubscriptionUpsellExperiment.rawValue
+        MacOSBrowserConfigSubfeature.onboardingChromeExtension.rawValue
     ]
 
     init(
@@ -72,11 +70,9 @@ final class StatisticsLoader: DuckAIPromptAtbRefreshing {
         fireSearchExperimentPixels: @escaping () -> Void = {
             PixelKit.fireSearchExperimentPixels()
             StatisticsLoader.fireLegacySearchRetentionExperimentPixels()
-            StatisticsLoader.fireOnboardingNonBlockingSearchRetentionExperimentPixel()
         },
         fireDuckAISearchExperimentPixels: @escaping () -> Void = {
             StatisticsLoader.fireSearchExperimentPixelsForDuckAIEligibleExperiments()
-            StatisticsLoader.fireOnboardingNonBlockingSearchRetentionExperimentPixel()
         },
         fireNewAIPromptExperimentPixels: @escaping () -> Void = PixelKit.fireNewAIPromptExperimentPixels
     ) {
@@ -96,8 +92,7 @@ final class StatisticsLoader: DuckAIPromptAtbRefreshing {
     /// started with. Drop each experiment as it is cleaned up, and delete this once none remain.
     static func fireLegacySearchRetentionExperimentPixels() {
         let inProgressExperiments = [
-            MacOSBrowserConfigSubfeature.onboardingChromeExtension.rawValue,
-            AutoconsentSubfeature.heuristicAction.rawValue
+            MacOSBrowserConfigSubfeature.onboardingChromeExtension.rawValue
         ]
         for subfeatureID in inProgressExperiments {
             for threshold in [4, 6, 11, 21, 30] {
@@ -109,14 +104,6 @@ final class StatisticsLoader: DuckAIPromptAtbRefreshing {
                 )
             }
         }
-    }
-
-    /// Uses the same search events (including Duck.ai) as the automatic 5...7 guardrail.
-    static func fireOnboardingNonBlockingSearchRetentionExperimentPixel(
-        featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
-        persistor: NonBlockingOnboardingPersistor = NonBlockingOnboardingPersistor()
-    ) {
-        OnboardingNonBlockingExperiment(featureFlagger: featureFlagger).fireSearchRetention(persistor: persistor)
     }
 
     /// Fires the search experiment metric for a Duck.ai prompt, but only for experiments that should count

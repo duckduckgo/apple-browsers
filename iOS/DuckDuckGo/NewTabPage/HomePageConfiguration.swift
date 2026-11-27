@@ -218,8 +218,12 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
 
         // Queue history is recorded once per ownership lease. The appearance itself is a
         // separate impression and must continue to be reported on every confirmed appearance.
-        _ = rmfOwnership.lease.markShown()
+        let isFirstAppearanceInLease = rmfOwnership.lease.markShown()
         reportRemoteMessageShown(remoteMessage)
+        if isFirstAppearanceInLease {
+            // Stamp the gap when the cooldown is stamped, so the gap measures what the cooldown enforces.
+            promptExposureReporter.recordCoordinatedPromptShown(.ntpCard)
+        }
     }
 
     /// Reports the currently published remote message after revalidating that it remains eligible.
@@ -415,9 +419,6 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
         publishCoordinatedMessages(messages)
         ownership?.lease.release()
         rmfOwnership = nil
-        if ownership?.lease.didConfirmAppearance == true {
-            promptExposureReporter.recordCoordinatedPromptFinished(.ntpCard)
-        }
     }
 
     private func isCurrent(_ presentationContext: HomeMessagePresentationContext, for messageID: String) -> Bool {

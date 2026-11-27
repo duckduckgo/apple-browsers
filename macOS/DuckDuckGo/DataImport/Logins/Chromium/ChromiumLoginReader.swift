@@ -58,7 +58,7 @@ final class ChromiumLoginReader {
 
     enum LoginDataFileName: String, CaseIterable {
         case loginData = "Login Data"
-        case loginDataForAccount = "Login Data for Account"
+        case loginDataForAccount = "Login Data For Account"
     }
 
     private let chromiumLocalLoginDirectoryURL: URL

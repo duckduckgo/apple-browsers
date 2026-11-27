@@ -62,6 +62,15 @@ the repository root before reporting.**
 A new Swift Testing test (`@Test`) must declare a timeout. The framework default
 is 60 minutes, which can outlast the CI workflow itself.
 
+## Platform API pitfalls
+
+Flag a `super` call from an override of an optional protocol method on a UIKit
+subclass. The superclass may not implement it on every OS, and the call then crashes
+with an unrecognized selector exception. Neither the
+compiler nor `@available` catches this. To ensure the superclass implements the
+method, `Superclass.instancesRespond(to:)` can be used, but avoid shipping it in
+production.
+
 ## Dependency changes
 
 When a PR changes a Swift package dependency's pinned version, every tracked

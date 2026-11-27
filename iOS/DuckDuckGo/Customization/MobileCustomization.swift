@@ -120,7 +120,7 @@ class MobileCustomization {
 
         var requiresWebPage: Bool {
             switch self {
-            case .share, .addEditBookmark, .addEditFavorite, .zoom:
+            case .share, .addEditBookmark, .addEditFavorite, .zoom, .newTab:
                 true
             default:
                 false

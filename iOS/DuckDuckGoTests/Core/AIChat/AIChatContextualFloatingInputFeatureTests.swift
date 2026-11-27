@@ -34,6 +34,7 @@ final class AIChatContextualFloatingInputFeatureTests: XCTestCase {
         var isAvailable: Bool
         var isToggleHiddenOnDuckAITab: Bool = false
         var isAttachmentPasteEnabled: Bool = false
+        var isFullTabChatInputAvailable: Bool = false
     }
 
     // MARK: - Helpers

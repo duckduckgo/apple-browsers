@@ -28,7 +28,7 @@ struct PromptCooldownMigratorTests {
     let sut: PromptCooldownMigrator
 
     init() throws {
-        keyValueStore = try MockKeyValueFileStore()
+        keyValueStore = MockKeyValueFileStore()
         sut = PromptCooldownMigrator(keyValueStore: keyValueStore)
     }
 

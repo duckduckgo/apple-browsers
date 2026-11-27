@@ -1,5 +1,9 @@
 # frozen_string_literal: true
+require "open3"
+require "plist"
+require "tmpdir"
 require_relative "spaceship_patch"
+require_relative "appstore_release_metadata"
 
 opt_out_usage
 fastlane_require 'httparty'
@@ -301,75 +305,78 @@ platform :mac do
 
   end
 
-  desc 'Fetches latest App Store version and uploads metadata to CDN'
+  # Publishes the App Store entries of release_metadata.json from the live version's phased release state.
+  #
+  # @option [Boolean] is_critical (default: keep the existing value) Whether the release is critical
+  # @option [Boolean] dry_run (default: false) Print the resulting file instead of uploading it
+  #
+  desc 'Publishes the App Store release metadata from the live version\'s phased release state'
   lane :upload_appstore_version_metadata do |options|
-    # Get latest App Store version using existing lane
-    version_info = fetch_appstore_version_info(options)
+    dry_run = options[:dry_run] == true || options[:dry_run].to_s == 'true'
+    is_critical = case options[:is_critical].to_s
+                  when 'true' then true
+                  when 'false' then false
+                  when '', 'unchanged' then nil
+                  else UI.user_error!("is_critical must be true, false or unchanged, not #{options[:is_critical]}")
+                  end
 
-    # Extract values from lane context
-    version = lane_context[SharedValues::LATEST_VERSION]
-    build_number = lane_context[SharedValues::LATEST_BUILD_NUMBER]
-    timestamp = Time.now.utc.strftime("%Y-%m-%dT%H:%M:%SZ")
-    is_critical = options[:is_critical] || false
+    release = fetch_live_appstore_release(options)
+    UI.message("App Store version: #{release[:version]} (#{release[:build_number]})")
+    UI.message("Version state: #{release[:version_state]}")
+    UI.message("Phased release: #{release[:phase_state] || 'none'}, started #{release[:phase_start_date] || 'n/a'}")
+    UI.message("Is critical: #{is_critical.nil? ? 'unchanged' : is_critical}")
 
-    UI.message("App Store version: #{version}")
-    UI.message("App Store build: #{build_number}")
-    UI.message("Is critical: #{is_critical}")
+    # Apple can take up to a day to make a released version downloadable, so prompting for it now could
+    # point users at an update the App Store doesn't serve yet.
+    if release[:version_state] == Spaceship::ConnectAPI::AppStoreVersion::AppVersionState::PROCESSING_FOR_DISTRIBUTION
+      unless is_critical.nil?
+        UI.user_error!("#{release[:version]} is still processing for distribution, so is_critical can't be set yet. " \
+                       "Run this workflow again once App Store Connect shows it as Ready for Distribution.")
+      end
+      UI.important("#{release[:version]} is still processing for distribution: not updating release_metadata.json")
+      next
+    end
 
-    # Generate metadata JSON
-    metadata = {
-      latest_appstore_version: {
-        latest_version: version,
-        build_number: build_number,
-        release_date: timestamp,
-        is_critical: is_critical
-      }
-    }
-
-    # Get S3 configuration from environment
     s3_bucket = ENV['RELEASE_BUCKET_NAME']
     s3_prefix = ENV['RELEASE_BUCKET_PREFIX']
-    cdn_path = ENV['CDN_PATH']
-
     unless s3_bucket && s3_prefix
       UI.user_error!("Missing required S3 configuration: RELEASE_BUCKET_NAME and RELEASE_BUCKET_PREFIX")
     end
+    UI.user_error!("Missing required CDN configuration: CDN_PATH") unless ENV['CDN_PATH']
+    s3_url = "s3://#{s3_bucket}/#{s3_prefix}/release_metadata.json"
+    cdn_url = "#{ENV['CDN_PATH']}release_metadata.json"
 
-    s3_path = "s3://#{s3_bucket}/#{s3_prefix}/"
+    existing_content = read_release_metadata(s3_url)
+    existing_metadata = existing_content ? JSON.parse(existing_content) : {}
 
-    # Download existing metadata (if exists)
-    existing_metadata = {}
-    cdn_url = "#{cdn_path}release_metadata.json"
-
-    begin
-      UI.message("Checking for existing metadata at #{cdn_url}")
-      existing_content = sh("curl -fLSs '#{cdn_url}'", log: false)
-      existing_metadata = JSON.parse(existing_content)
-      UI.message("Found existing metadata with keys: #{existing_metadata.keys}")
-    rescue => e
-      UI.message("No existing metadata found, will create new file")
-      existing_metadata = {}
+    updated_metadata = begin
+      AppStoreReleaseMetadata.update(
+        existing_metadata,
+        version: release[:version],
+        build_number: release[:build_number],
+        phase_state: release[:phase_state],
+        phase_start_date: release[:phase_start_date],
+        is_critical: is_critical,
+        now: Time.now
+      )
+    rescue AppStoreReleaseMetadata::Error => e
+      UI.user_error!(e.message)
     end
 
-    # Replace the latest_appstore_version entry (this should overwrite any existing entry)
-    updated_metadata = existing_metadata.dup
-    updated_metadata['latest_appstore_version'] = metadata[:latest_appstore_version]
-
-    # Write metadata to file
-    File.write('release_metadata.json', JSON.pretty_generate(updated_metadata))
+    updated_content = JSON.pretty_generate(updated_metadata)
     UI.message("Generated metadata:")
-    UI.message(JSON.pretty_generate(updated_metadata))
+    UI.message(updated_content)
 
-    # Upload to S3
-    UI.message("Uploading release_metadata.json to S3...")
-    sh("aws s3 cp release_metadata.json '#{s3_path}release_metadata.json' --acl public-read")
-
-    UI.success("✅ Successfully updated macOS release metadata")
-    UI.message("Version: #{version}")
-    UI.message("Build: #{build_number}")
-    UI.message("Release Date: #{timestamp}")
-    UI.message("Is Critical: #{is_critical}")
-    UI.message("📍 Available at: #{cdn_url}")
+    if dry_run
+      UI.important("Dry run: not uploading release_metadata.json")
+    elsif updated_metadata == existing_metadata
+      UI.success("✅ release_metadata.json is already up to date")
+    else
+      File.write('release_metadata.json', updated_content)
+      sh("aws s3 cp release_metadata.json '#{s3_url}' --acl public-read")
+      UI.success("✅ Successfully updated macOS release metadata")
+      UI.message("📍 Available at: #{cdn_url}")
+    end
   end
 
   desc 'Creates a new Kechain to use on UI tests'
@@ -458,6 +465,7 @@ platform :mac do
       export_options: "scripts/assets/AppStoreExportOptions.plist",
       xcargs: "-skipPackagePluginValidation -skipMacroValidation RELEASE_PRODUCT_NAME_OVERRIDE=DuckDuckGo"
     )
+    make_appstore_package_relocatable
   end
 
   # Builds the App Store review version of the app.
@@ -471,6 +479,7 @@ platform :mac do
       export_options: "scripts/assets/AppStoreExportOptions.plist",
       xcargs: "-skipPackagePluginValidation -skipMacroValidation"
     )
+    make_appstore_package_relocatable
   end
 
   # Builds the App Store review version of the app.
@@ -484,6 +493,122 @@ platform :mac do
       export_options: "scripts/assets/AppStoreExportOptions.plist",
       xcargs: "-skipPackagePluginValidation -skipMacroValidation"
     )
+    make_appstore_package_relocatable
+  end
+
+  # Rebuilds the exported App Store package so that the installer updates the app where the user keeps it.
+  #
+  # pkgbuild on macOS 27 and later sets BundleIsRelocatable to false by default, and the export has no
+  # option to change it. A non-relocatable update installs to /Applications/<app> even when the user moved
+  # the App Store app, and replaces the DMG app if it is there.
+  #
+  # The rebuilt package keeps the exported (already signed) app, the original Distribution file and
+  # the original installer signing identity. Only the main app bundle becomes relocatable.
+  #
+  def make_appstore_package_relocatable
+    package_path = lane_context[SharedValues::PKG_OUTPUT_PATH]
+    UI.user_error!("No exported App Store package found") unless package_path && File.exist?(package_path)
+
+    signing_identity = installer_signing_identity(package_path)
+
+    Dir.mktmpdir do |dir|
+      expanded_path = File.join(dir, 'expanded')
+      sh('pkgutil', '--expand-full', package_path, expanded_path)
+
+      component_path = single_component_package(expanded_path)
+      package_info = read_package_info(component_path)
+      main_bundle = main_app_bundle(package_info)
+      payload_path = File.join(component_path, 'Payload')
+      relative_bundle_path = main_bundle.attributes['path'].delete_prefix('./')
+      sh('codesign', '--verify', '--deep', '--strict', File.join(payload_path, relative_bundle_path))
+
+      component_plist_path = File.join(dir, 'components.plist')
+      File.write(component_plist_path, [{
+        'RootRelativeBundlePath' => relative_bundle_path,
+        'BundleIsRelocatable' => true,
+        'BundleIsVersionChecked' => true,
+        'BundleHasStrictIdentifier' => true,
+        'BundleOverwriteAction' => 'upgrade'
+      }].to_plist)
+
+      components_path = File.join(dir, 'components')
+      FileUtils.mkdir_p(components_path)
+      sh('pkgbuild',
+         '--root', payload_path,
+         '--component-plist', component_plist_path,
+         '--identifier', package_info.attributes['identifier'],
+         '--version', package_info.attributes['version'],
+         '--install-location', package_info.attributes['install-location'],
+         '--preserve-xattr',
+         File.join(components_path, File.basename(component_path)))
+
+      relocatable_package_path = File.join(dir, File.basename(package_path))
+      sh('productbuild',
+         '--distribution', File.join(expanded_path, 'Distribution'),
+         '--package-path', components_path,
+         '--sign', signing_identity,
+         relocatable_package_path)
+
+      verify_appstore_package_relocatable(relocatable_package_path, expected_package_info: package_info)
+      FileUtils.mv(relocatable_package_path, package_path, force: true)
+    end
+
+    UI.success("Made #{File.basename(package_path)} relocatable")
+  end
+
+  # Fails unless the main app bundle in the package is relocatable.
+  #
+  # With `expected_package_info`, also fails if anything else in PackageInfo differs from it,
+  # except the payload size and the list of relocatable bundles.
+  #
+  def verify_appstore_package_relocatable(package_path, expected_package_info: nil)
+    Dir.mktmpdir do |dir|
+      expanded_path = File.join(dir, 'expanded')
+      sh('pkgutil', '--expand', package_path, expanded_path)
+      package_info = read_package_info(single_component_package(expanded_path))
+      bundle_id = main_app_bundle(package_info).attributes['id']
+
+      relocatable_ids = REXML::XPath.match(package_info, 'relocate/bundle').map { |bundle| bundle.attributes['id'] }
+      unless relocatable_ids.include?(bundle_id)
+        UI.user_error!("#{File.basename(package_path)} is not relocatable: #{bundle_id} is missing from <relocate> in PackageInfo")
+      end
+
+      if expected_package_info
+        actual = package_info_without_relocation(package_info)
+        expected = package_info_without_relocation(expected_package_info)
+        UI.user_error!("PackageInfo of the rebuilt package differs from the exported one:\n#{actual}\nExpected:\n#{expected}") unless actual == expected
+      end
+    end
+  end
+
+  def installer_signing_identity(package_path)
+    signature = sh('pkgutil', '--check-signature', package_path, log: false)
+    identity = signature[/^\s*1\. (.+)$/, 1]
+    UI.user_error!("Couldn't read the installer signing identity of #{package_path}:\n#{signature}") unless identity
+    identity
+  end
+
+  def single_component_package(expanded_path)
+    components = Dir.glob(File.join(expanded_path, '*.pkg'))
+    UI.user_error!("Expected 1 component package in #{expanded_path}, found #{components.count}") unless components.count == 1
+    components.first
+  end
+
+  def read_package_info(component_path)
+    REXML::Document.new(File.read(File.join(component_path, 'PackageInfo'))).root
+  end
+
+  # The main app is the only bundle at the root of the payload, for example `./DuckDuckGo.app`.
+  def main_app_bundle(package_info)
+    bundles = REXML::XPath.match(package_info, 'bundle').select { |bundle| bundle.attributes['path'].count('/') == 1 }
+    UI.user_error!("Expected 1 bundle at the root of the package, found #{bundles.count}") unless bundles.count == 1
+    bundles.first
+  end
+
+  def package_info_without_relocation(package_info)
+    copy = REXML::Document.new(package_info.to_s).root
+    %w[payload relocate].each { |name| copy.delete_element(name) }
+    copy.to_s.gsub(/>\s+</, '><')
   end
 
   private_lane :fetch_testflight_build_number do |options|
@@ -495,20 +620,51 @@ platform :mac do
     build_number
   end
 
-  # Gets the latest App Store version and build number for macOS
+  # Gets the live App Store version, build number and phased release state for macOS
   #
   # @option [String] username (default: nil) Your DDG Apple ID
-  # @option [Boolean] live (default: true) Whether to get live version or TestFlight version
   #
-  private_lane :fetch_appstore_version_info do |options|
+  private_lane :fetch_live_appstore_release do |options|
     app_store_build_number(
       api_key: get_api_key,
       username: get_username(options),
       platform: 'osx',
       live: true
     )
+    version = lane_context[SharedValues::LATEST_VERSION]
+    build_number = lane_context[SharedValues::LATEST_BUILD_NUMBER]
+
+    app_identifier = CredentialsManager::AppfileConfig.try_fetch_value(:app_identifier)
+    app = Spaceship::ConnectAPI::App.find(app_identifier)
+    live_version = app.get_live_app_store_version(
+      platform: Spaceship::ConnectAPI::Platform::MAC_OS,
+      includes: "appStoreVersionPhasedRelease"
+    )
+    unless live_version&.version_string == version
+      UI.user_error!("The live version changed from #{version} while fetching its phased release, please try again")
+    end
+    # Included rather than fetched, because fetching raises for a version released without a phased release.
+    phased_release = live_version.app_store_version_phased_release
+
+    {
+      version: version,
+      build_number: build_number,
+      version_state: live_version.app_version_state,
+      phase_state: phased_release&.phased_release_state,
+      phase_start_date: phased_release&.start_date
+    }
   end
 
+  # Returns nil if the file doesn't exist, and fails on any other error so that a failed read can't drop
+  # the file's other entries.
+  def read_release_metadata(s3_url)
+    UI.message("Reading existing metadata from #{s3_url}")
+    content, error, status = Open3.capture3('aws', 's3', 'cp', s3_url, '-')
+    return content if status.success?
+    return nil if error.include?('(404)')
+
+    UI.user_error!("Couldn't read #{s3_url}: #{error.strip}")
+  end
 
   # Updates version and build number in respective config files
   #

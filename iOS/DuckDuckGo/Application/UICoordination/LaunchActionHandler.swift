@@ -20,8 +20,6 @@
 import UIKit
 import Core
 import PixelKit
-import PrivacyConfig
-import FeatureFlags_iOS
 
 enum LaunchAction {
 
@@ -66,9 +64,34 @@ protocol OnboardingPresenting: AnyObject {
 protocol IdleReturnLaunchDelegate: AnyObject {
     /// Completes after any screen dismissal and New Tab Page creation finish.
     func showNewTabPageAfterIdleReturn(timeAwayMs: Int?, isFirstForeground: Bool, completion: @escaping (IdleReturnNewTabPageResult) -> Void)
+    /// Completes like `showNewTabPageAfterIdleReturn`, for the New Tab Page the launch already drew.
+    func recordNewTabPageDrawnAtLaunch(timeAwayMs: Int?, completion: @escaping (IdleReturnNewTabPageResult) -> Void)
     func markLastUsedTabAsResumedAfterIdle(timeAwayMs: Int?)
     /// A standard-launch return that did not qualify for an after-idle treatment.
     func recordOrdinaryReturn(timeAwayMs: Int?)
+    /// Reports a drawn page a launch action left in place as an ordinary New Tab Page.
+    func releaseHeldNewTabPage()
+}
+
+/// What was on screen when the app came to the foreground. The after-idle treatment waits for App Lock and
+/// Automatically Clear Data, and the user can already open a screen or a page during that wait.
+struct IdleReturnForegroundScreen {
+    weak var presented: UIViewController?
+    let wasOnNewTabPage: Bool
+    /// The `idleReturnLaunchWaitProtection` kill switch. Off, nothing counts as the user acting and the screen
+    /// open when launch handling runs is the one closed, as before.
+    let isProtectionEnabled: Bool
+
+    func userActed(presented current: UIViewController?, isOnNewTabPage: Bool) -> Bool {
+        guard isProtectionEnabled else { return false }
+        if let current, current !== presented { return true }
+        return wasOnNewTabPage && !isOnNewTabPage
+    }
+
+    /// The screen an idle return may close.
+    func screenLeftOpen(current: UIViewController?) -> UIViewController? {
+        isProtectionEnabled ? presented : current
+    }
 }
 
 enum IdleReturnNewTabPageResult {
@@ -93,8 +116,10 @@ final class LaunchActionHandler: LaunchActionHandling {
     private let keyboardPresenter: KeyboardPresenting
     private let pixelFiring: (any PixelKitFiring)?
     private let launchSourceManager: LaunchSourceManaging
-    private let idleReturnEvaluator: IdleReturnEvaluating
-    private let featureFlagger: FeatureFlagger
+    /// Decided when the app comes to the foreground, so a background during the auth wait can't change it.
+    private let idleReturnOutcome: IdleReturnOutcome
+    /// Whether the launch already drew the after-idle New Tab Page; used by the first action only.
+    private var drewNewTabPage: Bool
     private weak var idleReturnDelegate: IdleReturnLaunchDelegate?
 
     init(urlHandler: URLHandling,
@@ -102,8 +127,8 @@ final class LaunchActionHandler: LaunchActionHandling {
          userActivityHandler: UserActivityHandling,
          keyboardPresenter: KeyboardPresenting,
          launchSourceService: LaunchSourceManaging,
-         idleReturnEvaluator: IdleReturnEvaluating,
-         featureFlagger: FeatureFlagger,
+         idleReturnOutcome: IdleReturnOutcome,
+         drewNewTabPage: Bool = false,
          idleReturnDelegate: IdleReturnLaunchDelegate? = nil,
          pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
         self.urlHandler = urlHandler
@@ -111,50 +136,58 @@ final class LaunchActionHandler: LaunchActionHandling {
         self.userActivityHandler = userActivityHandler
         self.keyboardPresenter = keyboardPresenter
         self.launchSourceManager = launchSourceService
-        self.idleReturnEvaluator = idleReturnEvaluator
-        self.featureFlagger = featureFlagger
+        self.idleReturnOutcome = idleReturnOutcome
+        self.drewNewTabPage = drewNewTabPage
         self.idleReturnDelegate = idleReturnDelegate
         self.pixelFiring = pixelFiring
     }
 
     func handleLaunchAction(_ action: LaunchAction) {
+        // Only the first action finds the drawn page; a link opened later while active doesn't.
+        let drewNewTabPage = self.drewNewTabPage
+        self.drewNewTabPage = false
         switch action {
         case .openURL(let url):
             launchSourceManager.setSource(.URL)
             openURL(url)
+            releaseNewTabPageLeftUnderAction(drewNewTabPage)
         case .handleShortcutItem(let shortcutItem):
             launchSourceManager.setSource(.shortcut)
             shortcutItemHandler.handleShortcutItem(shortcutItem)
+            releaseNewTabPageLeftUnderAction(drewNewTabPage)
         case .handleUserActivity(let userActivity):
             launchSourceManager.setSource(.standard)
             userActivityHandler.handleUserActivity(userActivity)
+            releaseNewTabPageLeftUnderAction(drewNewTabPage)
         case .standardLaunch(let lastBackgroundDate, let isFirstForeground, let hasCompletedAuthentication):
             launchSourceManager.setSource(.standard)
-            let timeAwayMs = lastBackgroundDate.map { Int(Date().timeIntervalSince($0) * 1000) }
-            let isAfterIdleReturn = idleReturnEvaluator.didReturnAfterIdle(lastBackgroundDate: lastBackgroundDate)
-            if isAfterIdleReturn {
-                switch idleReturnEvaluator.treatmentForIdleReturn() {
-                case .ntp:
-                    let flagOn = featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
-                    idleReturnDelegate?.showNewTabPageAfterIdleReturn(timeAwayMs: timeAwayMs, isFirstForeground: isFirstForeground) { [self] result in
-                        guard flagOn, featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) else { return }
-                        switch result {
-                        case .keptCurrent:
-                            // Preparation already closed the old screen; don't dismiss a newly presented launch prompt.
-                            keyboardPresenter.showKeyboardOnLaunch(lastBackgroundDate: isFirstForeground ? nil : lastBackgroundDate,
-                                                                   hasCompletedAuthentication: hasCompletedAuthentication,
-                                                                   isAfterIdleReturn: false)
-                        case .openedNewTab:
-                            keyboardPresenter.showKeyboardOnNewTabPageCreated()
-                        case .suppressed:
-                            break
-                        }
+            // A New Tab Page the launch drew stands; the rest is the outcome decided on foreground.
+            let outcome: IdleReturnOutcome = drewNewTabPage ? .afterIdle(treatment: .ntp, timeAwayMs: idleReturnOutcome.timeAwayMs) : idleReturnOutcome
+            let isAfterIdleReturn = outcome.isAfterIdle
+            switch outcome {
+            case .afterIdle(.ntp, let timeAwayMs):
+                let showKeyboard: (IdleReturnNewTabPageResult) -> Void = { [self] result in
+                    switch result {
+                    case .keptCurrent:
+                        // Preparation already closed the old screen; don't dismiss a newly presented launch prompt.
+                        keyboardPresenter.showKeyboardOnLaunch(lastBackgroundDate: isFirstForeground ? nil : lastBackgroundDate,
+                                                               hasCompletedAuthentication: hasCompletedAuthentication,
+                                                               isAfterIdleReturn: false)
+                    case .openedNewTab:
+                        keyboardPresenter.showKeyboardOnNewTabPageCreated()
+                    case .suppressed:
+                        break
                     }
-                    return
-                case .lut:
-                    idleReturnDelegate?.markLastUsedTabAsResumedAfterIdle(timeAwayMs: timeAwayMs)
                 }
-            } else {
+                if drewNewTabPage {
+                    idleReturnDelegate?.recordNewTabPageDrawnAtLaunch(timeAwayMs: timeAwayMs, completion: showKeyboard)
+                } else {
+                    idleReturnDelegate?.showNewTabPageAfterIdleReturn(timeAwayMs: timeAwayMs, isFirstForeground: isFirstForeground, completion: showKeyboard)
+                }
+                return
+            case .afterIdle(.lut, let timeAwayMs):
+                idleReturnDelegate?.markLastUsedTabAsResumedAfterIdle(timeAwayMs: timeAwayMs)
+            case .ordinary(let timeAwayMs):
                 idleReturnDelegate?.recordOrdinaryReturn(timeAwayMs: timeAwayMs)
             }
             keyboardPresenter.showKeyboardOnLaunch(lastBackgroundDate: isFirstForeground ? nil : lastBackgroundDate,
@@ -163,6 +196,13 @@ final class LaunchActionHandler: LaunchActionHandling {
         }
     }
     
+    /// A return through an action isn't an after-idle return, so a drawn page the action leaves in place
+    /// is reported as an ordinary New Tab Page once seen. A page the action replaces reports nothing.
+    private func releaseNewTabPageLeftUnderAction(_ drewNewTabPage: Bool) {
+        guard drewNewTabPage else { return }
+        idleReturnDelegate?.releaseHeldNewTabPage()
+    }
+
     private func openURL(_ url: URL) {
         Logger.sync.debug("App launched with url \(url.shortDescription)")
         fireAppLaunchedWithExternalLinkPixel(url: url)

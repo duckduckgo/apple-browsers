@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import Core
 import SwiftUI
 import DesignResourcesKit
@@ -74,6 +75,19 @@ struct SettingsYouTubeAdBlockingView: View {
                     Section(header: Text(UserText.adBlockingYouTubeSectionHeader),
                             footer: Text(footerAttributedString)) {
                         adBlockingToggleCell
+                    }
+                }
+            }
+
+            if viewModel.isSegmentSkipAvailable {
+                Section(header: Text(verbatim: SegmentSkipCopy.sectionHeader),
+                        footer: Text(verbatim: SegmentSkipCopy.footer)) {
+                    SettingsCellView(label: SegmentSkipCopy.toggle,
+                                     accessory: .toggle(isOn: viewModel.segmentSkipEnabled))
+                    if viewModel.segmentSkipEnabled.wrappedValue {
+                        SettingsPickerCellView(label: SegmentSkipCopy.skipModeLabel,
+                                               options: SegmentSkipMode.allCases,
+                                               selectedOption: viewModel.segmentSkipMode)
                     }
                 }
             }
@@ -142,6 +156,24 @@ struct SettingsYouTubeAdBlockingView: View {
         link.link = Self.learnMoreURL
         base.append(link)
         return base
+    }
+}
+
+private enum SegmentSkipCopy {
+    static let sectionHeader = "Sponsor Segments"
+    static let toggle = "Skip Sponsor Segments"
+    static let footer = "Marks sponsored segments on the video progress bar. Manual mode shows a Skip button, Automatic mode skips them for you."
+    static let skipModeLabel = "Skip Mode"
+    static let manual = "Manual"
+    static let auto = "Automatic"
+}
+
+extension SegmentSkipMode: @retroactive CustomStringConvertible {
+    public var description: String {
+        switch self {
+        case .manual: SegmentSkipCopy.manual
+        case .auto: SegmentSkipCopy.auto
+        }
     }
 }
 

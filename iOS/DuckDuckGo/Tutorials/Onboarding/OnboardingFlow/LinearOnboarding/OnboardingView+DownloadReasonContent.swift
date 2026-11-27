@@ -23,10 +23,12 @@ import Onboarding
 import SwiftUI
 import UIComponents
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 extension OnboardingView {
 
-    /// Figma: https://www.figma.com/design/vsuCJP9OGykRkk1iZIU0ek/Mobile-Onboarding---Segmented?node-id=89-87784
+    /// Grid: https://www.figma.com/design/vsuCJP9OGykRkk1iZIU0ek/Mobile-Onboarding---Segmented?node-id=89-87784
+    /// List: https://www.figma.com/design/icdZo7pS4cAWaoVf4byU9t/Add-VPN-to-list-of-download-reasons?node-id=5170-28324
     struct DownloadReasonContent: View {
         @Environment(\.onboardingTheme) private var onboardingTheme
         @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -62,15 +64,7 @@ extension OnboardingView {
                         .font(onboardingTheme.typography.body)
                         .multilineTextAlignment(.center)
                 ),
-                content: AnyView(
-                    DownloadReasonGrid(
-                        items: content.options,
-                        selectedItem: selectedDownloadReason,
-                        onSelect: { downloadReason in
-                            selectedDownloadReason = downloadReason
-                        }
-                    )
-                ),
+                content: AnyView(reasons),
                 showContent: $showContent,
                 title: {
                     TypingText(
@@ -97,6 +91,16 @@ extension OnboardingView {
                 }
             )
             .onBubbleVisibilityChanged(isVisible: $isVisible, shouldStartTyping: $shouldStartTyping, showContent: $showContent)
+        }
+
+        @ViewBuilder
+        private var reasons: some View {
+            switch content.layout {
+            case .grid:
+                DownloadReasonGrid(items: content.options, selectedItem: selectedDownloadReason) { selectedDownloadReason = $0 }
+            case .list:
+                DownloadReasonList(items: content.options, selectedItem: selectedDownloadReason) { selectedDownloadReason = $0 }
+            }
         }
 
         func handleNextButtonAction() {
@@ -141,7 +145,7 @@ private struct DownloadReasonGrid: View {
             ForEach(rowAndColumns, id: \.self) { row in
                 HStack(spacing: Metrics.itemSpacing) {
                     ForEach(row, id: \.self) { reason in
-                        DownloadReasonButton(animation: reason.animation, title: reason.title, isSelected: reason == selectedItem, height: itemHeight) {
+                        DownloadReasonButton(asset: reason.asset, title: reason.title, isSelected: reason == selectedItem, height: itemHeight) {
                             onSelect(reason)
                         }
                     }
@@ -185,7 +189,7 @@ private extension DownloadReasonGrid {
 
         @State private var isPlaying = false
 
-        let animation: OnboardingDownloadReasonContent.Animation
+        let asset: OnboardingDownloadReasonContent.Asset
         let title: String
         let isSelected: Bool
         /// Uniform tile height supplied by the grid (the tallest tile). `nil` on the first pass, before measuring.
@@ -196,13 +200,8 @@ private extension DownloadReasonGrid {
             VStack(alignment: .center, spacing: Metrics.contentVerticalSpacing) {
                 // The pictogram rests on its last frame (a fully-drawn icon), then replays
                 // from the start each time the tile is tapped. Reduce Motion keeps it frozen.
-                Lottie.LottieView {
-                    try await DotLottieFile.asset(named: animation.rawValue)
-                }
-                .playbackMode(playbackMode)
-                .animationDidFinish { _ in isPlaying = false }
-                .resizable()
-                .frame(width: Metrics.imageSize.width, height: Metrics.imageSize.height)
+                DownloadReasonAsset(asset: asset, playbackMode: playbackMode, onAnimationFinished: { isPlaying = false })
+                    .frame(width: Metrics.imageSize.width, height: Metrics.imageSize.height)
 
                 Text(title)
                     .foregroundColor(onboardingTheme.colorPalette.textPrimary)
@@ -260,6 +259,130 @@ private extension DownloadReasonGrid {
                     .inset(by: Metrics.strokeInset)
                     .stroke(borderColor, lineWidth: Metrics.strokeWidth)
             }
+        }
+    }
+
+}
+
+private enum DownloadReasonListMetrics {
+    static let rowSpacing: CGFloat = 12
+    static let listHorizontalPadding: CGFloat = 4
+    static let contentSpacing: CGFloat = 16
+    static let iconSpacing: CGFloat = 12
+    static let iconSize: CGFloat = 24
+    static let horizontalPadding: CGFloat = 16
+    static let verticalPadding: CGFloat = 12
+    static let cornerRadius: CGFloat = 16
+    static let borderWidth: CGFloat = 1
+    static let borderLightColor = Color.black.opacity(0.12)
+    static let borderDarkColor = Color.white.opacity(0.12)
+    static let accentColor = Color(singleUseColor: .rebranding(.accentPrimary))
+}
+
+private struct DownloadReasonList: View {
+
+    let items: [OnboardingDownloadReasonContent.Option]
+    let selectedItem: OnboardingDownloadReasonContent.Option?
+    let onSelect: (OnboardingDownloadReasonContent.Option) -> Void
+
+    var body: some View {
+        VStack(spacing: DownloadReasonListMetrics.rowSpacing) {
+            ForEach(items, id: \.self) { item in
+                DownloadReasonRow(asset: item.asset, title: item.title, isSelected: item == selectedItem) {
+                    onSelect(item)
+                }
+            }
+        }
+        .padding(.horizontal, DownloadReasonListMetrics.listHorizontalPadding)
+    }
+
+}
+
+private struct DownloadReasonRow: View {
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.onboardingTheme) private var onboardingTheme
+
+    let asset: OnboardingDownloadReasonContent.Asset
+    let title: String
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: DownloadReasonListMetrics.contentSpacing) {
+                HStack(spacing: DownloadReasonListMetrics.iconSpacing) {
+                    DownloadReasonAsset(asset: asset)
+                        .frame(width: DownloadReasonListMetrics.iconSize, height: DownloadReasonListMetrics.iconSize)
+
+                    Text(title)
+                        .font(onboardingTheme.typography.contextual.body)
+                        .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                OnboardingRebranding.RadioIndicator(isSelected: isSelected, accentColor: DownloadReasonListMetrics.accentColor)
+            }
+            .padding(.horizontal, DownloadReasonListMetrics.horizontalPadding)
+            .padding(.vertical, DownloadReasonListMetrics.verticalPadding)
+            .frame(maxWidth: .infinity)
+            .background(isSelected ? OnboardingRebrandColor.accentAltGlowPrimary : .clear)
+            .clipShape(RoundedRectangle(cornerRadius: DownloadReasonListMetrics.cornerRadius))
+            .overlay {
+                RoundedRectangle(cornerRadius: DownloadReasonListMetrics.cornerRadius)
+                    .strokeBorder(borderColor, lineWidth: DownloadReasonListMetrics.borderWidth)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    private var borderColor: Color {
+        if isSelected {
+            DownloadReasonListMetrics.accentColor
+        } else {
+            colorScheme == .light ? DownloadReasonListMetrics.borderLightColor : DownloadReasonListMetrics.borderDarkColor
+        }
+    }
+
+}
+
+// MARK: - Asset
+
+/// Renders a reason's animation or icon. Icons ignore the playback mode.
+private struct DownloadReasonAsset: View {
+    let asset: OnboardingDownloadReasonContent.Asset
+    var playbackMode: LottiePlaybackMode = .paused(at: .progress(1))
+    var onAnimationFinished: () -> Void = {}
+
+    var body: some View {
+        switch asset {
+        case let .animation(animation):
+            Lottie.LottieView {
+                try await DotLottieFile.asset(named: animation.rawValue)
+            }
+            .playbackMode(playbackMode)
+            .animationDidFinish { _ in onAnimationFinished() }
+            .resizable()
+        case let .icon(icon):
+            Image(uiImage: icon.image)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+        }
+    }
+}
+
+private extension OnboardingDownloadReasonContent.Icon {
+
+    var image: UIImage {
+        switch self {
+        case .search: DesignSystemImages.Color.Size24.findSearch
+        case .aiChat: DesignSystemImages.Color.Size24.aiChat
+        case .adsBlocked: DesignSystemImages.Color.Size24.adsBlocked
+        case .block: DesignSystemImages.Color.Size24.block
+        case .vpn: DesignSystemImages.Color.Size24.vpn
         }
     }
 

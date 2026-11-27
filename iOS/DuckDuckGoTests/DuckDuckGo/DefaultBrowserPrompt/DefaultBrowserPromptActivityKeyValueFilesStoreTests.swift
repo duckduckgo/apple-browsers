@@ -29,7 +29,7 @@ struct DefaultBrowserPromptActivityKeyValueFilesStoreTests {
     @Test("Check Modal Shown Occurrences Is Persisted Correctly")
     func whenModalShownOccurrencesIsSavedThenStoreItInStorage() throws {
         // GIVEN
-        let storageMock = try MockKeyValueFileStore()
+        let storageMock = MockKeyValueFileStore()
         let sut = DefaultBrowserPromptActivityKeyValueFilesStore(keyValueFilesStore: storageMock, eventMapper: .init { _, _, _, _ in })
         #expect(storageMock.underlyingDict[DefaultBrowserPromptActivityKeyValueFilesStore.StorageKey.modalShownOccurrences.rawValue] == nil)
 
@@ -43,7 +43,7 @@ struct DefaultBrowserPromptActivityKeyValueFilesStoreTests {
     @Test("Check Modal Shown Occurrences Is Retrieved Correctly", arguments: [2, 5, nil])
     func whenModalShownOccurrencesIsRetrievedThenReturnValueInStorage(_ value: Int?) throws {
         // GIVEN
-        let storageMock = try MockKeyValueFileStore()
+        let storageMock = MockKeyValueFileStore()
         let sut = DefaultBrowserPromptActivityKeyValueFilesStore(keyValueFilesStore: storageMock, eventMapper: .init { _, _, _, _ in })
         storageMock.underlyingDict[DefaultBrowserPromptActivityKeyValueFilesStore.StorageKey.modalShownOccurrences.rawValue] = value
 
@@ -58,7 +58,7 @@ struct DefaultBrowserPromptActivityKeyValueFilesStoreTests {
     @Test("Check Is Prompt Permanently Dismissed Is Persisted Correctly", arguments: [true, false])
     func whenPromptPermanentlyDismissedIsSavedThenStoreItInStorage(_ value: Bool) throws {
         // GIVEN
-        let storageMock = try MockKeyValueFileStore()
+        let storageMock = MockKeyValueFileStore()
         let sut = DefaultBrowserPromptActivityKeyValueFilesStore(keyValueFilesStore: storageMock, eventMapper: .init { _, _, _, _ in })
         #expect(storageMock.underlyingDict[DefaultBrowserPromptActivityKeyValueFilesStore.StorageKey.promptPermanentlyDismissed.rawValue] == nil)
 
@@ -72,7 +72,7 @@ struct DefaultBrowserPromptActivityKeyValueFilesStoreTests {
     @Test("Check Is Prompt Permanently Dismissed Is Retrieved Correctly", arguments: [true, false, nil])
     func whenPromptPermanentlyDismissedIsRetrievedThenReturnValueInStorage(_ value: Bool?) throws {
         // GIVEN
-        let storageMock = try MockKeyValueFileStore()
+        let storageMock = MockKeyValueFileStore()
         let sut = DefaultBrowserPromptActivityKeyValueFilesStore(keyValueFilesStore: storageMock, eventMapper: .init { _, _, _, _ in })
         storageMock.underlyingDict[DefaultBrowserPromptActivityKeyValueFilesStore.StorageKey.promptPermanentlyDismissed.rawValue] = value
 
@@ -87,7 +87,7 @@ struct DefaultBrowserPromptActivityKeyValueFilesStoreTests {
     @Test("Check Has Inactive Modal Shown Flag Is Persisted Correctly", arguments: [true, false])
     func whenLastInactiveModalShownFlagIsSavedThenStoreItInStorage(_ value: Bool) throws {
         // GIVEN
-        let storageMock = try MockKeyValueFileStore()
+        let storageMock = MockKeyValueFileStore()
         let sut = DefaultBrowserPromptActivityKeyValueFilesStore(keyValueFilesStore: storageMock, eventMapper: .init { _, _, _, _ in })
         #expect(storageMock.underlyingDict[DefaultBrowserPromptActivityKeyValueFilesStore.StorageKey.inactiveModalShown.rawValue] == nil)
 
@@ -101,7 +101,7 @@ struct DefaultBrowserPromptActivityKeyValueFilesStoreTests {
     @Test("Check Has Inactive Modal Shown Flag Is Retrieved Correctly", arguments: [true, false, nil])
     func whenLastInactiveModalShownFlagIsRetrievedThenReturnValueInStorage(_ value: Bool?) throws {
         // GIVEN
-        let storageMock = try MockKeyValueFileStore()
+        let storageMock = MockKeyValueFileStore()
         let sut = DefaultBrowserPromptActivityKeyValueFilesStore(keyValueFilesStore: storageMock, eventMapper: .init { _, _, _, _ in })
         storageMock.underlyingDict[DefaultBrowserPromptActivityKeyValueFilesStore.StorageKey.inactiveModalShown.rawValue] = value
 

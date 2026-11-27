@@ -60,13 +60,21 @@ struct SubscriptionOnboardingViewFactory {
         flow.instrumentation.stepShown(section)
     }
 
+    func completeAndCloseProgress() {
+        flow.sectionDidComplete(.progress)
+        flow.sectionDidRequestClose(.progress)
+    }
+
     private func content(for section: SubscriptionOnboardingSection) -> AnyView {
         let title = flow.title(for: section)
         let navigationButton = flow.navigationButton(for: section)
 
         switch section {
         case .orderConfirmation:
-            let onNext = { flow.sectionDidRequestAdvance() }
+            let onNext = {
+                flow.sectionDidComplete(.orderConfirmation)
+                flow.sectionDidRequestAdvance()
+            }
             let viewModel: SubscriptionOnboardingOrderConfirmationViewModel
             if let forcedTrialLengthDays {
                 viewModel = .forcingFreeTrial(lengthInDays: forcedTrialLengthDays, onNext: onNext)
@@ -81,7 +89,10 @@ struct SubscriptionOnboardingViewFactory {
             return AnyView(SubscriptionOnboardingWelcomeView(
                 navigationButton: navigationButton,
                 features: flow.progress.checklist,
-                onNext: { flow.sectionDidRequestAdvance() }))
+                onNext: {
+                    flow.sectionDidComplete(.welcome)
+                    flow.sectionDidRequestAdvance()
+                }))
 
         case .vpnActivation:
             return AnyView(SubscriptionOnboardingVPNActivationView(
@@ -139,7 +150,7 @@ struct SubscriptionOnboardingViewFactory {
                     flow.isPresentingPIR = true
                 },
                 onPIRPresentationChanged: { flow.reportPIRPresentation($0) },
-                onNext: { flow.finish() }))
+                onNext: completeAndCloseProgress))
 
         case .pir:
             // `.pir` is excluded from `activationSections`, so it never enters `path` and this is unreachable.

@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import AppKitExtensions
 
 import Foundation
@@ -77,6 +78,7 @@ final class AppContentBlocking {
         configurationStore: ConfigurationStore,
         contentScopeExperimentsManager: @autoclosure @escaping () -> ContentScopeExperimentsManaging,
         onboardingNavigationDelegate: OnboardingNavigating,
+        onboardingPathStarter: @escaping () -> ContextualOnboardingPathStarting,
         appearancePreferences: AppearancePreferences,
         themeManager: ThemeManaging,
         startupPreferences: StartupPreferences,
@@ -93,6 +95,7 @@ final class AppContentBlocking {
         autoconsentManagement: AutoconsentManagement,
         contentScopePreferences: ContentScopePreferences,
         syncErrorHandler: SyncErrorHandling,
+        aiChatBonusOffer: AIChatBonusOfferDependencies,
         webExtensionAvailability: WebExtensionAvailabilityProviding?,
         dockCustomization: DockCustomization,
         reinstallUserDetection: ReinstallingUserDetecting,
@@ -121,6 +124,7 @@ final class AppContentBlocking {
             configurationStore: configurationStore,
             contentScopeExperimentsManager: contentScopeExperimentsManager(),
             onboardingNavigationDelegate: onboardingNavigationDelegate,
+            onboardingPathStarter: onboardingPathStarter,
             appearancePreferences: appearancePreferences,
             themeManager: themeManager,
             startupPreferences: startupPreferences,
@@ -137,6 +141,7 @@ final class AppContentBlocking {
             autoconsentManagement: autoconsentManagement,
             contentScopePreferences: contentScopePreferences,
             syncErrorHandler: syncErrorHandler,
+            aiChatBonusOffer: aiChatBonusOffer,
             webExtensionAvailability: webExtensionAvailability,
             dockCustomization: dockCustomization,
             reinstallUserDetection: reinstallUserDetection,
@@ -152,6 +157,7 @@ final class AppContentBlocking {
         configurationStore: ConfigurationStore,
         contentScopeExperimentsManager: @autoclosure @escaping () -> ContentScopeExperimentsManaging,
         onboardingNavigationDelegate: OnboardingNavigating,
+        onboardingPathStarter: @escaping () -> ContextualOnboardingPathStarting,
         appearancePreferences: AppearancePreferences,
         themeManager: ThemeManaging,
         startupPreferences: StartupPreferences,
@@ -168,6 +174,7 @@ final class AppContentBlocking {
         autoconsentManagement: AutoconsentManagement,
         contentScopePreferences: ContentScopePreferences,
         syncErrorHandler: SyncErrorHandling,
+        aiChatBonusOffer: AIChatBonusOfferDependencies,
         webExtensionAvailability: WebExtensionAvailabilityProviding?,
         dockCustomization: DockCustomization,
         reinstallUserDetection: ReinstallingUserDetecting,
@@ -207,6 +214,7 @@ final class AppContentBlocking {
                                                   tld: tld,
                                                   featureFlagger: featureFlagger,
                                                   onboardingNavigationDelegate: onboardingNavigationDelegate,
+                                                  onboardingPathStarter: onboardingPathStarter,
                                                   appearancePreferences: appearancePreferences,
                                                   themeManager: themeManager,
                                                   startupPreferences: startupPreferences,
@@ -219,6 +227,7 @@ final class AppContentBlocking {
                                                   autoconsentManagement: autoconsentManagement,
                                                   contentScopePreferences: contentScopePreferences,
                                                   syncErrorHandler: syncErrorHandler,
+                                                  aiChatBonusOffer: aiChatBonusOffer,
                                                   webExtensionAvailability: webExtensionAvailability,
                                                   dockCustomization: dockCustomization,
                                                   reinstallUserDetection: reinstallUserDetection,

@@ -37,10 +37,17 @@ import WebKit
 @available(macOS 15.4, *)
 final class WebExtensionPageStubUserScript: NSObject, UserScript, WKScriptMessageHandlerWithReply {
 
-    /// Third-party extensions can only be installed by internal users, so nobody else needs the
-    /// script.
-    static func make(isInternalUser: Bool) -> WebExtensionPageStubUserScript? {
-        isInternalUser ? WebExtensionPageStubUserScript() : nil
+    private let managerProvider: @MainActor () -> WebExtensionManager?
+
+    init(managerProvider: @escaping @MainActor () -> WebExtensionManager?) {
+        self.managerProvider = managerProvider
+    }
+
+    /// Third-party extensions can only be installed when extension management is available, so
+    /// nobody else needs the script.
+    static func make(isExtensionManagementAvailable: Bool,
+                     managerProvider: @escaping @MainActor () -> WebExtensionManager?) -> WebExtensionPageStubUserScript? {
+        isExtensionManagementAvailable ? WebExtensionPageStubUserScript(managerProvider: managerProvider) : nil
     }
 
     /// The same scripts, in the same order, as `WebExtensionLoader` installs on the controller.
@@ -56,16 +63,16 @@ final class WebExtensionPageStubUserScript: NSObject, UserScript, WKScriptMessag
     /// DuckDuckGo uses for its own scripts would not be seen by the extension.
     let requiresRunInPageContentWorld: Bool = true
 
-    /// The scripts report the unsupported APIs an extension touches through the first handler, ask
-    /// for the `chrome.idle` state through the second, keep `chrome.privacy` settings through the
-    /// third and ask about app permissions through the fourth; the last three answer.
+    /// Forward extension-page requests to the same handlers used by the extension controller.
     let messageNames: [String] = [WebExtensionAPICompatibilityScript.messageHandlerName,
+                                  WebExtensionAPIStubScript.downloadMessageHandlerName,
                                   WebExtensionAPIStubScript.idleMessageHandlerName,
+                                  WebExtensionAPIStubScript.clipboardReadMessageHandlerName,
                                   WebExtensionAPIStubScript.privacyMessageHandlerName,
                                   WebExtensionAPIStubScript.permissionsMessageHandlerName]
 
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-        (NSApp.delegateTyped.webExtensionManager as? WebExtensionManager)?.handleAPICompatibilityMessage(message)
+        managerProvider()?.handleAPICompatibilityMessage(message)
     }
 
     /// A script registered with a reply handler receives all its messages here, so the compatibility
@@ -73,12 +80,16 @@ final class WebExtensionPageStubUserScript: NSObject, UserScript, WKScriptMessag
     func userContentController(_ userContentController: WKUserContentController,
                                didReceive message: WKScriptMessage,
                                replyHandler: @escaping (Any?, String?) -> Void) {
-        guard let manager = NSApp.delegateTyped.webExtensionManager as? WebExtensionManager else {
+        guard let manager = managerProvider() else {
             replyHandler(nil, "Web extensions are unavailable")
             return
         }
-        if message.name == WebExtensionAPIStubScript.idleMessageHandlerName {
+        if message.name == WebExtensionAPIStubScript.downloadMessageHandlerName {
+            manager.handleDownloadMessage(message, replyHandler: replyHandler)
+        } else if message.name == WebExtensionAPIStubScript.idleMessageHandlerName {
             manager.handleIdleMessage(message, replyHandler: replyHandler)
+        } else if message.name == WebExtensionAPIStubScript.clipboardReadMessageHandlerName {
+            manager.handleClipboardReadMessage(message, replyHandler: replyHandler)
         } else if message.name == WebExtensionAPIStubScript.privacyMessageHandlerName {
             manager.handlePrivacyMessage(message, replyHandler: replyHandler)
         } else if message.name == WebExtensionAPIStubScript.permissionsMessageHandlerName {
@@ -87,5 +98,24 @@ final class WebExtensionPageStubUserScript: NSObject, UserScript, WKScriptMessag
             manager.handleAPICompatibilityMessage(message)
             replyHandler(nil, nil)
         }
+    }
+}
+
+/// The companion isolated script records input without exposing its handler to extension code.
+@available(macOS 15.4, *)
+final class WebExtensionPermissionUserGestureUserScript: NSObject, UserScript {
+    private let managerProvider: @MainActor () -> WebExtensionManager?
+
+    init(managerProvider: @escaping @MainActor () -> WebExtensionManager?) {
+        self.managerProvider = managerProvider
+    }
+
+    let source = WebExtensionPermissionUserGestureScript.source
+    let injectionTime: WKUserScriptInjectionTime = .atDocumentStart
+    let forMainFrameOnly = false
+    let messageNames = [WebExtensionPermissionUserGestureScript.messageHandlerName]
+
+    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        managerProvider()?.handlePermissionUserGestureMessage(message)
     }
 }

@@ -367,6 +367,7 @@ private final class MockAiChatsConfigProvider: NewTabPageOmnibarConfigProviding 
     @MainActor func selectLauncherPromoCta() {}
     @MainActor func dismissLauncherPromo() {}
     @MainActor func launcherPromoIgnored() {}
+    @MainActor func chatSubmitted() {}
     var launcherPromoPublisher: AnyPublisher<Void, Never> { Empty<Void, Never>().eraseToAnyPublisher() }
     var isAttachTabsEnabled: Bool = false
     var isAttachTabsEnabledPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
@@ -389,6 +390,9 @@ private final class MockAiChatsConfigProvider: NewTabPageOmnibarConfigProviding 
     var showSuggestedPrompts: Bool = false
     var suggestedPromptsPromptCount: Int = 0
     var suggestedPromptsPublisher: AnyPublisher<Void, Never> { Empty<Void, Never>().eraseToAnyPublisher() }
+    var isPastedTextEnabled: Bool = false
+    var pastedTextLimits: NewTabPageDataModel.OmnibarPastedTextLimits?
+    var pastedTextConfigPublisher: AnyPublisher<Void, Never> { Empty<Void, Never>().eraseToAnyPublisher() }
 }
 
 private extension AIChatSuggestion {

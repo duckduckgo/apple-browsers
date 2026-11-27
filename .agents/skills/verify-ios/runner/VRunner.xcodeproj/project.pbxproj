@@ -1,0 +1,398 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		2C3827FFAB47FE661567394D /* VRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E21FF0207024B4517EE7202 /* VRunner.swift */; };
+		733ADF28A5D7416DA89CF4A2 /* VRHostApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78185DE07E5E348533C6440D /* VRHostApp.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		CE7D44B2E4B59502E792EC91 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6DDF9DC2200C4D3ED98AC7E1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 5A9C62AF1A3C110F91F03516;
+			remoteInfo = "VRHost-iOS";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		0E21FF0207024B4517EE7202 /* VRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VRunner.swift; sourceTree = "<group>"; };
+		6FE767E6EAB95ED98E6E8C18 /* VRHost-iOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = "VRHost-iOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		78185DE07E5E348533C6440D /* VRHostApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VRHostApp.swift; sourceTree = "<group>"; };
+		FEAC960B252F6BC95E2177FD /* VRunnerUITests-iOS.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = "VRunnerUITests-iOS.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		2E014BAFD0595B5F29B81134 /* Runner */ = {
+			isa = PBXGroup;
+			children = (
+				0E21FF0207024B4517EE7202 /* VRunner.swift */,
+			);
+			name = Runner;
+			path = Sources/Runner;
+			sourceTree = "<group>";
+		};
+		62AA934EB7E65C4FA625456A /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				6FE767E6EAB95ED98E6E8C18 /* VRHost-iOS.app */,
+				FEAC960B252F6BC95E2177FD /* VRunnerUITests-iOS.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		6B880DE08517530A2A09CBDA /* Host */ = {
+			isa = PBXGroup;
+			children = (
+				78185DE07E5E348533C6440D /* VRHostApp.swift */,
+			);
+			name = Host;
+			path = Sources/Host;
+			sourceTree = "<group>";
+		};
+		CA9130ACD1C9E6A5282D0375 = {
+			isa = PBXGroup;
+			children = (
+				6B880DE08517530A2A09CBDA /* Host */,
+				2E014BAFD0595B5F29B81134 /* Runner */,
+				62AA934EB7E65C4FA625456A /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		0A9302F8166F807738EC3D8A /* VRunnerUITests-iOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8CDBB4D928E3D59105B56CC8 /* Build configuration list for PBXNativeTarget "VRunnerUITests-iOS" */;
+			buildPhases = (
+				11A7D3B04D272B99E898F67E /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				78DE9D618537AF49B8D219AC /* PBXTargetDependency */,
+			);
+			name = "VRunnerUITests-iOS";
+			packageProductDependencies = (
+			);
+			productName = "VRunnerUITests-iOS";
+			productReference = FEAC960B252F6BC95E2177FD /* VRunnerUITests-iOS.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		5A9C62AF1A3C110F91F03516 /* VRHost-iOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7FB5306E637F8FF7D6289081 /* Build configuration list for PBXNativeTarget "VRHost-iOS" */;
+			buildPhases = (
+				32F11E6960EFCB42DCD06B01 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "VRHost-iOS";
+			packageProductDependencies = (
+			);
+			productName = "VRHost-iOS";
+			productReference = 6FE767E6EAB95ED98E6E8C18 /* VRHost-iOS.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		6DDF9DC2200C4D3ED98AC7E1 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					0A9302F8166F807738EC3D8A = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Manual;
+						TestTargetID = 5A9C62AF1A3C110F91F03516;
+					};
+					5A9C62AF1A3C110F91F03516 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Manual;
+					};
+				};
+			};
+			buildConfigurationList = D84F5B712B68C451DC981E1A /* Build configuration list for PBXProject "VRunner" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = CA9130ACD1C9E6A5282D0375;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 62AA934EB7E65C4FA625456A /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				5A9C62AF1A3C110F91F03516 /* VRHost-iOS */,
+				0A9302F8166F807738EC3D8A /* VRunnerUITests-iOS */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		11A7D3B04D272B99E898F67E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2C3827FFAB47FE661567394D /* VRunner.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		32F11E6960EFCB42DCD06B01 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				733ADF28A5D7416DA89CF4A2 /* VRHostApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		78DE9D618537AF49B8D219AC /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 5A9C62AF1A3C110F91F03516 /* VRHost-iOS */;
+			targetProxy = CE7D44B2E4B59502E792EC91 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		20294C2AD353608058A4E1A6 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.duckduckgo.verifyios.runner;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = "VRHost-iOS";
+			};
+			name = Release;
+		};
+		2AAC8CC6F61E8D8704F4CF43 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.duckduckgo.verifyios.runner;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = "VRHost-iOS";
+			};
+			name = Debug;
+		};
+		49520BA9BEBE84878495CB6B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		5A8DBDD5CD9D672D4FF6E945 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.duckduckgo.verifyios.host;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		CF894E4FCAEA09DA2F3CEEDB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		E34073759DE6D390F7AA859B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.duckduckgo.verifyios.host;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		7FB5306E637F8FF7D6289081 /* Build configuration list for PBXNativeTarget "VRHost-iOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5A8DBDD5CD9D672D4FF6E945 /* Debug */,
+				E34073759DE6D390F7AA859B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		8CDBB4D928E3D59105B56CC8 /* Build configuration list for PBXNativeTarget "VRunnerUITests-iOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2AAC8CC6F61E8D8704F4CF43 /* Debug */,
+				20294C2AD353608058A4E1A6 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		D84F5B712B68C451DC981E1A /* Build configuration list for PBXProject "VRunner" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CF894E4FCAEA09DA2F3CEEDB /* Debug */,
+				49520BA9BEBE84878495CB6B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 6DDF9DC2200C4D3ED98AC7E1 /* Project object */;
+}

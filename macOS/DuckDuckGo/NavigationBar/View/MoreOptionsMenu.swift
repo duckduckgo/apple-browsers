@@ -31,7 +31,6 @@ import DesignResourcesKitIcons
 import Freemium
 import History
 import os.log
-import Persistence
 import PixelKit
 import PrivacyConfig
 import Subscription
@@ -90,6 +89,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     private let freemiumDBPPresenter: FreemiumDBPPresenter
     private let appearancePreferences: AppearancePreferences
     private let dockCustomizer: DockCustomization
+    private let addToDockMenuAction: AddToDockMenuAction
     private let defaultBrowserPreferences: DefaultBrowserPreferences
     private let featureFlagger: FeatureFlagger
     private let freeTrialBadgePersistor: FreeTrialBadgePersisting
@@ -145,7 +145,10 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
          isFireWindowDefault: Bool = NSApp.delegateTyped.visualizeFireSettingsDecider.isOpenFireWindowByDefaultEnabled,
          syncDeviceButtonModel: SyncDeviceButtonModel = SyncDeviceButtonModel(),
          freeTrialBadgePersistor: FreeTrialBadgePersisting = FreeTrialBadgePersistor(keyValueStore: UserDefaults.standard),
-         winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = NSApp.delegateTyped.winBackOfferVisibilityManager) {
+         winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = NSApp.delegateTyped.winBackOfferVisibilityManager,
+         addToDockMenuAction: AddToDockMenuAction) {
+
+        self.addToDockMenuAction = addToDockMenuAction
 
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
@@ -191,7 +194,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
     @MainActor
     private func setupMenuItems() {
-        if !addMoreProminentUpdatesDebugPromptItem() {
+        if !addUpdatePromptItem() {
             addUpdateItem()
         }
 
@@ -211,8 +214,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
                                                    featureFlagger: featureFlagger)
         addItem(feedbackMenuItem)
 
-        if dockCustomizer.supportsAddingToDock,
-           dockCustomizer.isAddedToDock == false {
+        if addToDockMenuAction.canShowMenuItem {
 
             if dockCustomizer.shouldShowNotification {
                 let addToDockMenuItem = NSMenuItem(action: #selector(addToDock(_:)))
@@ -298,8 +300,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
     @MainActor
     @objc func addToDock(_ sender: NSMenuItem) {
-        guard dockCustomizer.supportsAddingToDock, dockCustomizer.addToDock() else { return }
-        PixelKit.fire(GeneralPixel.userAddedToDockFromMoreOptionsMenu, frequency: .dailyAndStandard)
+        addToDockMenuAction.perform(from: .moreOptionsMenu)
     }
 
     @MainActor
@@ -524,30 +525,34 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         addItem(releaseNotes)
     }
 
-    /// Adds the prominent update prompt selected in `Debug → Updates → More Prominent Updates`, in place of the regular update item,
-    /// while `moreProminentUpdates` is on.
+    /// Adds the prominent update row or card in place of the regular update item at the stages that call for it.
     /// - Returns: Whether a prompt was added.
     @MainActor
-    private func addMoreProminentUpdatesDebugPromptItem() -> Bool {
-        guard featureFlagger.isFeatureOn(.moreProminentUpdates) else { return false }
-
-        let debugSettings: any KeyedStoring<MoreProminentUpdatesDebugSettings> = UserDefaults.standard.keyedStoring()
-        let style: UpdateBannerView.Style
-        switch debugSettings.menuPromptStyle {
-        case .none:
+    private func addUpdatePromptItem() -> Bool {
+        guard AppVersion.runType != .uiTests,
+              let updateController = Application.appDelegate.updateController,
+              let update = updateController.latestUpdate,
+              let menuPrompt = updateController.pendingUpdatePromptStage.prominentMenuPrompt else {
             return false
-        case .row:
-            style = .row
-        case .card:
-            style = .card
         }
 
-        let updateController = Application.appDelegate.updateController
+        let style: UpdateBannerView.Style
+        let surface: UpdatePromptSurface
+        switch menuPrompt {
+        case .row:
+            style = .row(title: updateController.updateBannerRowTitle)
+            surface = .menuRow
+        case .card:
+            style = .card
+            surface = .menuCard
+        }
+
         let banner = UpdateBannerView(style: style,
-                                      version: updateController?.latestUpdate?.version ?? AppVersion.shared.versionNumber,
-                                      buttonTitle: UserText.updateBannerOpenAppStoreButton) { [weak self] in
+                                      version: update.version,
+                                      buttonTitle: updateController.updateBannerButtonTitle) { [weak self] in
             self?.cancelTracking()
-            updateController?.runUpdate()
+            UpdateClickReporter().reportClick(on: surface)
+            updateController.runUpdateFromPrompt()
         }
 
         let item = NSMenuItem()
@@ -856,7 +861,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
     override func performActionForItem(at index: Int) {
         if let item = item(at: index), item == updateMenuItem {
-            PixelKit.fire(MoreOptionsMenuPixel.updateActionClicked, frequency: .daily)
+            UpdateClickReporter().reportClick(on: .menuItem)
         }
         super.performActionForItem(at: index)
     }
@@ -1507,7 +1512,7 @@ final class SubscriptionSubMenu: NSMenu, NSMenuDelegate {
         if features.contains(.dataBrokerProtection) {
             addItem(dataBrokerProtectionItem)
         }
-        if features.contains(.paidAIChat) && featureFlagger.isFeatureOn(.paidAIChat) {
+        if features.contains(.paidAIChat) {
             addItem(paidAIChatItem)
         }
         if features.contains(.identityTheftRestoration) || features.contains(.identityTheftRestorationGlobal) {

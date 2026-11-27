@@ -55,7 +55,9 @@ extension SubscriptionOnboardingProgressPersisting {
         progressLock.lock()
         defer { progressLock.unlock() }
         // A real completion always wins over a fake one, however it arrived.
-        reversibleCompletedItems.remove(item)
+        if reversibleCompletedItems.contains(item) {
+            reversibleCompletedItems.remove(item)
+        }
         guard !completedItems.contains(item) else { return }
         completedItems.insert(item)
     }

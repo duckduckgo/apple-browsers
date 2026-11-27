@@ -318,6 +318,21 @@ public extension NewTabPageDataModel {
         var screenshotModes: [String]?
         /// Lets the page attach pasted images and copied files; absent or `false` keeps a normal paste.
         var enablePastedAttachments: Bool?
+        /// Lets the page turn long text pastes into pasted-text attachments; absent or `false` keeps a normal paste.
+        var enablePastedText: Bool?
+        /// The paste length that becomes a chip and the cap on typed text plus pastes; absent makes the page use its built-in defaults.
+        var pastedTextLimits: OmnibarPastedTextLimits?
+    }
+
+    /// Mirrors `AIChatPromptLimits`: lengths are UTF-16 units, and the cap covers typed text plus every paste.
+    struct OmnibarPastedTextLimits: Codable, Equatable {
+        public let pasteConversionThreshold: Int
+        public let maxCharacters: Int
+
+        public init(pasteConversionThreshold: Int, maxCharacters: Int) {
+            self.pasteConversionThreshold = pasteConversionThreshold
+            self.maxCharacters = maxCharacters
+        }
     }
 
     struct OmnibarSetImageGenerationActive: Codable, Equatable {
@@ -590,6 +605,8 @@ public extension NewTabPageDataModel {
         /// Fixed catalog ID of the suggested-prompt chip the user picked (e.g. `jobapplication`).
         /// Omitted for typed prompts.
         var suggestedPromptId: String?
+        /// Long pastes the page turned into attachments. Omitted when there are none.
+        var textPasted: [OmnibarPromptPastedText]?
     }
 
     // MARK: - omnibar_getOpenTabs / omnibar_getTabContent (attach tabs)
@@ -654,6 +671,15 @@ public extension NewTabPageDataModel {
             self.data = data
             self.fileName = fileName
             self.mimeType = mimeType
+        }
+    }
+
+    /// Mirrors Duck.ai's `NativePromptTextPasted`: the paste, verbatim.
+    struct OmnibarPromptPastedText: Codable, Equatable {
+        public let content: String
+
+        public init(content: String) {
+            self.content = content
         }
     }
 

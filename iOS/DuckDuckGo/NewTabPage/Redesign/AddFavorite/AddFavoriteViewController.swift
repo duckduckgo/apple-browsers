@@ -22,7 +22,7 @@ import SwiftUI
 import UIKit
 
 final class AddFavoriteViewController: UIHostingController<AddFavoriteView> {
-    private var measuredLayout: (width: CGFloat, contentSize: UIContentSizeCategory)?
+    private var measuredLayout: (width: CGFloat, verticalInsets: CGFloat)?
 
     init(model: AddFavoriteViewModel) {
         var onClose: (() -> Void)?
@@ -67,15 +67,17 @@ final class AddFavoriteViewController: UIHostingController<AddFavoriteView> {
         let width = view.bounds.width - view.safeAreaInsets.left - view.safeAreaInsets.right
         guard width > 0 else { return }
         // Layout passes repeat for keyboard and detent changes. Re-measure only when the inputs change.
-        let layout = (width: width, contentSize: traitCollection.preferredContentSizeCategory)
+        let verticalInsets = view.safeAreaInsets.top + view.safeAreaInsets.bottom
+        let layout = (width: width, verticalInsets: verticalInsets)
         if let measuredLayout, measuredLayout == layout { return }
         measuredLayout = layout
-        // Measure the form rather than its scroll viewport, excluding keyboard and sheet insets.
+        // Measure the form rather than its scroll viewport, then add the sheet's vertical insets back:
+        // the scroll viewport loses them, and a shorter viewport scrolls the focused URL field into view.
         let sizingController = UIHostingController(rootView: rootView.form)
         if #available(iOS 16.4, *) {
             sizingController.safeAreaRegions = []
         }
-        let height = ceil(sizingController.sizeThatFits(in: CGSize(width: width, height: .infinity)).height)
+        let height = ceil(sizingController.sizeThatFits(in: CGSize(width: width, height: .infinity)).height) + verticalInsets
         guard preferredContentSize.height != height else { return }
         preferredContentSize.height = height
         if #available(iOS 16, *) {

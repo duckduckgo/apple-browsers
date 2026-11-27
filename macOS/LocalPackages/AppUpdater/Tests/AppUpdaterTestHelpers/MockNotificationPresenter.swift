@@ -20,11 +20,15 @@ import AppUpdaterShared
 import Foundation
 
 /// Mock notification presenter for testing - does not show any notifications.
-public struct MockNotificationPresenter: UpdateNotificationPresenting {
+public final class MockNotificationPresenter: UpdateNotificationPresenting {
+    public private(set) var shownUpdateTypes: [Update.UpdateType] = []
+
     public init() {}
 
     public func showUpdateNotification(for status: AppUpdateStatus) {}
-    public func showUpdateNotification(for updateType: Update.UpdateType, areAutomaticUpdatesEnabled: Bool) {}
+    public func showUpdateNotification(for updateType: Update.UpdateType, areAutomaticUpdatesEnabled: Bool) {
+        shownUpdateTypes.append(updateType)
+    }
     public func dismissIfPresented() {}
     public func openUpdatesPage() {}
 }

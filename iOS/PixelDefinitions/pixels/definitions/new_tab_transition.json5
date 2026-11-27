@@ -1,0 +1,9 @@
+{
+    "new_tab_transition_keyboard_hide_missed": {
+        "description": "Fired when a new tab waited for the keyboard to hide, iOS never sent keyboardDidHide, and the tab opened from the safety net instead. Expected never to fire; a non-zero count means a keyboard state the new tab transition doesn't handle.",
+        "owners": ["jaceklyp"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    }
+}

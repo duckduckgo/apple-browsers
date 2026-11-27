@@ -70,8 +70,8 @@ private extension WinBackOfferLaunchView {
                         .resizable()
                         .scaledToFit()
                         .frame(width: Metrics.Header.closeButtonSize, height: Metrics.Header.closeButtonSize)
-                        .foregroundStyle(Color.primary)
                 }
+                .buttonStyle(CloseButtonStyle())
             }
         }
     }

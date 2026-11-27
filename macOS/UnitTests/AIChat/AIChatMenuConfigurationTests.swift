@@ -327,6 +327,13 @@ class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
     var lastUsedSidebarWidth: Double?
     var hasAcceptedTermsAndConditions: Bool = false
 
+    var pageSummariesModel: AIChatPageSummariesModel = .duckAI {
+        didSet {
+            pageSummariesModelSubject.send(pageSummariesModel)
+        }
+    }
+
+    private var pageSummariesModelSubject = PassthroughSubject<AIChatPageSummariesModel, Never>()
     private var isAIFeaturesEnabledSubject = PassthroughSubject<Bool, Never>()
     private var showShortcutOnNewTabPageSubject = PassthroughSubject<Bool, Never>()
     private var showShortcutInApplicationMenuSubject = PassthroughSubject<Bool, Never>()
@@ -368,6 +375,10 @@ class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
         showSearchAndDuckAIToggleSubject.eraseToAnyPublisher()
     }
 
+    var pageSummariesModelPublisher: AnyPublisher<AIChatPageSummariesModel, Never> {
+        pageSummariesModelSubject.eraseToAnyPublisher()
+    }
+
     func reset() {
         isAIFeaturesEnabled = true
         showShortcutOnNewTabPage = false
@@ -381,6 +392,7 @@ class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
         userDidSeeToggleOnboarding = false
         lastUsedSidebarWidth = nil
         hasAcceptedTermsAndConditions = false
+        pageSummariesModel = .duckAI
     }
 
     func updateNewTabPageShortcutDisplay(to value: Bool) {

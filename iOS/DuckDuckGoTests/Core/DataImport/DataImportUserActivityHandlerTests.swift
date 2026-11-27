@@ -31,7 +31,7 @@ final class DataImportUserActivityHandlerTests: XCTestCase {
     override func setUpWithError() throws {
         try super.setUpWithError()
         importHandler = MockCredentialExchangeImportHandler()
-        keyValueStore = try MockKeyValueFileStore()
+        keyValueStore = MockKeyValueFileStore()
     }
 
     override func tearDown() {

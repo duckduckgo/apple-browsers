@@ -46,8 +46,10 @@ public protocol AIChatBonusHandling {
     /// - Parameter params: The message params, as the bridge received them. Dropped when invalid.
     func aiChatBonusRedeemOutcome(params: Any)
 
-    /// Handles `aiChatBonusDismiss`, which Duck.ai sends when the activation modal is closed without claiming.
-    func aiChatBonusDismiss()
+    /// Handles `aiChatBonusDismiss { campaignName }`, which Duck.ai sends when the activation modal is closed without claiming.
+    ///
+    /// - Parameter params: The message params, as the bridge received them. Dropped when invalid.
+    func aiChatBonusDismiss(params: Any)
 
     /// Handles `aiChatBonusEnd`, which Duck.ai sends when the boost expired, was opted out of or was replaced by a subscription.
     func aiChatBonusEnd()
@@ -58,6 +60,9 @@ public final class AIChatBonusHandler {
     private let service: AIChatBonusMessageHandling
     private let factsProvider: AIChatBonusFactsProviding
 
+    /// Built once and shared, so each record change builds one payload however many Duck.ai tabs listen.
+    public let recordPayloadPublisher: AnyPublisher<AIChatBonusRecordPayload, Never>
+
     /// Initializes a new instance with the specified parameters.
     /// - Parameters:
     ///   - service: The single owner of the bonus record. Pass the app's one shared instance, never a new one per tab:
@@ -66,6 +71,10 @@ public final class AIChatBonusHandler {
     public init(service: AIChatBonusMessageHandling, factsProvider: AIChatBonusFactsProviding) {
         self.service = service
         self.factsProvider = factsProvider
+        self.recordPayloadPublisher = service.recordPublisher
+            .map { Self.payload(for: $0, factsProvider: factsProvider) }
+            .share()
+            .eraseToAnyPublisher()
     }
 }
 
@@ -84,7 +93,7 @@ extension AIChatBonusHandler: AIChatBonusHandling {
     }
 
     public func getAIChatNewBonusRecord(params: Any) -> AIChatBonusRecordPayload? {
-        guard let request: NewBonusRecordParams = decode(params) else { return nil }
+        guard let request: CampaignNameParams = decode(params) else { return nil }
         guard let record = try? service.claim(campaignName: request.campaignName) else { return nil }
         return payload(for: record)
     }
@@ -95,20 +104,15 @@ extension AIChatBonusHandler: AIChatBonusHandling {
         try? service.applyRedeemOutcome(request.outcome)
     }
 
-    public func aiChatBonusDismiss() {
+    public func aiChatBonusDismiss(params: Any) {
+        guard let request: CampaignNameParams = decode(params) else { return }
         // The service already logs and reports store errors; there's no reply to send.
-        try? service.dismiss()
+        try? service.dismiss(campaignName: request.campaignName)
     }
 
     public func aiChatBonusEnd() {
         // The service already logs and reports store errors; there's no reply to send.
         try? service.end()
-    }
-
-    public var recordPayloadPublisher: AnyPublisher<AIChatBonusRecordPayload, Never> {
-        service.recordPublisher
-            .map(payload(for:))
-            .eraseToAnyPublisher()
     }
 }
 
@@ -117,6 +121,10 @@ extension AIChatBonusHandler: AIChatBonusHandling {
 private extension AIChatBonusHandler {
 
     func payload(for record: AIChatBonusRecord?) -> AIChatBonusRecordPayload {
+        Self.payload(for: record, factsProvider: factsProvider)
+    }
+
+    static func payload(for record: AIChatBonusRecord?, factsProvider: AIChatBonusFactsProviding) -> AIChatBonusRecordPayload {
         AIChatBonusRecordPayload(
             record: record,
             isNewInstall: factsProvider.isNewInstall,
@@ -136,14 +144,14 @@ private extension AIChatBonusHandler {
 
 // MARK: - Params
 
-/// `getAIChatNewBonusRecord` params: `{ campaignName }`.
-private struct NewBonusRecordParams: Decodable {
+/// `getAIChatNewBonusRecord` and `aiChatBonusDismiss` params: `{ campaignName }`.
+private struct CampaignNameParams: Decodable {
     let campaignName: String
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         campaignName = try container.decode(String.self, forKey: .campaignName)
-        // An empty name breaks the record invariant, so the store would refuse to write it.
+        // No campaign has an empty name, and a claim with one would break the record invariant.
         guard !campaignName.isEmpty else {
             throw DecodingError.dataCorruptedError(forKey: .campaignName, in: container, debugDescription: "Empty campaign name")
         }

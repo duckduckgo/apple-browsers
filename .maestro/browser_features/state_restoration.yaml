@@ -26,7 +26,10 @@ tags:
     speed: 100
 - tapOn: 
     text: 'Terms of Service'
-- assertVisible: "DuckDuckGo Terms of Service"
+- extendedWaitUntil:
+    visible: "DuckDuckGo Terms of Service"
+    timeout: 15000
+    label: "Terms of Service page loaded from duckduckgo.com link (before relaunch)"
 - scrollUntilVisible:
     element: "Privacy Policy"
     timeout: 50000
@@ -53,7 +56,6 @@ tags:
 - launchApp:
     arguments:
         isRunningUITests: true
-        "ff.alwaysShowKeyboardOnNewTabPage": "false"
 
 - tapOn:
     text: "Tab Switcher"
@@ -64,4 +66,7 @@ tags:
 # Check if state from previous session was restored
 - assertVisible: "DuckDuckGo.*"
 - tapOn: "Browse Forward"
-- assertVisible: "DuckDuckGo Terms of Service"
+- extendedWaitUntil:
+    visible: "DuckDuckGo Terms of Service"
+    timeout: 15000
+    label: "Terms of Service page restored via Browse Forward after relaunch"

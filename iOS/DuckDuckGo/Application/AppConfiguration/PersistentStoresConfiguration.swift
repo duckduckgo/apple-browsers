@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import Common
 import Foundation
 import Core
 import Persistence
@@ -51,11 +52,11 @@ final class PersistentStoresConfiguration {
     }
 
     private func loadDatabase() throws {
-        var dbError: Error?
+        let dbError = Locked<Error?>(wrappedValue: nil)
         database.loadStore { _, error in
-            dbError = error
+            dbError.wrappedValue = error
         }
-        if let dbError {
+        if let dbError = dbError.wrappedValue {
             if let containerError = dbError as? CoreDataDatabase.Error,
                case .containerLocationCouldNotBePrepared(let underlyingError) = containerError {
                 throw TerminationError.database(.container(underlyingError))

@@ -23,11 +23,9 @@ import PixelKit
 import WebExtensions
 
 private struct CPMWebExtensionPixel: PixelKit.Event {
-    let metadata: CPMWebExtensionPixelMetadata
+    let name: String
+    let parameters: [String: String]?
 
-    var name: String { metadata.name }
-
-    var parameters: [String: String]? { metadata.parameters }
     var standardParameters: [PixelKitStandardParameter]? { nil }
     var namePrefix: PixelKitNamePrefix { .none }
 }
@@ -45,39 +43,39 @@ private struct WebExtensionReloadErrorPixel: PixelKit.Event {
 @available(iOS 18.4, *)
 private extension DuckDuckGoWebExtensionType {
 
-    var installedPixel: Pixel.Event {
+    var installedPixel: Pixel.Event? {
         switch self {
         case .embedded: return .webExtensionEmbeddedInstalled
         case .darkReader: return .webExtensionDarkReaderInstalled
         case .adBlockingExtension: return .webExtensionAdBlockingInstalled
-        case .searchToken: return .webExtensionSearchTokenInstalled
+        case .searchToken: return nil
         }
     }
 
-    var upgradedPixel: Pixel.Event {
+    var upgradedPixel: Pixel.Event? {
         switch self {
         case .embedded: return .webExtensionEmbeddedUpgraded
         case .darkReader: return .webExtensionDarkReaderUpgraded
         case .adBlockingExtension: return .webExtensionAdBlockingUpgraded
-        case .searchToken: return .webExtensionSearchTokenUpgraded
+        case .searchToken: return nil
         }
     }
 
-    var installErrorPixel: Pixel.Event {
+    var installErrorPixel: Pixel.Event? {
         switch self {
         case .embedded: return .webExtensionEmbeddedInstallError
         case .darkReader: return .webExtensionDarkReaderInstallError
         case .adBlockingExtension: return .webExtensionAdBlockingInstallError
-        case .searchToken: return .webExtensionSearchTokenInstallError
+        case .searchToken: return nil
         }
     }
 
-    var notLoadedPixel: Pixel.Event {
+    var notLoadedPixel: Pixel.Event? {
         switch self {
         case .embedded: return .webExtensionEmbeddedNotLoaded
         case .darkReader: return .webExtensionDarkReaderNotLoaded
         case .adBlockingExtension: return .webExtensionAdBlockingNotLoaded
-        case .searchToken: return .webExtensionSearchTokenNotLoaded
+        case .searchToken: return nil
         }
     }
 }
@@ -126,9 +124,11 @@ struct iOSWebExtensionPixelFiring: WebExtensionPixelFiring {
             )
             pixelFiring?.fire(WebExtensionReloadErrorPixel(metadata: metadata), frequency: .dailyAndCount)
         case .embeddedInstalled(let type):
-            pixelFiring?.fire(type.installedPixel,
+            guard let pixel = type.installedPixel else { return }
+            pixelFiring?.fire(pixel,
                           frequency: .dailyAndStandard)
         case .embeddedUpgraded(let type, let fromVersion, let toVersion):
+            guard let pixel = type.upgradedPixel else { return }
             var params: [String: String] = [:]
             if let fromVersion {
                 params["from_version"] = fromVersion
@@ -136,11 +136,12 @@ struct iOSWebExtensionPixelFiring: WebExtensionPixelFiring {
             if let toVersion {
                 params["to_version"] = toVersion
             }
-            pixelFiring?.fire(type.upgradedPixel,
+            pixelFiring?.fire(pixel,
                           frequency: .dailyAndStandard,
                           options: .parameters(params))
         case .embeddedInstallError(let type, let error):
-            pixelFiring?.fire(type.installErrorPixel.withError(error),
+            guard let pixel = type.installErrorPixel else { return }
+            pixelFiring?.fire(pixel.withError(error),
                           frequency: .dailyAndStandard)
         case .scriptletFetchSuccess(let type, let version, let count):
             pixelFiring?.fire(Pixel.Event.webExtensionScriptletFetchSuccess,
@@ -166,31 +167,35 @@ struct iOSWebExtensionPixelFiring: WebExtensionPixelFiring {
             pixelFiring?.fire(Pixel.Event.webExtensionStateChecked,
                           frequency: .dailyAndStandard)
         case .expectedExtensionNotLoaded(let type):
-            pixelFiring?.fire(type.notLoadedPixel,
+            guard let pixel = type.notLoadedPixel else { return }
+            pixelFiring?.fire(pixel,
                           frequency: .dailyAndStandard)
         case .adBlockingScriptletsNotFetched(let extensionLoaded):
             pixelFiring?.fire(Pixel.Event.webExtensionAdBlockingScriptletsNotFetched,
                           frequency: .dailyAndStandard,
                           options: .parameters(["extension_loaded": extensionLoaded ? "true" : "false"]))
-        case .cpmBackgroundLoadRestart, .cpmMessagingEpisode, .cpmNetworkProcessRecoveryApplied, .cpmRecovery, .cpmStartupResponseMissing:
-            fireCPMPixel(event)
-        case .defaultPasswordManagerSet, .bitwardenDailyActive, .apiCompatibilityGaps:
+        case .cpmMessagingBreakage(let lastStage, let tabs):
+            var parameters = ["tabs": tabs.rawValue]
+            parameters["last_stage"] = lastStage.pixelValue
+            fireCPMPixel(name: "web_extension_cpm_breakage", parameters: parameters)
+        case .cpmMessagingBreakagePersistent:
+            fireCPMPixel(name: "web_extension_cpm_breakage_persistent", parameters: [:])
+        case .enabled, .disabled, .remotelyDisabled, .killSwitchDisabled:
+            // Store pixels are macOS-only, but iOS debug-menu toggles still reach here, so drop rather than assert.
+            break
+        case .updateCheck, .updateDownloadFailed, .updateVerificationFailed, .updateVerified, .updateApplied, .updateInstallFailed:
+            // Chrome Web Store updates are only enabled on macOS.
+            return
+        case .defaultPasswordManagerSet, .bitwardenDailyActive, .apiCompatibilityGaps, .retained14Days, .churned14Days, .installedCount,
+             .nativeMessagingBlocked:
             // Chrome extensions, and so password manager extensions, are only supported on macOS, so
             // these are only sent there.
             assertionFailure("\(event) is only sent on macOS")
         }
     }
 
-    private func fireCPMPixel(_ event: WebExtensionPixelEvent) {
-        guard let metadata = CPMWebExtensionPixelMetadata(event: event) else { return }
-        pixelFiring?.fire(CPMWebExtensionPixel(metadata: metadata), frequency: metadata.frequency.pixelKitFrequency)
-    }
-}
-
-private extension CPMWebExtensionPixelFrequency {
-    var pixelKitFrequency: PixelKit.Frequency {
-        switch self {
-        case .dailyAndCount: return .dailyAndCount
-        }
+    private func fireCPMPixel(name: String, parameters: [String: String]) {
+        let pixel = CPMWebExtensionPixel(name: name, parameters: parameters)
+        pixelFiring?.fire(pixel, frequency: .dailyAndCount)
     }
 }

@@ -188,7 +188,7 @@ final class AutofillExtensionEnableCoordinatorTests: XCTestCase {
         mockSettingsHelper.requestResult = false
 
         // When
-        await coordinator.enableExtension()
+        _ = await coordinator.enableExtension()
 
         // Then
         XCTAssertTrue(coordinator.isEnableRequestThrottled)
@@ -211,7 +211,7 @@ final class AutofillExtensionEnableCoordinatorTests: XCTestCase {
         )
 
         // When
-        await shortThrottleCoordinator.enableExtension()
+        _ = await shortThrottleCoordinator.enableExtension()
         XCTAssertTrue(shortThrottleCoordinator.isEnableRequestThrottled)
 
         // Wait for throttle to expire
@@ -227,7 +227,7 @@ final class AutofillExtensionEnableCoordinatorTests: XCTestCase {
         mockStore.isEnabled = false
         mockSettingsHelper.requestResult = false
 
-        await coordinator.enableExtension()
+        _ = await coordinator.enableExtension()
         XCTAssertTrue(coordinator.isEnableRequestThrottled)
 
         // When
@@ -243,13 +243,13 @@ final class AutofillExtensionEnableCoordinatorTests: XCTestCase {
         mockStore.isEnabled = false
         mockSettingsHelper.requestResult = false
 
-        await coordinator.enableExtension()
+        _ = await coordinator.enableExtension()
         XCTAssertEqual(mockSettingsHelper.requestCallCount, 1)
 
         coordinator.clearEnableRequestThrottle()
 
         // When
-        await coordinator.enableExtension()
+        _ = await coordinator.enableExtension()
 
         // Then
         XCTAssertEqual(mockSettingsHelper.requestCallCount, 2) // Called again

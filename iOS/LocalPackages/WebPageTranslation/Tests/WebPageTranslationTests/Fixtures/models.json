@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "generated": "2026-11-02T10:00:25Z",
+  "extra": 1,
+  "baseUrl": "https://models.test/translations/models/",
+  "models": {
+    "fr-en": {
+      "sourceLanguage": "fr",
+      "targetLanguage": "en",
+      "version": "3.0",
+      "architecture": "base-memory",
+      "totalBytes": 600,
+      "files": {
+        "model": { "path": "fr-en/3.0/base-memory/model.fren.intgemm.alphas.bin.zst", "bytes": 300, "sha256": "aa", "decompressedSize": 900, "decompressedHash": "ab" },
+        "vocab": { "path": "fr-en/3.0/base-memory/vocab.fren.spm.zst", "bytes": 200, "sha256": "bb", "decompressedSize": 500, "decompressedHash": "bc" },
+        "lexicalShortlist": { "path": "fr-en/3.0/base-memory/lex.50.50.fren.s2t.bin.zst", "bytes": 100, "sha256": "cc", "decompressedSize": 250, "decompressedHash": "cd" }
+      }
+    },
+    "en-de": {
+      "sourceLanguage": "en",
+      "targetLanguage": "de",
+      "version": "3.0",
+      "architecture": "base-memory",
+      "totalBytes": 1000,
+      "files": {
+        "model": { "path": "en-de/3.0/base-memory/model.ende.intgemm.alphas.bin.zst", "bytes": 400, "sha256": "dd", "decompressedSize": 900, "decompressedHash": "de" },
+        "srcVocab": { "path": "en-de/3.0/base-memory/srcvocab.ende.spm.zst", "bytes": 200, "sha256": "ee", "decompressedSize": 500, "decompressedHash": "ef" },
+        "trgVocab": { "path": "en-de/3.0/base-memory/trgvocab.ende.spm.zst", "bytes": 200, "sha256": "ff", "decompressedSize": 500, "decompressedHash": "fa" },
+        "lexicalShortlist": { "path": "en-de/3.0/base-memory/lex.50.50.ende.s2t.bin.zst", "bytes": 200, "sha256": "11", "decompressedSize": 250, "decompressedHash": "12" }
+      }
+    }
+  }
+}

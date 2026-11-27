@@ -66,10 +66,15 @@ final class NativeMessagingHandler: WebExtensionNativeMessagingHandling {
     /// Where an extension came from, which gives the Chrome identifier of a Web Store install.
     private let installationStore: InstalledWebExtensionStoring?
 
+    /// - Parameter hostsDirectories: Our own host manifest directories, which the handler creates if they do not exist.
     init(installationStore: InstalledWebExtensionStoring? = nil,
-         singleMessageTimeout: TimeInterval = NativeMessagingHandler.defaultSingleMessageTimeout) {
+         singleMessageTimeout: TimeInterval = NativeMessagingHandler.defaultSingleMessageTimeout,
+         hostsDirectories: [URL] = NativeMessagingHostManifestLocator.ownHostsDirectories) {
         self.installationStore = installationStore
         self.singleMessageTimeout = singleMessageTimeout
+        for directory in hostsDirectories {
+            NativeMessagingHostManifestLocator.createHostsDirectoryIfNeeded(at: directory)
+        }
     }
 
     /// Sessions of open ports, keyed by the port that owns each one.
@@ -151,8 +156,17 @@ final class NativeMessagingHandler: WebExtensionNativeMessagingHandling {
             self?.sessions[key] = nil
         }
 
-        try session.start()
+        do {
+            try session.start()
+        } catch {
+            sessions[key] = nil
+            throw error
+        }
         Logger.webExtensions.debug("🔗 Port bridged to \(hostName, privacy: .public)")
+    }
+
+    func hasOpenPorts(for context: WKWebExtensionContext) -> Bool {
+        sessions.values.contains { $0.extensionIdentifier == context.uniqueIdentifier }
     }
 
     func sendMessage(_ message: Any,
@@ -251,6 +265,7 @@ final class NativeMessagingHandler: WebExtensionNativeMessagingHandling {
 
         let origin = try callerOrigin(for: context, hostName: hostName, manifest: located.manifest)
         let session = NativeMessagingHostSession(hostName: hostName,
+                                                 extensionIdentifier: context.uniqueIdentifier,
                                                  executable: located.executable,
                                                  callerOrigin: origin)
         Logger.webExtensions.info("""

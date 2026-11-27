@@ -31,15 +31,17 @@ struct DownloadsListSectionViewModel: Identifiable, Hashable, Comparable {
 }
 
 extension DownloadsListSectionViewModel {
-    static let monthNameFormatter: DateFormatter = {
+    static func monthNameFormatter(locale: Locale) -> DateFormatter {
         let formatter = DateFormatter()
+        formatter.locale = locale
         formatter.dateFormat = "LLLL"
         return formatter
-    }()
+    }
 
-    static let yearFormatter: DateFormatter = {
+    static func yearFormatter(locale: Locale) -> DateFormatter {
         let formatter = DateFormatter()
+        formatter.locale = locale
         formatter.dateFormat = "y"
         return formatter
-    }()
+    }
 }

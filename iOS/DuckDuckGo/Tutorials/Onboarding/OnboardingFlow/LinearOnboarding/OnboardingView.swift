@@ -464,8 +464,6 @@ extension OnboardingView {
                 introView(content: content, dialogType: dialogType)
             case let .downloadReasonDialog(content):
                 downloadReasonView(content: content)
-            case let .searchPrivacySettingsDialog(content):
-                toggleSettingsPersonalizationView(content: content, action: model.searchPrivacySettingsContinueAction)
             case let .aiSearchSettingsDialog(content):
                 toggleSettingsPersonalizationView(content: content, action: model.aiSearchSettingsContinueAction)
             case let .aiModelDialog(content, options, selectedID):
@@ -476,6 +474,12 @@ extension OnboardingView {
                 aiChatEnabledSelectionView(content: content)
             case let .adBlockingDialog(content):
                 toggleSettingsPersonalizationView(content: content, action: model.adBlockingContinueAction)
+            case let .tryVPNDialog(content):
+                tryVPNView(content: content)
+            case let .vpnActivationDialog(content):
+                vpnActivationView(content: content)
+            case let .subscriptionReminderDialog(content):
+                subscriptionReminderView(content: content)
             case let .setDefaultBrowserDialog(content):
                 setDefaultBrowserView(content: content)
             case let .aiIntroDialog(content):
@@ -539,6 +543,50 @@ extension OnboardingView {
                     model.aiModelContinueAction()
                 }
             }
+        }
+
+        private func tryVPNView(content: OnboardingTryVPNContent) -> some View {
+            TryVPNContent(
+                content: content,
+                isVisible: $showBubbleContent,
+                primaryAction: {
+                    model.tryVPNAction { advance in
+                        animateContentTransition(action: advance)
+                    }
+                },
+                secondaryAction: {
+                    animateContentTransition {
+                        model.skipTryVPNAction()
+                    }
+                }
+            )
+        }
+
+        private func vpnActivationView(content: OnboardingVPNActivationContent) -> some View {
+            VPNActivationContent(
+                content: content,
+                isVisible: $showBubbleContent,
+                continueAction: { isVPNOn in
+                    animateContentTransition {
+                        model.vpnActivationContinueAction(isVPNOn: isVPNOn)
+                    }
+                },
+                failureAction: { reason in
+                    model.vpnActivationFailedAction(reason: reason)
+                }
+            )
+        }
+
+        private func subscriptionReminderView(content: OnboardingSubscriptionReminderContent) -> some View {
+            SubscriptionReminderContent(
+                content: content,
+                isVisible: $showBubbleContent,
+                action: {
+                    animateContentTransition {
+                        model.subscriptionReminderContinueAction()
+                    }
+                }
+            )
         }
 
         private func addressBarToggleModeView(content: OnboardingAddressBarToggleModeContent) -> some View {
@@ -665,13 +713,19 @@ extension OnboardingView {
                 return scaledThumbUpAnimation(forBubbleHeight: lockedIntroBubbleHeight, base: content.daxAnimation)
             case .downloadReasonDialog(let content):
                 return content.daxAnimation
-            case .searchPrivacySettingsDialog(let content), .aiSearchSettingsDialog(let content), .adBlockingDialog(let content):
+            case .aiSearchSettingsDialog(let content), .adBlockingDialog(let content):
                 return content.daxAnimation
             case .aiModelDialog(let content, _, _):
                 return content.daxAnimation
             case let .toggleInputModeDialog(content):
                 return content.daxAnimation
             case let .keepDuckAIDialog(content):
+                return content.daxAnimation
+            case let .tryVPNDialog(content):
+                return content.daxAnimation
+            case let .vpnActivationDialog(content):
+                return content.daxAnimation
+            case let .subscriptionReminderDialog(content):
                 return content.daxAnimation
             case .setDefaultBrowserDialog(let content):
                 return content.daxAnimation
@@ -848,8 +902,9 @@ private extension OnboardingView {
                 isVisible: model.introState.showIntroViewContent
             )
         case .downloadReasonDialog,
-             .searchPrivacySettingsDialog, .aiSearchSettingsDialog, .aiModelDialog,
-             .toggleInputModeDialog, .keepDuckAIDialog, .adBlockingDialog:
+             .aiSearchSettingsDialog, .aiModelDialog,
+             .toggleInputModeDialog, .keepDuckAIDialog, .adBlockingDialog, .tryVPNDialog,
+             .vpnActivationDialog, .subscriptionReminderDialog:
             return BubbleBackedDialogConfiguration(
                 tailOffset: tailLeadingOffset,
                 tailDirection: .leading,

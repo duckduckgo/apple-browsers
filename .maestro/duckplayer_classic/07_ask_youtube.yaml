@@ -41,6 +41,8 @@ tags:
     when:
       visible: ${output.turnOnDuckPlayerLabel}
     commands:
+      - assertVisible: ${output.videoTitle}
+      - waitForAnimationToEnd
       - tapOn: ${output.turnOnDuckPlayerLabel}
       - runFlow:
           file: shared/duckplayer_is_visible.yaml

@@ -22,10 +22,6 @@ import DDGError
 import FoundationExtensions
 import Foundation
 
-public enum LatestReleaseMetadataType {
-    case macOSAppStore
-}
-
 public enum LatestReleaseError: DDGError {
     case invalidURL
     case networkError(Error)
@@ -71,37 +67,96 @@ public enum LatestReleaseError: DDGError {
     }
 }
 
-private struct ReleaseMetadataCollector: Codable {
-    let latestAppStoreVersion: ReleaseMetadata
+/// The App Store entries in the release metadata file.
+public struct AppStoreReleases: Decodable {
+    /// The release that has finished rolling out.
+    public let latest: ReleaseMetadata
+
+    /// The release that is rolling out, published when its rollout starts.
+    public let available: ReleaseMetadata?
 
     enum CodingKeys: String, CodingKey {
-        case latestAppStoreVersion = "latest_appstore_version"
+        case latest = "latest_appstore_version"
+        case available = "available_appstore_version"
+    }
+
+    public init(latest: ReleaseMetadata, available: ReleaseMetadata?) {
+        self.latest = latest
+        self.available = available
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        latest = try container.decode(ReleaseMetadata.self, forKey: .latest)
+        available = try? container.decodeIfPresent(ReleaseMetadata.self, forKey: .available)
+    }
+
+    /// The release to offer the user.
+    ///
+    /// Returns the available release if it was released at least `delay` ago and is newer than the latest
+    /// release. Otherwise returns the latest release. The available release in the metadata shouldn't
+    /// ever be older than the latest one, but if that were to happen this version check would prevent
+    ///  users from being told there's no update.
+    public func releaseToOffer(availableAfter delay: TimeInterval, now: Date) -> ReleaseMetadata {
+        guard let available,
+              Self.isRelease(available, newerThan: latest),
+              let releaseDate = ISO8601DateFormatter().date(from: available.releaseDate),
+              now >= releaseDate.addingTimeInterval(delay) else {
+            return latest
+        }
+        return available
+    }
+
+    private static func isRelease(_ release: ReleaseMetadata, newerThan other: ReleaseMetadata) -> Bool {
+        switch release.latestVersion.compare(other.latestVersion, options: .numeric) {
+        case .orderedDescending: true
+        case .orderedAscending: false
+        case .orderedSame: release.buildNumber > other.buildNumber
+        }
     }
 }
 
 public final class LatestReleaseChecker {
-    private let baseURL: String
+    private let baseURL: String?
     private let urlSession: URLSession
+    private let debugSettings: UpdatesDebugSettings
 
-    public init(baseURL: String = "https://staticcdn.duckduckgo.com/macos-desktop-browser/",
-                urlSession: URLSession = .shared) {
+    /// An explicitly supplied base URL takes precedence over the Debug menu override.
+    public init(baseURL: String? = nil,
+                urlSession: URLSession = .shared,
+                debugSettings: UpdatesDebugSettings = UpdatesDebugSettings()) {
         self.baseURL = baseURL
         self.urlSession = urlSession
+        self.debugSettings = debugSettings
     }
 
     private var releaseMetadataURL: String {
-        return baseURL + "release_metadata.json"
+        #if DEBUG
+        let customBaseURL = baseURL ?? debugSettings.appStoreMetadataBaseURL
+        #else
+        let customBaseURL = baseURL
+        #endif
+        let resolvedURL = customBaseURL ?? "https://staticcdn.duckduckgo.com/macos-desktop-browser/"
+        let separator = resolvedURL.hasSuffix("/") ? "" : "/"
+        return resolvedURL + separator + "release_metadata.json"
     }
 
-    public func getLatestReleaseAvailable(
-        for metadataType: LatestReleaseMetadataType
-    ) async throws -> ReleaseMetadata {
+    public func getAppStoreReleases() async throws -> AppStoreReleases {
         guard let url = URL(string: releaseMetadataURL) else {
             throw LatestReleaseError.invalidURL
         }
 
+        var request = URLRequest(url: url)
+        #if DEBUG
+        if baseURL == nil, debugSettings.appStoreMetadataBaseURL != nil {
+            let appVersion = AppVersion()
+            request.setValue(appVersion.versionNumber, forHTTPHeaderField: "X-DDG-Test-App-Version")
+            request.setValue(appVersion.buildNumber, forHTTPHeaderField: "X-DDG-Test-App-Build")
+        }
+        #endif
+
         do {
-            let (data, response) = try await urlSession.data(from: url)
+            let (data, response) = try await urlSession.data(for: request)
 
             // Validate HTTP response
             if let httpResponse = response as? HTTPURLResponse,
@@ -109,13 +164,7 @@ public final class LatestReleaseChecker {
                 throw LatestReleaseError.networkError(URLError(.badServerResponse))
             }
 
-            let decoder = JSONDecoder()
-            let metadata = try decoder.decode(ReleaseMetadataCollector.self, from: data)
-
-            switch metadataType {
-            case .macOSAppStore:
-                return metadata.latestAppStoreVersion
-            }
+            return try JSONDecoder().decode(AppStoreReleases.self, from: data)
         } catch let error as DecodingError {
             throw LatestReleaseError.decodingError(error)
         } catch let error as LatestReleaseError {

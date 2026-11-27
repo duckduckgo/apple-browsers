@@ -50,6 +50,7 @@ final class AIChatTabExtension {
     private let attachmentPrivacyDisclosureProvider: () -> AttachmentPrivacyDisclosure
     private let preferencesStorage: AIChatPreferencesStorage
     private let pixelFiring: PixelFiring?
+    private let tabsPreferences: TabsPreferences
 
     /// Source of the tab's latest content, for telling how a navigation to Duck.ai started.
     private var latestContentSource: TabContent.URLSource?
@@ -74,6 +75,26 @@ final class AIChatTabExtension {
         }
     }
 
+    /// Scripts are reinstalled mid-page (e.g. new content-blocking rules) and the bridge routes answers
+    /// to the new script, so the old one's pending client-tool prompts could never be answered.
+    @MainActor
+    private func replaceAIChatUserScript(with script: AIChatUserScript?) {
+        let previousScript = aiChatUserScript
+        aiChatUserScript = script
+        if let previousScript, previousScript !== script {
+            previousScript.cancelClientToolPermissionRequests()
+        }
+    }
+
+    deinit {
+        // The tab closed. A pending client-tool call keeps its script alive, so cancel it explicitly
+        // rather than leaving it to the permission timeout.
+        let aiChatUserScript = aiChatUserScript
+        Task { @MainActor in
+            aiChatUserScript?.cancelClientToolPermissionRequests()
+        }
+    }
+
     init(scriptsPublisher: some Publisher<some AIChatUserScriptProvider, Never>,
          webViewPublisher: some Publisher<WKWebView, Never>,
          contentPublisher: some Publisher<TabContent, Never>,
@@ -86,8 +107,10 @@ final class AIChatTabExtension {
          burnerDuckAiStorageRegistry: BurnerDuckAiStorageRegistry? = NSApp.delegateTyped.burnerDuckAiStorageRegistry,
          aiChatDebugURLSettings: (any KeyedStoring<AIChatDebugURLSettings>)? = nil,
          preferencesStorage: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
-         pixelFiring: PixelFiring? = PixelKit.shared) {
+         pixelFiring: PixelFiring? = PixelKit.shared,
+         tabsPreferences: TabsPreferences = NSApp.delegateTyped.tabsPreferences) {
         self.isLoadedInSidebar = isLoadedInSidebar
+        self.tabsPreferences = tabsPreferences
         self.preferencesStorage = preferencesStorage
         self.pixelFiring = pixelFiring
         self.isTabBurner = isTabBurner
@@ -117,6 +140,7 @@ final class AIChatTabExtension {
         pageContextRemovedPublisher = pageContextRemovedSubject.eraseToAnyPublisher()
         pageContextAddedPublisher = pageContextAddedSubject.eraseToAnyPublisher()
         chatRestorationDataPublisher = chatRestorationDataSubject.eraseToAnyPublisher()
+        responseReceivedPublisher = responseReceivedSubject.eraseToAnyPublisher()
 
         webViewPublisher.sink { [weak self] webView in
             self?.webView = webView
@@ -128,8 +152,11 @@ final class AIChatTabExtension {
         }.store(in: &cancellables)
 
         scriptsPublisher.sink { [weak self] scripts in
+            // A local run's output goes to the script that serves its page, found by the web view.
+            // Waiting for the task below leaves a gap with no such script, and a chunk sent then is lost.
+            scripts.aiChatUserScript?.webView = self?.webView
             Task { @MainActor in
-                self?.aiChatUserScript = scripts.aiChatUserScript
+                self?.replaceAIChatUserScript(with: scripts.aiChatUserScript)
                 self?.aiChatUserScript?.webView = self?.webView
                 if let isTabBurner = self?.isTabBurner {
                     self?.aiChatUserScript?.handler.isFireWindowProvider = { isTabBurner }
@@ -161,8 +188,6 @@ final class AIChatTabExtension {
                 }
 
                 if let pageContext = self?.temporaryPageContext {
-                    /// See the comment in `self.submitAIChatPageContext` for the explanation of why we're calling user script twice.
-                    self?.aiChatUserScript?.handler.messageHandling.setData(pageContext, forMessageType: .pageContext)
                     self?.aiChatUserScript?.handler.submitAIChatPageContext(pageContext)
                     self?.temporaryPageContext = nil
                 }
@@ -218,6 +243,12 @@ final class AIChatTabExtension {
                 self?.chatRestorationDataSubject.send(data)
             }
             .store(in: &userScriptCancellables)
+
+        aiChatUserScript.handler.responseReceivedPublisher
+            .sink { [weak self] in
+                self?.responseReceivedSubject.send()
+            }
+            .store(in: &userScriptCancellables)
     }
 
     private let pageContextRequestedSubject = PassthroughSubject<Void, Never>()
@@ -234,6 +265,10 @@ final class AIChatTabExtension {
 
     private let chatRestorationDataSubject = PassthroughSubject<AIChatRestorationData?, Never>()
     let chatRestorationDataPublisher: AnyPublisher<AIChatRestorationData?, Never>
+
+    private let responseReceivedSubject = PassthroughSubject<Void, Never>()
+    /// The first Duck.ai answer in onboarding mode finished, failed or was blocked.
+    let responseReceivedPublisher: AnyPublisher<Void, Never>
 
     private var temporaryAIChatNativeHandoffData: AIChatPayload?
     func setAIChatNativeHandoffData(payload: AIChatPayload) {
@@ -316,8 +351,8 @@ final class AIChatTabExtension {
         aiChatUserScript.requestOpenSettingsAction()
     }
 
-    private var temporaryPageContext: AIChatPageContextData?
-    func submitAIChatPageContext(_ pageContext: AIChatPageContextData?) {
+    private var temporaryPageContext: PageContextResponse?
+    func submitAIChatPageContext(_ pageContext: PageContextResponse) {
         // Page Context functionality is only for the sidebar.
         guard isLoadedInSidebar else {
             return
@@ -330,15 +365,14 @@ final class AIChatTabExtension {
         }
 
         ///
-        /// We're both making the data available for `getAIChatPageContext` (by storing it in the page context handler)
-        /// and calling `submitAIChatPageContext`, because when sidebar is just presented, it's not ready to receive
+        /// The handler both makes the data available for `getAIChatPageContext` (by storing it in the page context handler)
+        /// and pushes `submitAIChatPageContext`, because when sidebar is just presented, it's not ready to receive
         /// `submitAIChatPageContext` and will call `getAIChatPageContext` at a later time (when fully initialized).
         /// After that it will exclusively use `submitAIChatPageContext`.
         ///
         /// This can be optimized later to only call one function, depending on whether `getAIChatPageContext`
         /// was received by this user script.
         ///
-        aiChatUserScript.handler.messageHandling.setData(pageContext, forMessageType: .pageContext)
         aiChatUserScript.handler.submitAIChatPageContext(pageContext)
     }
 
@@ -396,9 +430,30 @@ extension AIChatTabExtension: NavigationResponder {
             return .next
         }
 
-        let tabCollectionViewModel = parentWindowController.mainViewController.tabCollectionViewModel
-        tabCollectionViewModel.insertOrAppendNewTab(.url(navigationAction.url, source: .link))
+        let behavior = Self.sidebarLinkOpenBehavior(isMiddleButtonClick: navigationAction.navigationType.isMiddleButtonClick,
+                                                    modifierFlags: navigationAction.modifierFlags,
+                                                    switchToNewTabWhenOpened: tabsPreferences.switchToNewTabWhenOpened)
+        switch behavior {
+        case .newWindow(selected: let selected):
+            WindowsManager.openNewWindow(with: navigationAction.url, source: .link, isBurner: isTabBurner, showWindow: selected)
+        case .newTab(selected: let selected):
+            let tabCollectionViewModel = parentWindowController.mainViewController.tabCollectionViewModel
+            tabCollectionViewModel.insertOrAppendNewTab(.url(navigationAction.url, source: .link), selected: selected)
+        case .currentTab:
+            assertionFailure("Sidebar links never load in the current tab")
+        }
         return .cancel
+    }
+
+    /// Links clicked in the sidebar always leave it, so a plain click opens a selected tab,
+    /// while ⌘-click, middle-click and their ⇧/⌥ variants follow the same rules as in a regular tab.
+    static func sidebarLinkOpenBehavior(isMiddleButtonClick: Bool,
+                                        modifierFlags: NSEvent.ModifierFlags,
+                                        switchToNewTabWhenOpened: Bool) -> LinkOpenBehavior {
+        let behavior = LinkOpenBehavior(button: isMiddleButtonClick ? .middle : .left,
+                                        modifierFlags: modifierFlags,
+                                        switchToNewTabWhenOpenedPreference: switchToNewTabWhenOpened)
+        return behavior == .currentTab ? .newTab(selected: true) : behavior
     }
 
     func navigationDidFinish(_ navigation: Navigation) {
@@ -430,6 +485,8 @@ extension AIChatTabExtension: NavigationResponder {
 
     func didCommit(_ navigation: Navigation) {
         aiChatUserScript?.handler.resetConversationSourceForNewDocument()
+        // A new document replaces the chat that asked for permission; its pending calls cannot be answered.
+        aiChatUserScript?.cancelClientToolPermissionRequests()
 
         // Only the first commit may use it, so a later chat in this tab isn't labelled as re-created.
         let recreationSource = pendingRecreationSource
@@ -547,8 +604,8 @@ extension AIChatTabExtension {
             return
         }
         guard !navigationAction.navigationType.isSameDocumentNavigation else { return }
-        guard bootstrapRefresher.isInScope(url: navigationAction.url) else {
-            Logger.aiChat.debug("[NativeStorage] Skipping bootstrap refresh: \(navigationAction.url.host ?? "<nil>") out of scope")
+        guard bootstrapRefresher.shouldRefresh(navigatingTo: navigationAction.url, isForMainFrame: navigationAction.isForMainFrame) else {
+            Logger.aiChat.debug("[NativeStorage] Skipping bootstrap refresh: \(navigationAction.url.host ?? "<nil>") out of scope or not main frame")
             return
         }
         guard let webView else {
@@ -570,7 +627,7 @@ extension AIChatTabExtension {
         aiChatDebugURLSettings: any KeyedStoring<AIChatDebugURLSettings>
     ) -> DuckAiNativeStorageBootstrapScriptRefresher? {
         guard featureFlagger.isFeatureOn(.aiChatNativeStorage), let handler else { return nil }
-        var originRules: [HostnameMatchingRule] = [.exactOrSubdomain(hostname: "duck.ai")]
+        var originRules: [HostnameMatchingRule] = [.exact(hostname: "duck.ai")]
         if let customHostname = aiChatDebugURLSettings.customURLHostname {
             originRules.append(.exact(hostname: customHostname))
         }
@@ -585,7 +642,7 @@ protocol AIChatProtocol: AnyObject, NavigationResponder {
     func setAIChatNativeHandoffData(payload: AIChatPayload)
     func setAIChatRestorationData(_ data: AIChatRestorationData?)
     func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt)
-    func submitAIChatPageContext(_ pageContext: AIChatPageContextData?)
+    func submitAIChatPageContext(_ pageContext: PageContextResponse)
     func submitAIChatSelectionContext(_ selection: AIChatSelectionContextData)
     func requestOpenSettings()
     func noteAddressBarSuggestionNavigation(to url: URL)
@@ -597,6 +654,7 @@ protocol AIChatProtocol: AnyObject, NavigationResponder {
     var pageContextRemovedPublisher: AnyPublisher<Void, Never> { get }
     var pageContextAddedPublisher: AnyPublisher<Void, Never> { get }
     var chatRestorationDataPublisher: AnyPublisher<AIChatRestorationData?, Never> { get }
+    var responseReceivedPublisher: AnyPublisher<Void, Never> { get }
 }
 
 extension AIChatTabExtension: AIChatProtocol, TabExtension {

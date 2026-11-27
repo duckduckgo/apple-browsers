@@ -1,0 +1,36 @@
+[
+  {"path": "AttributedMetric", "scheme": "AttributedMetric-Package", "testTargets": ["AttributedMetricTests"]},
+  {"path": "AutomationServer", "testTargets": ["AutomationServerTests"]},
+  {"path": "Common", "macosTestOnly": true},
+  {"path": "DDGError"},
+  {"path": "DebugServer", "scheme": "DebugServer-Package", "testTargets": ["DebugServerTests", "LaunchProfileTests"]},
+  {"path": "HangMetrics", "testTargets": ["HangMetricsTests"]},
+  {"path": "ICSParser"},
+  {"path": "LlamaRuntime"},
+  {"path": "LocalModels"},
+  {"path": "Infrastructure/DesignResourcesKit"},
+  {
+    "path": "Infrastructure/SystemFrameworksExtensions",
+    "scheme": "SystemFrameworksExtensions-Package",
+    "testTargets": ["FoundationExtensionsTests", "ConcurrencyExtensionsTests"],
+    "warningSources": [
+      "Sources/FoundationExtensions",
+      "Sources/CombineExtensions",
+      "Sources/ConcurrencyExtensions",
+      "Sources/UIKitExtensions",
+      "Sources/UIKitExtensionsProxy",
+      "Tests/FoundationExtensionsTests",
+      "Tests/ConcurrencyExtensionsTests"
+    ]
+  },
+  {"path": "Networking", "macosTestOnly": true},
+  {"path": "Persistence", "testTargets": ["PersistenceTests"]},
+  {"path": "PixelKit", "macosTestOnly": true},
+  {"path": "ScreenTimeDataCleaner", "buildOnly": true, "warningSources": ["Sources"]},
+  {"path": "SERPInstallOrigin", "testTargets": ["SERPInstallOriginTests"]},
+  {"path": "SnapshotTestingSupport", "scheme": "SnapshotTestingSupport-Package", "testTargets": ["SnapshotTestingSupportTests"]},
+  {"path": "UITestingSupport", "buildOnly": true, "warningSources": ["Sources"]},
+  {"path": "URLPredictor", "testTargets": ["URLPredictorTests"], "warningSources": ["Sources"]},
+  {"path": "WideEvent", "macosTestOnly": true},
+  {"path": "Infrastructure/DesignResourcesKitIcons", "buildOnly": true, "warningSources": ["Sources"]}
+]

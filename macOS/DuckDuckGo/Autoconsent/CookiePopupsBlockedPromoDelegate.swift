@@ -38,7 +38,6 @@ final class CookiePopupsBlockedPromoDelegate: InternalPromoDelegate {
         static let minimumDaysSinceInstallation = 2
     }
 
-    private let featureFlagger: FeatureFlagger
     private let keyValueStore: ThrowingKeyValueStoring
     private let windowControllersManager: WindowControllersManagerProtocol
     private let cookiePopupProtectionPreferences: CookiePopupProtectionPreferences
@@ -51,15 +50,13 @@ final class CookiePopupsBlockedPromoDelegate: InternalPromoDelegate {
     private let refreshSubject = PassthroughSubject<Void, Never>()
 
     @MainActor
-    init(featureFlagger: FeatureFlagger,
-         keyValueStore: ThrowingKeyValueStoring,
+    init(keyValueStore: ThrowingKeyValueStoring,
          windowControllersManager: WindowControllersManagerProtocol,
          cookiePopupProtectionPreferences: CookiePopupProtectionPreferences,
          appearancePreferences: AppearancePreferences,
          onboardingStateUpdater: ContextualOnboardingStateUpdater,
          autoconsentStats: AutoconsentStatsCollecting,
          presenter: AutoconsentStatsPopoverPresenting? = nil) {
-        self.featureFlagger = featureFlagger
         self.keyValueStore = keyValueStore
         self.windowControllersManager = windowControllersManager
         self.cookiePopupProtectionPreferences = cookiePopupProtectionPreferences
@@ -84,7 +81,6 @@ final class CookiePopupsBlockedPromoDelegate: InternalPromoDelegate {
     }
 
     private func computeEligibility() -> Bool {
-        guard featureFlagger.isFeatureOn(.promoQueueCookiePopupsBlockedPromo) else { return false }
         guard cookiePopupProtectionPreferences.isAutoconsentEnabled,
               appearancePreferences.isProtectionsReportVisible,
               onboardingStateUpdater.state == .onboardingCompleted,

@@ -31,6 +31,8 @@ struct AppDependencies {
     let voiceSearchHelper: VoiceSearchHelperProtocol
     let appSettings: AppSettings
     let backgroundTaskManager: BackgroundTaskManager
+    let idleReturnEligibilityManager: IdleReturnEligibilityManaging
+    let idleReturnEvaluator: IdleReturnEvaluating
 
 }
 

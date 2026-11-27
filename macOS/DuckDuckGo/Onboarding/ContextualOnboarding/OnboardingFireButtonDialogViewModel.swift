@@ -26,17 +26,32 @@ public class OnboardingFireButtonDialogViewModel: ObservableObject {
     private var onFireButtonPressed: () -> Void
     private let onboardingPixelReporter: OnboardingDialogsReporting
     private let fireCoordinator: FireCoordinator?
+    private let lastDialog: () -> ContextualDialogType?
+    private let onTryDuckAI: () -> Void
 
     init(onboardingPixelReporter: OnboardingDialogsReporting = OnboardingPixelReporter(),
          fireCoordinator: FireCoordinator?,
+         lastDialog: @escaping () -> ContextualDialogType? = { nil },
          onDismiss: @escaping () -> Void,
          onGotItPressed: @escaping () -> Void,
-         onFireButtonPressed: @escaping () -> Void) {
+         onFireButtonPressed: @escaping () -> Void,
+         onTryDuckAI: @escaping () -> Void = {}) {
         self.onDismiss = onDismiss
         self.onGotItPressed = onGotItPressed
         self.onFireButtonPressed = onFireButtonPressed
         self.onboardingPixelReporter = onboardingPixelReporter
         self.fireCoordinator = fireCoordinator
+        self.lastDialog = lastDialog
+        self.onTryDuckAI = onTryDuckAI
+    }
+
+    /// Whether skipping Fire moved onboarding to Try Duck.ai rather than High Five.
+    var endsWithTryDuckAI: Bool {
+        lastDialog() == .tryDuckAI
+    }
+
+    func tryDuckAI() {
+        onTryDuckAI()
     }
 
     func highFive() {

@@ -17,6 +17,7 @@
 //
 
 import AIChat
+import AppKitExtensions
 import Foundation
 import BrowserServicesKit
 import Common
@@ -47,7 +48,6 @@ public struct AccessTokenValue: Encodable {
 public struct GetFeatureValue: Encodable {
     let useUnifiedFeedback: Bool = true
     let useSubscriptionsAuthV2: Bool = true
-    let usePaidDuckAi: Bool
     let useAlternateStripePaymentFlow: Bool
     let useGetSubscriptionTierOptions: Bool = true
 }
@@ -71,7 +71,6 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
     let stripePurchaseFlow: any StripePurchaseFlow
     let subscriptionEventReporter: SubscriptionEventReporter
     let subscriptionSuccessPixelHandler: SubscriptionAttributionPixelHandling
-    private let subscriptionUpsellMetrics: OnboardingSubscriptionUpsellMetricsReporting
     let uiHandler: SubscriptionUIHandling
     let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
     private var freemiumDBPUserStateManager: FreemiumDBPUserStateManager
@@ -83,6 +82,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
     private let aiChatTabOpener: AIChatTabOpening
     private let aiChatConversationSourceHandler: AIChatConversationSourceHandler
     private let requestValidator: any ScriptRequestValidator
+    private let buildType: ApplicationBuildType
 
     // Wide Event
     private let wideEvent: WideEventManaging
@@ -96,7 +96,6 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
 
     public init(subscriptionManager: SubscriptionManager,
                 subscriptionSuccessPixelHandler: SubscriptionAttributionPixelHandling = SubscriptionAttributionPixelHandler(),
-                subscriptionUpsellMetrics: OnboardingSubscriptionUpsellMetricsReporting = OnboardingSubscriptionUpsellMetricsReporter(),
                 stripePurchaseFlow: StripePurchaseFlow,
                 uiHandler: SubscriptionUIHandling,
                 subscriptionFeatureAvailability: SubscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(),
@@ -111,11 +110,11 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
                 subscriptionEventReporter: SubscriptionEventReporter = DefaultSubscriptionEventReporter(),
                 pendingTransactionHandler: PendingTransactionHandling,
                 flowPerformer: any SubscriptionFlowsExecuting,
-                requestValidator: any ScriptRequestValidator) {
+                requestValidator: any ScriptRequestValidator,
+                buildType: ApplicationBuildType = StandardApplicationBuildType()) {
         self.subscriptionManager = subscriptionManager
         self.stripePurchaseFlow = stripePurchaseFlow
         self.subscriptionSuccessPixelHandler = subscriptionSuccessPixelHandler
-        self.subscriptionUpsellMetrics = subscriptionUpsellMetrics
         self.uiHandler = uiHandler
         self.aiChatURL = aiChatURL
         self.aiChatTabOpener = aiChatTabOpener
@@ -130,6 +129,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
         self.pendingTransactionHandler = pendingTransactionHandler
         self.flowPerformer = flowPerformer
         self.requestValidator = requestValidator
+        self.buildType = buildType
     }
 
     func with(broker: UserScriptMessageBroker) {
@@ -237,9 +237,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
     }
 
     func getFeatureConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        return GetFeatureValue(usePaidDuckAi: subscriptionFeatureAvailability.isPaidAIChatEnabled,
-                               useAlternateStripePaymentFlow: subscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled
-        )
+        return GetFeatureValue(useAlternateStripePaymentFlow: buildType.isSparkleBuild && subscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled)
     }
 
     // MARK: -
@@ -255,18 +253,10 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
     func getSubscriptionTierOptions(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         subscriptionEventReporter.report(subscriptionTierOptionEvent: SubscriptionPixel.subscriptionTierOptionsRequested)
 
-        let result = await subscriptionManager.subscriptionTierOptions(
-            includeProTier: subscriptionFeatureAvailability.isProTierPurchaseEnabled
-        )
+        let result = await subscriptionManager.subscriptionTierOptions()
 
         switch result {
         case .success(let subscriptionTierOptions):
-            // TEMPORARY: Check if Pro tier was unexpectedly returned
-            let hasProTier = subscriptionTierOptions.products.contains { $0.tier == .pro }
-            if hasProTier && !subscriptionFeatureAvailability.isProTierPurchaseEnabled {
-                subscriptionEventReporter.report(subscriptionTierOptionEvent: SubscriptionPixel.subscriptionTierOptionsUnexpectedProTier)
-            }
-
             let origin = await originFrom(originalMessage: original)
             subscriptionEventReporter.report(subscriptionTierOptionEvent: SubscriptionPixel.subscriptionTierOptionsSuccess(origin: origin))
 
@@ -339,7 +329,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
                                                                      wideEvent: wideEvent)
             // 6: Execute App Store purchase (account creation + StoreKit transaction) and handle the result
             Logger.subscription.log("[Purchase] Purchasing")
-            let purchaseResult = await appStorePurchaseFlow.purchaseSubscription(with: subscriptionSelection.id, includeProTier: subscriptionFeatureAvailability.isProTierPurchaseEnabled)
+            let purchaseResult = await appStorePurchaseFlow.purchaseSubscription(with: subscriptionSelection.id)
 
             switch purchaseResult {
             case .success(let result):
@@ -417,7 +407,6 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
                 saveSubscriptionUpgradeTimestampIfFreemiumActivated()
                 PixelKit.fire(SubscriptionPixel.subscriptionActivated, frequency: .uniqueByName)
                 subscriptionSuccessPixelHandler.fireSuccessfulSubscriptionAttributionPixel(freeTrial: freeTrialEligible)
-                await reportOnboardingUpsellTrialStartedIfNeeded(origin: origin)
                 sendSubscriptionUpgradeFromFreemiumNotificationIfFreemiumActivated()
                 notificationCenter.post(name: .subscriptionDidChange, object: self)
                 await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: purchaseUpdate)
@@ -642,7 +631,6 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
 
         let completion: StripePaymentCompletion? = CodableHelper.decode(from: params)
         let changeType = completion?.change
-        let origin = subscriptionSuccessPixelHandler.origin
 
         var accountActivationDuration = WideEvent.MeasuredInterval.startingNow()
         purchaseWideEventData?.activateAccountDuration = accountActivationDuration
@@ -658,7 +646,6 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
         } else {
             PixelKit.fire(SubscriptionPixel.subscriptionPurchaseStripeSuccess, frequency: .legacyDailyAndCount)
             subscriptionSuccessPixelHandler.fireSuccessfulSubscriptionAttributionPixel(freeTrial: false)
-            await reportOnboardingUpsellTrialStartedIfNeeded(origin: origin)
         }
 
         sendFreemiumSubscriptionPixelIfFreemiumActivated()
@@ -919,14 +906,6 @@ private extension SubscriptionPagesUseSubscriptionFeature {
         if freemiumDBPUserStateManager.didActivate {
             notificationCenter.post(name: .subscriptionUpgradeFromFreemium, object: nil)
         }
-    }
-
-    /// Reports the shared conversion metric only when the completed subscription includes an active trial.
-    func reportOnboardingUpsellTrialStartedIfNeeded(origin: String?) async {
-        guard origin == SubscriptionFunnelOrigin.onboardingSubscriptionUpsell.rawValue,
-              let subscription = try? await subscriptionManager.getSubscription(),
-              subscription.hasActiveTrialOffer else { return }
-        subscriptionUpsellMetrics.report(.trialStarted)
     }
 
     /// Sends a freemium subscription pixel event if the freemium feature has been activated.

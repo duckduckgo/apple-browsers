@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import PreferencesUI_macOS
  import PixelKit
 import SwiftUI
@@ -146,6 +147,28 @@ extension Preferences {
                     }
                 }
 
+                if model.isSegmentSkipAvailable {
+                    PreferencePaneSection(SegmentSkipCopy.sectionHeader) {
+                        TextMenuItemCaption(SegmentSkipCopy.explanation)
+
+                        Spacer().frame(height: 4)
+
+                        ToggleMenuItem(SegmentSkipCopy.toggle, isOn: $model.segmentSkipEnabled)
+                            .accessibilityIdentifier("Preferences.SegmentSkip.enabledToggle")
+
+                        if model.segmentSkipEnabled {
+                            Picker(SegmentSkipCopy.skipModeLabel, selection: $model.segmentSkipMode) {
+                                Text(verbatim: SegmentSkipCopy.manual).tag(SegmentSkipMode.manual)
+                                Text(verbatim: SegmentSkipCopy.auto).tag(SegmentSkipMode.auto)
+                            }
+                            .pickerStyle(.menu)
+                            .fixedSize()
+                            .padding(.leading, 19)
+                            .accessibilityIdentifier("Preferences.SegmentSkip.skipModePicker")
+                        }
+                    }
+                }
+
                 // Duck Player Section
                 PreferencePaneSection(UserText.duckPlayer) {
                     TextMenuItemCaption(UserText.duckPlayerYouTubeAdBlockingExplanation)
@@ -191,6 +214,15 @@ extension Preferences {
             }
         }
     }
+}
+
+private enum SegmentSkipCopy {
+    static let sectionHeader = "Sponsor Segments"
+    static let toggle = "Skip sponsor segments"
+    static let explanation = "Marks sponsored segments on the video progress bar. Manual mode shows a Skip button, Automatic mode skips them for you."
+    static let skipModeLabel = "Skip mode:"
+    static let manual = "Manual"
+    static let auto = "Automatic"
 }
 
 /// "YouTube Ad Block Unavailable" notice shown in the Preferences pane when the feature is

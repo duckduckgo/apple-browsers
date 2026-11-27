@@ -74,6 +74,19 @@ final class NewTabPageConfigurationEventHandler: EventMapping<NewTabPageConfigur
             case .newTabPageTelemetry(.omnibarScreenshotFailed(let rawReason)):
                 guard let reason = AIChatScreenshotFailureReason(rawValue: rawReason) else { return }
                 pixelFiring?.fire(AIChatPixel.aiChatNtpScreenshotFailed(reason: reason), frequency: .dailyAndCount)
+
+            // Pasted-text chips and their dialog belong to the page too.
+            case .newTabPageTelemetry(.omnibarPastedTextAttached):
+                pixelFiring?.fire(AIChatPixel.aiChatNtpPastedTextAttached, frequency: .dailyAndCount)
+
+            case .newTabPageTelemetry(.omnibarPastedTextRemoved):
+                pixelFiring?.fire(AIChatPixel.aiChatNtpPastedTextRemoved, frequency: .dailyAndCount)
+
+            case .newTabPageTelemetry(.omnibarPastedTextEdited):
+                pixelFiring?.fire(AIChatPixel.aiChatNtpPastedTextEdited, frequency: .dailyAndCount)
+
+            case .newTabPageTelemetry(.omnibarPastedTextDialogOpened):
+                pixelFiring?.fire(AIChatPixel.aiChatNtpPastedTextDialogOpened, frequency: .dailyAndCount)
             }
         }
     }

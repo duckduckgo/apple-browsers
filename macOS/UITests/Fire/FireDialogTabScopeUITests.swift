@@ -21,9 +21,19 @@ import XCTest
 /// Tab Scope Fire Dialog UI tests
 final class FireDialogTabScopeUITests: UITestCase, FireDialogUITests {
 
+    // Handle permission prompts between gestures so the timer cannot click during Cmd+N.
+    override var isSystemPermissionPromptPollingTimerEnabled: Bool { false }
+
     override func setUp() {
         super.setUp()
         setUpFireDialogUITests()
+    }
+
+    private func openWindowForBurn() {
+        let notificationCenter = XCUIApplication.notificationCenter
+        notificationCenter.dismissSystemPermissionPromptIfPresent(logIfNotFound: false)
+        app.openNewWindow()
+        notificationCenter.dismissSystemPermissionPromptIfPresent(logIfNotFound: false)
     }
 
     func test_fireDialog_tabScope_closesOnlyCurrentTab() throws {
@@ -41,7 +51,7 @@ final class FireDialogTabScopeUITests: UITestCase, FireDialogUITests {
         app.openURL(backgroundTab2URL)
 
         // Open new window (becomes foreground - the one to burn)
-        app.typeKey("n", modifierFlags: [.command])
+        openWindowForBurn()
 
         // Setup current tab with multiple sites visited
         app.openURL(storageURL)
@@ -175,7 +185,7 @@ final class FireDialogTabScopeUITests: UITestCase, FireDialogUITests {
         app.openURL(backgroundTab2URL)
 
         // Open new window (becomes foreground - the one to burn)
-        app.typeKey("n", modifierFlags: [.command])
+        openWindowForBurn()
 
         // Visit storage page and set cookies/storage
         app.openURL(storageURL)
@@ -283,7 +293,7 @@ final class FireDialogTabScopeUITests: UITestCase, FireDialogUITests {
         app.openURL(backgroundTab2URL)
 
         // Open new window (becomes foreground - the one to burn)
-        app.typeKey("n", modifierFlags: [.command])
+        openWindowForBurn()
 
         // Setup current tab with storage and multiple sites
         app.openURL(storageURL)
@@ -405,7 +415,7 @@ final class FireDialogTabScopeUITests: UITestCase, FireDialogUITests {
         app.openURL(backgroundTab2URL)
 
         // Open new window (becomes foreground - the one to burn)
-        app.typeKey("n", modifierFlags: [.command])
+        openWindowForBurn()
 
         // Setup current window
         app.openURL(storageURL)
@@ -505,7 +515,7 @@ final class FireDialogTabScopeUITests: UITestCase, FireDialogUITests {
         app.openURL(backgroundTab2URL)
 
         // Open new window (becomes foreground - the one to burn)
-        app.typeKey("n", modifierFlags: [.command])
+        openWindowForBurn()
 
         // Setup current window
         app.openURL(storageURL)
@@ -599,7 +609,7 @@ final class FireDialogTabScopeUITests: UITestCase, FireDialogUITests {
         app.openURL(backgroundTab2URL)
 
         // Open new window (becomes foreground - the one to burn)
-        app.typeKey("n", modifierFlags: [.command])
+        openWindowForBurn()
 
         // Setup current window
         app.openURL(storageURL)
@@ -671,7 +681,7 @@ final class FireDialogTabScopeUITests: UITestCase, FireDialogUITests {
         app.openURL(backgroundTab2URL)
 
         // Open new window (becomes foreground - the one to burn)
-        app.typeKey("n", modifierFlags: [.command])
+        openWindowForBurn()
 
         // Setup current tab with multiple sites and storage
         app.openURL(storageURL)
@@ -780,7 +790,7 @@ final class FireDialogTabScopeUITests: UITestCase, FireDialogUITests {
         app.openURL(backgroundTab2URL)
 
         // Open new window (becomes foreground - the one to burn)
-        app.typeKey("n", modifierFlags: [.command])
+        openWindowForBurn()
 
         // Setup current window
         app.openURL(storageURL)
@@ -848,7 +858,7 @@ final class FireDialogTabScopeUITests: UITestCase, FireDialogUITests {
         app.openURL(backgroundTab2URL)
 
         // Open new window (becomes foreground - the one to burn, with only 1 tab)
-        app.typeKey("n", modifierFlags: [.command])
+        openWindowForBurn()
 
         // Setup current window with storage (single tab)
         app.openURL(storageURL)

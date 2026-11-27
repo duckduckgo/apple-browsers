@@ -38,4 +38,26 @@ class AutofillPreferencesTests: XCTestCase {
 
         waitForExpectations(timeout: 0.1, handler: nil)
     }
+
+    // MARK: - Password Manager Transition
+
+    func testWhenWebExtensionsAreSupported_ThenDuckDuckGoCannotSwitchToBitwarden() {
+        XCTAssertEqual(PasswordManager.duckduckgo.transitioned(to: .bitwarden, webExtensionsSupported: true), .duckduckgo)
+    }
+
+    func testWhenWebExtensionsAreSupported_ThenBitwardenCanSwitchToDuckDuckGo() {
+        XCTAssertEqual(PasswordManager.bitwarden.transitioned(to: .duckduckgo, webExtensionsSupported: true), .duckduckgo)
+    }
+
+    func testWhenWebExtensionsAreSupported_ThenBitwardenStaysBitwarden() {
+        XCTAssertEqual(PasswordManager.bitwarden.transitioned(to: .bitwarden, webExtensionsSupported: true), .bitwarden)
+    }
+
+    func testWhenWebExtensionsAreNotSupported_ThenDuckDuckGoCanSwitchToBitwarden() {
+        XCTAssertEqual(PasswordManager.duckduckgo.transitioned(to: .bitwarden, webExtensionsSupported: false), .bitwarden)
+    }
+
+    func testWhenWebExtensionsAreNotSupported_ThenBitwardenCanSwitchToDuckDuckGo() {
+        XCTAssertEqual(PasswordManager.bitwarden.transitioned(to: .duckduckgo, webExtensionsSupported: false), .duckduckgo)
+    }
 }

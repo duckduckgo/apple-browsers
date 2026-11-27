@@ -57,15 +57,20 @@ public struct WKHTTPCookieStoreProvider: AIChatCookieProviding {
 public struct AIChatModelsResponse: Decodable {
     public let models: [AIChatRemoteModel]
     public let attachmentLimits: AIChatAttachmentLimits?
+    public let newChatDefault: AIChatNewChatDefault
 
-    public init(models: [AIChatRemoteModel], attachmentLimits: AIChatAttachmentLimits? = nil) {
+    public init(models: [AIChatRemoteModel],
+                attachmentLimits: AIChatAttachmentLimits? = nil,
+                newChatDefault: AIChatNewChatDefault = .unavailable) {
         self.models = models
         self.attachmentLimits = attachmentLimits
+        self.newChatDefault = newChatDefault
     }
 
     private enum CodingKeys: String, CodingKey {
         case models
         case attachmentLimits
+        case newChatDefault
     }
 
     public init(from decoder: Decoder) throws {
@@ -78,6 +83,8 @@ public struct AIChatModelsResponse: Decodable {
             Logger.aiChat.error("Failed to decode AI Chat attachment limits: \(error.localizedDescription)")
             attachmentLimits = nil
         }
+
+        newChatDefault = AIChatNewChatDefault.decode(from: container, forKey: .newChatDefault)
     }
 }
 
@@ -200,6 +207,16 @@ public final class AIChatModelsService: AIChatModelsProviding {
     /// The production AI Chat API origin, built from the canonical `URL.duckAIHost`.
     public static let defaultBaseURL = URL(string: "https://\(URL.duckAIHost)")!
 
+    /// The `/models` origin for `chatURL`, so a Debug custom Duck.ai URL also serves its own models.
+    public nonisolated static func baseURL(forChatURL chatURL: URL) -> URL {
+        guard let scheme = chatURL.scheme, let host = chatURL.host else { return defaultBaseURL }
+        var components = URLComponents()
+        components.scheme = scheme
+        components.host = host
+        components.port = chatURL.port
+        return components.url ?? defaultBaseURL
+    }
+
     private let baseURL: URL
     private let session: URLSession
     private let cookieProvider: AIChatCookieProviding
@@ -268,6 +285,14 @@ public enum AIChatUserTier: String {
     case plus
     case pro
     case `internal`
+}
+
+extension AIChatUserTier {
+    /// A free user can only upgrade where the storefront sells a subscription. Subscribers keep
+    /// upgrading, since theirs may have been bought on Stripe.
+    public func allowsSubscriptionUpsell(isPurchaseEligible: Bool) -> Bool {
+        self != .free || isPurchaseEligible
+    }
 }
 
 extension AIChatModel {

@@ -22,6 +22,7 @@ import Core
 import Combine
 import BrowserServicesKit
 import PrivacyConfig
+import AIChat
 import DDGSync
 import enum UserScript.UserScriptError
 import WebExtensions
@@ -40,6 +41,8 @@ public protocol ScriptSourceProviding {
     var syncErrorHandler: SyncErrorHandling { get }
     var webExtensionAvailability: WebExtensionAvailabilityProviding? { get }
     var trackerProtectionDataSource: TrackerProtectionDataSource? { get }
+    var aiChatBonusOffer: AIChatBonusOfferDependencies { get }
+    var aiChatLocalModel: AIChatLocalModelDependencies? { get }
 
 }
 
@@ -55,6 +58,8 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
         let internalUserDecider: InternalUserDecider
         let syncErrorHandler: SyncErrorHandling
         let webExtensionAvailability: WebExtensionAvailabilityProviding?
+        let aiChatBonusOffer: AIChatBonusOfferDependencies
+        var aiChatLocalModel: AIChatLocalModelDependencies?
     }
 
     var loginDetectionEnabled: Bool { fireproofing.loginDetectionEnabled }
@@ -75,6 +80,8 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
     let syncErrorHandler: SyncErrorHandling
     let webExtensionAvailability: WebExtensionAvailabilityProviding?
     let trackerProtectionDataSource: TrackerProtectionDataSource?
+    let aiChatBonusOffer: AIChatBonusOfferDependencies
+    let aiChatLocalModel: AIChatLocalModelDependencies?
 
     init(dependencies: Dependencies) {
 
@@ -91,6 +98,8 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
         currentCohorts = Self.generateCurrentCohorts(experimentManager: contentScopeExperimentsManager)
         syncErrorHandler = dependencies.syncErrorHandler
         webExtensionAvailability = dependencies.webExtensionAvailability
+        aiChatBonusOffer = dependencies.aiChatBonusOffer
+        aiChatLocalModel = dependencies.aiChatLocalModel
         trackerProtectionDataSource = DefaultTrackerProtectionDataSource(
             contentBlockingManager: contentBlockingManager
         )

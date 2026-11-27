@@ -89,6 +89,54 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         XCTAssertEqual(reporter.shownDialog, dialogType)
     }
 
+    func testWhenMakeRebrandedViewForThatsDuckAIThenDialogShownPixelIsFired() {
+        // GIVEN
+        let factory = RebrandedContextualDaxDialogsFactory(onboardingPixelReporter: reporter, fireCoordinator: fireCoordinator)
+
+        // WHEN
+        _ = factory.makeView(for: .thatsDuckAI, delegate: delegate, onDismiss: {}, onManualDismiss: {}, onGotItPressed: {}, onFireButtonPressed: {}, onSuggestionPressed: {})
+
+        // THEN
+        XCTAssertEqual(reporter.shownDialog, .thatsDuckAI)
+    }
+
+    func testWhenMakeRebrandedBubbleForThatsDuckAIThenThatsDuckAIDialogIsUsedInsteadOfFireDialog() {
+        // GIVEN
+        let factory = RebrandedContextualDaxDialogsFactory(onboardingPixelReporter: reporter, fireCoordinator: fireCoordinator)
+
+        // WHEN
+        let result = factory.makeBubbleView(for: .thatsDuckAI, delegate: delegate, onDismiss: {}, onManualDismiss: {}, onGotItPressed: {}, onFireButtonPressed: {}, onSuggestionPressed: {})
+
+        // THEN
+        XCTAssertNotNil(find(OnboardingRebranding.OnboardingThatsDuckAIDialog.self, in: result))
+        XCTAssertNil(find(OnboardingRebranding.OnboardingFireDialog.self, in: result))
+    }
+
+    func testWhenMakeRebrandedBubbleForTryDuckAIThenTryDuckAIDialogIsUsedInsteadOfHighFive() {
+        // GIVEN
+        let factory = RebrandedContextualDaxDialogsFactory(onboardingPixelReporter: reporter, fireCoordinator: fireCoordinator)
+
+        // WHEN
+        let result = factory.makeBubbleView(for: .tryDuckAI, delegate: delegate, onDismiss: {}, onManualDismiss: {}, onGotItPressed: {}, onFireButtonPressed: {}, onSuggestionPressed: {})
+
+        // THEN
+        XCTAssertNotNil(find(OnboardingRebranding.OnboardingTryDuckAIDialogContent.self, in: result))
+        XCTAssertNil(find(OnboardingRebranding.OnboardingEndOfJourneyDialogContent.self, in: result))
+    }
+
+    func testWhenTryDuckAIThenTheDialogClosesAndDuckAIOpens() {
+        // GIVEN
+        var dismissed = false
+
+        // WHEN
+        RebrandedContextualDaxDialogsFactory.tryDuckAIAction(delegate: delegate, onDismiss: { dismissed = true })()
+
+        // THEN
+        XCTAssertTrue(dismissed)
+        XCTAssertTrue(delegate.didNavigateToCalled)
+        XCTAssertEqual(delegate.capturedUrlString, AIChatRemoteSettings().aiChatURL.absoluteString)
+    }
+
     // MARK: - Default Onboarding
 
     func testWhenMakeViewForTryASearchThenOnboardingTrySearchDialogViewCreatedAndOnActionExpectedSearchOccurs() throws {
@@ -388,6 +436,38 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         XCTAssertEqual(reporter.shownDialog, dialogType)
     }
 
+    @MainActor
+    func testWhenSubscriptionUpsellAccepted_ThenAcceptanceIsMeasured() {
+        let dialog = DefaultContextualDaxDialogViewFactory.subscriptionUpsellDialog(delegate: delegate, pixelReporter: reporter, onDismiss: {}, onManualDismiss: {}, onGotItPressed: {})
+        dialog.acceptAction()
+        XCTAssertTrue(reporter.subscriptionUpsellAcceptedCalled)
+        XCTAssertFalse(reporter.subscriptionUpsellDeclinedCalled)
+    }
+
+    @MainActor
+    func testWhenSubscriptionUpsellDeclined_ThenDeclineIsMeasured() {
+        let dialog = DefaultContextualDaxDialogViewFactory.subscriptionUpsellDialog(delegate: delegate, pixelReporter: reporter, onDismiss: {}, onManualDismiss: {}, onGotItPressed: {})
+        dialog.declineAction()
+        XCTAssertTrue(reporter.subscriptionUpsellDeclinedCalled)
+        XCTAssertFalse(reporter.subscriptionUpsellAcceptedCalled)
+    }
+
+    @MainActor
+    func testWhenRebrandedSubscriptionUpsellAccepted_ThenAcceptanceIsMeasured() {
+        let dialog = RebrandedContextualDaxDialogsFactory.subscriptionUpsellDialog(delegate: delegate, pixelReporter: reporter, onDismiss: {}, onManualDismiss: {}, onGotItPressed: {})
+        dialog.acceptAction()
+        XCTAssertTrue(reporter.subscriptionUpsellAcceptedCalled)
+        XCTAssertFalse(reporter.subscriptionUpsellDeclinedCalled)
+    }
+
+    @MainActor
+    func testWhenRebrandedSubscriptionUpsellDeclined_ThenDeclineIsMeasured() {
+        let dialog = RebrandedContextualDaxDialogsFactory.subscriptionUpsellDialog(delegate: delegate, pixelReporter: reporter, onDismiss: {}, onManualDismiss: {}, onGotItPressed: {})
+        dialog.declineAction()
+        XCTAssertTrue(reporter.subscriptionUpsellDeclinedCalled)
+        XCTAssertFalse(reporter.subscriptionUpsellAcceptedCalled)
+    }
+
 }
 
 class CapturingOnboardingPixelReporter: OnboardingPixelReporting {
@@ -398,6 +478,8 @@ class CapturingOnboardingPixelReporter: OnboardingPixelReporting {
     var dismissedDialog: ContextualDialogType?
     var shownDialog: ContextualDialogType?
     var gotItPressedDialog: ContextualDialogType?
+    var subscriptionUpsellAcceptedCalled = false
+    var subscriptionUpsellDeclinedCalled = false
 
     func measureFireButtonSkipped() {
         measureFireButtonSkippedCalled = true
@@ -443,6 +525,14 @@ class CapturingOnboardingPixelReporter: OnboardingPixelReporting {
 
     func measureGotItPressed(dialogType: ContextualDialogType) {
         gotItPressedDialog = dialogType
+    }
+
+    func measureSubscriptionUpsellAccepted() {
+        subscriptionUpsellAcceptedCalled = true
+    }
+
+    func measureSubscriptionUpsellDeclined() {
+        subscriptionUpsellDeclinedCalled = true
     }
 }
 extension CapturingOnboardingNavigationDelegate: OnboardingNavigationDelegate {}

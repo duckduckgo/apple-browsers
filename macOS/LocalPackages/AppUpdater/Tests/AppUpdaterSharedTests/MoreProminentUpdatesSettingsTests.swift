@@ -36,7 +36,8 @@ struct MoreProminentUpdatesSettingsTests {
         let settings = makeSettings(nil)
 
         #expect(settings.firstPromptDelay == .hours(48))
-        #expect(settings.secondPromptDelay == .hours(96))
+        #expect(settings.secondPromptDelay == .hours(216))
+        #expect(settings.thirdPromptDelay == .hours(384))
         #expect(settings.appStoreUpdateAvailableDelay == .hours(24))
     }
 
@@ -47,12 +48,14 @@ struct MoreProminentUpdatesSettingsTests {
 
         #expect(settings.firstPromptDelay == .hours(2))
         #expect(settings.secondPromptDelay == .hours(4))
+        #expect(settings.thirdPromptDelay == .hours(6))
         #expect(settings.appStoreUpdateAvailableDelay == .hours(1))
     }
 
     private static let allValues = """
-        {"hoursUntilFirstPrompt": 72, "hoursUntilSecondPrompt": 120, "hoursUntilAppStoreUpdateAvailable": 12,
-         "internalHoursUntilFirstPrompt": 0.5, "internalHoursUntilSecondPrompt": 3, "internalHoursUntilAppStoreUpdateAvailable": 0}
+        {"hoursUntilFirstPrompt": 72, "hoursUntilSecondPrompt": 120, "hoursUntilThirdPrompt": 240, "hoursUntilAppStoreUpdateAvailable": 12,
+         "internalHoursUntilFirstPrompt": 0.5, "internalHoursUntilSecondPrompt": 3, "internalHoursUntilThirdPrompt": 5,
+         "internalHoursUntilAppStoreUpdateAvailable": 0}
         """
 
     @available(iOS 16, macOS 13, *)
@@ -60,7 +63,10 @@ struct MoreProminentUpdatesSettingsTests {
     func externalUsersReadUnprefixedValues() {
         let settings = makeSettings(Self.allValues)
 
-        #expect(settings == MoreProminentUpdatesSettings(hoursUntilFirstPrompt: 72, hoursUntilSecondPrompt: 120, hoursUntilAppStoreUpdateAvailable: 12))
+        #expect(settings == MoreProminentUpdatesSettings(hoursUntilFirstPrompt: 72,
+                                                         hoursUntilSecondPrompt: 120,
+                                                         hoursUntilThirdPrompt: 240,
+                                                         hoursUntilAppStoreUpdateAvailable: 12))
     }
 
     @available(iOS 16, macOS 13, *)
@@ -68,13 +74,16 @@ struct MoreProminentUpdatesSettingsTests {
     func internalUsersReadInternalValues() {
         let settings = makeSettings(Self.allValues, isInternalUser: true)
 
-        #expect(settings == MoreProminentUpdatesSettings(hoursUntilFirstPrompt: 0.5, hoursUntilSecondPrompt: 3, hoursUntilAppStoreUpdateAvailable: 0))
+        #expect(settings == MoreProminentUpdatesSettings(hoursUntilFirstPrompt: 0.5,
+                                                         hoursUntilSecondPrompt: 3,
+                                                         hoursUntilThirdPrompt: 5,
+                                                         hoursUntilAppStoreUpdateAvailable: 0))
     }
 
     @available(iOS 16, macOS 13, *)
     @Test("Internal users fall back to the internal defaults when only the external values are present", .timeLimit(.minutes(1)))
     func internalUsersIgnoreExternalValues() {
-        let settings = makeSettings(#"{"hoursUntilFirstPrompt": 72, "hoursUntilSecondPrompt": 120, "hoursUntilAppStoreUpdateAvailable": 12}"#,
+        let settings = makeSettings(#"{"hoursUntilFirstPrompt": 72, "hoursUntilSecondPrompt": 120, "hoursUntilThirdPrompt": 240, "hoursUntilAppStoreUpdateAvailable": 12}"#,
                                     isInternalUser: true)
 
         #expect(settings == MoreProminentUpdatesSettings(.internal))
@@ -83,17 +92,38 @@ struct MoreProminentUpdatesSettingsTests {
     @available(iOS 16, macOS 13, *)
     @Test("Falls back per value when one setting is missing or negative", .timeLimit(.minutes(1)))
     func fallsBackPerValue() {
-        let settings = makeSettings(#"{"hoursUntilSecondPrompt": 100, "hoursUntilAppStoreUpdateAvailable": -1}"#)
+        let settings = makeSettings(#"{"hoursUntilSecondPrompt": 100, "hoursUntilThirdPrompt": -1, "hoursUntilAppStoreUpdateAvailable": -1}"#)
 
-        #expect(settings == MoreProminentUpdatesSettings(hoursUntilFirstPrompt: 48, hoursUntilSecondPrompt: 100, hoursUntilAppStoreUpdateAvailable: 24))
+        #expect(settings == MoreProminentUpdatesSettings(hoursUntilFirstPrompt: 48,
+                                                         hoursUntilSecondPrompt: 100,
+                                                         hoursUntilThirdPrompt: 384,
+                                                         hoursUntilAppStoreUpdateAvailable: 24))
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Falls back to both default prompt timings when the second prompt would come before the first", .timeLimit(.minutes(1)))
-    func fallsBackWhenPromptsAreOutOfOrder() {
-        let settings = makeSettings(#"{"hoursUntilFirstPrompt": 72, "hoursUntilSecondPrompt": 60, "hoursUntilAppStoreUpdateAvailable": 12}"#)
+    @Test("Falls back to all default prompt timings when a prompt would come before the one preceding it", .timeLimit(.minutes(1)), arguments: [
+        #"{"hoursUntilFirstPrompt": 72, "hoursUntilSecondPrompt": 60, "hoursUntilThirdPrompt": 200, "hoursUntilAppStoreUpdateAvailable": 12}"#,
+        #"{"hoursUntilFirstPrompt": 24, "hoursUntilSecondPrompt": 60, "hoursUntilThirdPrompt": 50, "hoursUntilAppStoreUpdateAvailable": 12}"#,
+        #"{"hoursUntilFirstPrompt": 400, "hoursUntilAppStoreUpdateAvailable": 12}"#
+    ])
+    func fallsBackWhenPromptsAreOutOfOrder(json: String) {
+        let settings = makeSettings(json)
 
-        #expect(settings == MoreProminentUpdatesSettings(hoursUntilFirstPrompt: 48, hoursUntilSecondPrompt: 96, hoursUntilAppStoreUpdateAvailable: 12))
+        #expect(settings == MoreProminentUpdatesSettings(hoursUntilFirstPrompt: 48,
+                                                         hoursUntilSecondPrompt: 216,
+                                                         hoursUntilThirdPrompt: 384,
+                                                         hoursUntilAppStoreUpdateAvailable: 12))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Accepts equal prompt timings", .timeLimit(.minutes(1)))
+    func acceptsEqualPromptTimings() {
+        let settings = makeSettings(#"{"hoursUntilFirstPrompt": 10, "hoursUntilSecondPrompt": 10, "hoursUntilThirdPrompt": 10}"#)
+
+        #expect(settings == MoreProminentUpdatesSettings(hoursUntilFirstPrompt: 10,
+                                                         hoursUntilSecondPrompt: 10,
+                                                         hoursUntilThirdPrompt: 10,
+                                                         hoursUntilAppStoreUpdateAvailable: 24))
     }
 
     @available(iOS 16, macOS 13, *)

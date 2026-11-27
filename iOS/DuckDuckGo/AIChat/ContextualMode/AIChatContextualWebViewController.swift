@@ -50,10 +50,17 @@ final class AIChatContextualWebViewController: UIViewController {
         let reasoningEffort: AIChatReasoningEffort?
         let tabAttachmentRequest: MultiTabAttachmentRequest?
         let termsAccepted: Bool
+        let localTask: AIChatLocalModelTask?
     }
 
     // MARK: - Properties
 
+    weak var browserToolsOwner: Tab?
+    var browserToolsService: AIChatBrowserToolsService?
+    var browserToolsPermissionPresenter: (any AIChatNativePermissionPresenting)?
+
+    var browserToolScopeFactory: (@MainActor () -> BrowserToolScope?)?
+    private weak var browserToolsScript: AIChatUserScript?
     weak var delegate: AIChatContextualWebViewControllerDelegate?
 
     private let aiChatSettings: AIChatSettingsProvider
@@ -74,8 +81,11 @@ final class AIChatContextualWebViewController: UIViewController {
     private var promptFlowReporter: ContextualDuckAIPromptFlowReporting?
     private var chatPersistenceCancellable: AnyCancellable?
     private var webViewBottomConstraint: NSLayoutConstraint?
+    private weak var floatingInputView: UIView?
+    private var floatingInputObscuredHeight: CGFloat = 0
 
     private(set) var aiChatContentHandler: AIChatContentHandling
+    private(set) weak var aiChatUserScript: AIChatUserScript?
 
     /// Passthrough delegate for the content handler. Set this to receive navigation callbacks.
     var aiChatContentHandlingDelegate: AIChatContentHandlingDelegate? {
@@ -87,7 +97,10 @@ final class AIChatContextualWebViewController: UIViewController {
     /// Page context bundled with a pending prompt submission (consumed together in `submitPromptNow`).
     private var pendingPageContext: AIChatPageContextData?
     private var pendingTermsAccepted = false
+    private var pendingLocalTask: AIChatLocalModelTask?
     private var pendingRichPrompt: PendingRichPrompt?
+    /// Set only while `submitting(localTask:)` runs. A prompt that's queued keeps the mark it was submitted with.
+    private var localTaskForSubmission: AIChatLocalModelTask?
     /// Selections as they were when a queued prompt was submitted, so editing chips while the frontend
     /// loads cannot change what that prompt carries.
     private var pendingSelections: [AIChatSelectionContextData]?
@@ -167,6 +180,7 @@ final class AIChatContextualWebViewController: UIViewController {
          debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
          userAgentManager: UserAgentManaging = DefaultUserAgentManager.shared,
          onboardingActivationRecorder: SubscriptionOnboardingActivationRecording,
+         onboardingExperimentMetricStore: SubscriptionOnboardingExperimentMetricStoring,
          utiHostInstaller: ((AIChatContextualWebViewController) -> AIChatContextualUTIHost?)? = nil) {
         self.aiChatSettings = aiChatSettings
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -191,6 +205,7 @@ final class AIChatContextualWebViewController: UIViewController {
             featureDiscovery: featureDiscovery,
             productSurfaceTelemetry: productSurfaceTelemetry,
             onboardingActivationRecorder: onboardingActivationRecorder,
+            onboardingExperimentMetricStore: onboardingExperimentMetricStore,
             unifiedToggleInputFeature: unifiedToggleInputFeature,
             debugSettings: debugSettings,
             getPageContext: getPageContext
@@ -225,10 +240,28 @@ final class AIChatContextualWebViewController: UIViewController {
         }
     }
 
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        updateFloatingInputInset()
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        if (parent as? AIChatContextualSheetViewController)?.isChangingSurface == true,
+           browserToolsPermissionPresenter?.preservesPermissionOnSurfaceChange == true {
+            return
+        }
+        if browserToolsPermissionPresenter?.isPresentingPermission != true || parent?.isBeingDismissed == true || isMovingFromParent {
+            browserToolsWillLeaveScreen()
+        }
+    }
+
     deinit {
+        let browserToolsScript = browserToolsScript
         let request = pendingRichPrompt?.tabAttachmentRequest
         let contentHandler = aiChatContentHandler
         Task { @MainActor in
+            browserToolsScript?.detachBrowserTools()
             request?.cancel()
             contentHandler.cancelPendingTabContextSubmission()
         }
@@ -237,16 +270,38 @@ final class AIChatContextualWebViewController: UIViewController {
 
     // MARK: - Public Methods
 
+    /// Marks the prompts submitted inside `submit` as `localTask`, so Duck.ai can run them on the local model.
+    /// A prompt that's queued until the page is ready keeps the mark and is delivered with it.
+    func submitting(localTask: AIChatLocalModelTask, _ submit: () -> Void) {
+        localTaskForSubmission = localTask
+        defer { localTaskForSubmission = nil }
+        deliver(localTask: localTask, submit)
+    }
+
+    /// The user script reads the mark during the call that sends the prompt, so a prompt that goes out
+    /// later has to be sent inside the same kind of scope.
+    private func deliver(localTask: AIChatLocalModelTask?, _ send: () -> Void) {
+        guard let localTask, let aiChatUserScript else {
+            send()
+            return
+        }
+        aiChatUserScript.submitting(localTask: localTask, send)
+    }
+
     /// Queues prompt if web view not ready yet; otherwise submits immediately.
-    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil, termsAccepted: Bool = false) {
+    /// `localTask` is for a caller that can't submit inside `submitting(localTask:)`.
+    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil, termsAccepted: Bool = false, localTask: AIChatLocalModelTask? = nil) {
         Logger.aiChat.debug("[ContextualWebVC] submitPrompt called - isPageReady: \(self.isPageReady), isContentHandlerReady: \(self.isContentHandlerReady)")
+        let localTask = localTask ?? localTaskForSubmission
         if pageContext != nil {
             utiHost?.notifyPromptDelivered()
         }
         if canDeliverPrompt {
             Logger.aiChat.debug("[ContextualWebVC] Submitting prompt immediately")
             let didSendBridgeMessage = aiChatContentHandler.canDispatchBridgeMessages
-            aiChatContentHandler.submitPrompt(prompt, pageContext: pageContext, termsAccepted: termsAccepted)
+            deliver(localTask: localTask) {
+                aiChatContentHandler.submitPrompt(prompt, pageContext: pageContext, termsAccepted: termsAccepted)
+            }
             utiHost?.promptDeliveryUpdated(wasQueued: false, didSendBridgeMessage: didSendBridgeMessage)
         } else {
             Logger.aiChat.debug("[ContextualWebVC] Queuing prompt as pending")
@@ -254,6 +309,7 @@ final class AIChatContextualWebViewController: UIViewController {
             pendingPrompt = prompt
             pendingPageContext = pageContext
             pendingTermsAccepted = termsAccepted
+            pendingLocalTask = localTask
             pendingSelections = selectionsProvider?()
         }
     }
@@ -267,13 +323,16 @@ final class AIChatContextualWebViewController: UIViewController {
                       tabAttachmentRequest: MultiTabAttachmentRequest? = nil,
                       termsAccepted: Bool = false) {
         Logger.aiChat.debug("[ContextualWebVC] submit rich prompt called - isPageReady: \(self.isPageReady), isContentHandlerReady: \(self.isContentHandlerReady)")
+        let localTask = localTaskForSubmission
         if canDeliverPrompt {
-            aiChatContentHandler.submitPrompt(prompt, attachments: attachments, modelId: modelId, tools: tools,
-                                             pageContext: pageContext, reasoningEffort: reasoningEffort,
-                                             tabAttachmentRequest: tabAttachmentRequest, termsAccepted: termsAccepted,
-                                             onPromptDispatched: { [weak self] in
-                self?.utiHost?.promptDeliveryUpdated(wasQueued: false, didSendBridgeMessage: true)
-            })
+            deliver(localTask: localTask) {
+                aiChatContentHandler.submitPrompt(prompt, attachments: attachments, modelId: modelId, tools: tools,
+                                                 pageContext: pageContext, reasoningEffort: reasoningEffort,
+                                                 tabAttachmentRequest: tabAttachmentRequest, termsAccepted: termsAccepted,
+                                                 onPromptDispatched: { [weak self] in
+                    self?.utiHost?.promptDeliveryUpdated(wasQueued: false, didSendBridgeMessage: true)
+                })
+            }
         } else {
             utiHost?.promptDeliveryUpdated(wasQueued: true, didSendBridgeMessage: nil)
             pendingRichPrompt?.tabAttachmentRequest?.cancel()
@@ -284,11 +343,13 @@ final class AIChatContextualWebViewController: UIViewController {
                                                   pageContext: pageContext,
                                                   reasoningEffort: reasoningEffort,
                                                   tabAttachmentRequest: tabAttachmentRequest,
-                                                  termsAccepted: termsAccepted)
+                                                  termsAccepted: termsAccepted,
+                                                  localTask: localTask)
             pendingSelections = selectionsProvider?()
             pendingPrompt = nil
             pendingPageContext = nil
             pendingTermsAccepted = false
+            pendingLocalTask = nil
         }
     }
 
@@ -357,6 +418,37 @@ final class AIChatContextualWebViewController: UIViewController {
         webViewBottomConstraint = newConstraint
     }
 
+    func setFloatingInputView(_ inputView: UIView) {
+        if floatingInputView === inputView {
+            updateFloatingInputInset()
+            return
+        }
+        floatingInputView = inputView
+        if #available(iOS 26, *) {
+            let color = UIColor(singleUseColor: .duckAIWebViewBackground)
+            view.backgroundColor = color
+            webView.backgroundColor = color
+            webView.scrollView.backgroundColor = color
+            webView.underPageBackgroundColor = color
+            webView.isOpaque = false
+            webView.scrollView.bottomEdgeEffect.isHidden = true
+        }
+        view.setNeedsLayout()
+    }
+
+    private func updateFloatingInputInset() {
+        guard #available(iOS 26, *), let floatingInputView else { return }
+        let top = floatingInputView.convert(.zero, to: view).y
+        let height = max(0, view.bounds.maxY - top)
+        guard height != floatingInputObscuredHeight else { return }
+        floatingInputObscuredHeight = height
+        let insets = UIEdgeInsets(top: 0, left: 0, bottom: height, right: 0)
+        if webView.responds(to: #selector(setter: WKWebView.obscuredContentInsets)) {
+            webView.obscuredContentInsets = insets
+        }
+        DuckAIChatScrollInsetStyler.apply(insets, to: webView)
+    }
+
     func loadChatURL(_ url: URL) {
         cancelPendingTabAttachmentPrompt()
         let urlToLoad = chatURLForLoading(url)
@@ -366,6 +458,7 @@ final class AIChatContextualWebViewController: UIViewController {
         pendingPrompt = nil
         pendingPageContext = nil
         pendingTermsAccepted = false
+        pendingLocalTask = nil
         pendingRichPrompt = nil
         pendingSelections = nil
         hasPendingChipContext = false
@@ -460,10 +553,12 @@ final class AIChatContextualWebViewController: UIViewController {
         } else if let prompt = pendingPrompt {
             let pageContext = pendingPageContext
             let termsAccepted = pendingTermsAccepted
+            let localTask = pendingLocalTask
             pendingPrompt = nil
             pendingPageContext = nil
             pendingTermsAccepted = false
-            submitPromptNow(prompt, pageContext: pageContext, termsAccepted: termsAccepted)
+            pendingLocalTask = nil
+            submitPromptNow(prompt, pageContext: pageContext, termsAccepted: termsAccepted, localTask: localTask)
             pendingSelections = nil
         }
 
@@ -475,26 +570,30 @@ final class AIChatContextualWebViewController: UIViewController {
         }
     }
 
-    private func submitPromptNow(_ prompt: String, pageContext: AIChatPageContextData?, termsAccepted: Bool) {
+    private func submitPromptNow(_ prompt: String, pageContext: AIChatPageContextData?, termsAccepted: Bool, localTask: AIChatLocalModelTask?) {
         Logger.aiChat.debug("[ContextualWebVC] Submitting pending prompt now")
         let didSendBridgeMessage = aiChatContentHandler.canDispatchBridgeMessages
-        aiChatContentHandler.submitPrompt(prompt, pageContext: pageContext, termsAccepted: termsAccepted)
+        deliver(localTask: localTask) {
+            aiChatContentHandler.submitPrompt(prompt, pageContext: pageContext, termsAccepted: termsAccepted)
+        }
         utiHost?.promptDeliveryUpdated(wasQueued: nil, didSendBridgeMessage: didSendBridgeMessage)
     }
 
     private func submitPromptNow(_ richPrompt: PendingRichPrompt) {
         Logger.aiChat.debug("[ContextualWebVC] Submitting pending rich prompt now")
-        aiChatContentHandler.submitPrompt(richPrompt.prompt,
-                                         attachments: richPrompt.attachments,
-                                         modelId: richPrompt.modelId,
-                                         tools: richPrompt.tools,
-                                         pageContext: richPrompt.pageContext,
-                                         reasoningEffort: richPrompt.reasoningEffort,
-                                         tabAttachmentRequest: richPrompt.tabAttachmentRequest,
-                                         termsAccepted: richPrompt.termsAccepted,
-                                         onPromptDispatched: { [weak self] in
-            self?.utiHost?.promptDeliveryUpdated(wasQueued: nil, didSendBridgeMessage: true)
-        })
+        deliver(localTask: richPrompt.localTask) {
+            aiChatContentHandler.submitPrompt(richPrompt.prompt,
+                                             attachments: richPrompt.attachments,
+                                             modelId: richPrompt.modelId,
+                                             tools: richPrompt.tools,
+                                             pageContext: richPrompt.pageContext,
+                                             reasoningEffort: richPrompt.reasoningEffort,
+                                             tabAttachmentRequest: richPrompt.tabAttachmentRequest,
+                                             termsAccepted: richPrompt.termsAccepted,
+                                             onPromptDispatched: { [weak self] in
+                self?.utiHost?.promptDeliveryUpdated(wasQueued: nil, didSendBridgeMessage: true)
+            })
+        }
     }
 
     // MARK: - URL Observation
@@ -551,7 +650,14 @@ extension AIChatContextualWebViewController: UserContentControllerDelegate {
     }
 
     func configureContentHandler(with userScript: AIChatUserScript) {
+        aiChatUserScript = userScript
         aiChatContentHandler.setup(with: userScript, webView: webView, displayMode: .contextual)
+        browserToolsScript = nil
+        if let browserToolsService, let browserToolsOwner, let browserToolScopeFactory {
+            browserToolsScript = userScript
+            userScript.bindBrowserTools(to: browserToolsService, owner: browserToolsOwner,
+                                       presenter: browserToolsPermissionPresenter, makeScope: browserToolScopeFactory)
+        }
         userScript.setContextualModePixelHandler(pixelHandler)
         utiHost?.bindToUserScript(userScript)
         isContentHandlerReady = true
@@ -559,9 +665,31 @@ extension AIChatContextualWebViewController: UserContentControllerDelegate {
     }
 }
 
+// MARK: - Browser Tools
+
+extension AIChatContextualWebViewController {
+    func browserToolsWillLeaveScreen() {
+        if let browserToolsScript { browserToolsService?.sourceWillDisappear(browserToolsScript) }
+    }
+
+    func detachBrowserTools() {
+        browserToolScopeFactory = nil
+        browserToolsOwner = nil
+        browserToolsService = nil
+        browserToolsScript?.detachBrowserTools()
+        browserToolsScript = nil
+    }
+}
+
 // MARK: - WKNavigationDelegate
 
 extension AIChatContextualWebViewController: WKNavigationDelegate {
+    func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+        guard webView === self.webView else { return }
+        browserToolsScript?.browserToolsDocumentDidCommit()
+        aiChatUserScript?.isAIChatPromoVisible = nil
+        aiChatUserScript?.aiChatStatusOnPage = nil
+    }
 
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction) async -> WKNavigationActionPolicy {
         guard let url = navigationAction.request.url else { return .allow }
@@ -593,6 +721,12 @@ extension AIChatContextualWebViewController: WKNavigationDelegate {
         Logger.aiChat.debug("[ContextualWebVC] didFinish navigation - URL: \(webView.url?.shortDescription ?? "nil")")
         loadingView.stopAnimating()
         isPageReady = true
+        if #available(iOS 26, *), floatingInputView != nil {
+            DuckAIChatScrollInsetStyler.apply(
+                UIEdgeInsets(top: 0, left: 0, bottom: floatingInputObscuredHeight, right: 0),
+                to: webView
+            )
+        }
         submitPendingIfReady()
     }
 

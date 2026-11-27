@@ -35,6 +35,7 @@ extension Tab: NSSecureCoding {
                   lastSelectedAt: data.lastSelectedAt)
 
         _=self.awakeAfter(using: decoder)
+        data.linkedPageDomains.map { self.pageContext?.linkedPageDomains = Set($0) }
     }
 
     func encode(with coder: NSCoder) {
@@ -56,7 +57,8 @@ extension Tab: NSSecureCoding {
             interactionStateData: getActualInteractionStateData(),
             lastSelectedAt: lastSelectedAt,
             localHistoryIDs: localHistory.compactMap(\.identifier),
-            tabSnapshotIdentifier: tabSnapshotIdentifier?.uuidString
+            tabSnapshotIdentifier: tabSnapshotIdentifier?.uuidString,
+            linkedPageDomains: self.pageContext.map { Array($0.linkedPageDomains) }
         )
     }
 
@@ -156,4 +158,8 @@ extension Tab.TabContent {
         }
     }
 
+    var isRestorable: Bool {
+        if case .webExtensionUrl = self { return false }
+        return true
+    }
 }

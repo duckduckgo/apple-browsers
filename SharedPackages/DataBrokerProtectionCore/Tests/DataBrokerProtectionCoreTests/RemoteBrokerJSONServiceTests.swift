@@ -17,6 +17,7 @@
 //
 
 import XCTest
+import CryptoKit
 import Foundation
 import SecureStorage
 import BrowserServicesKit
@@ -37,6 +38,11 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
     var settings: DataBrokerProtectionSettings!
     let fileManager = MockFileManager(fixtureBundle: .module)
     let authenticationManager = MockAuthenticationManager()
+    let privacyConfigurationManager = PrivacyConfigurationManagingMock()
+    let signingKey = P256.Signing.PrivateKey()
+    var signingKeys: BrokerBundleSigningKeys {
+        .init(production: [signingKey.publicKey.derRepresentation.base64EncodedString()], staging: [])
+    }
 
     var urlSession: URLSession {
         let config = URLSessionConfiguration.default
@@ -65,7 +71,9 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
                                                           urlSession: urlSession,
                                                           authenticationManager: authenticationManager,
                                                           pixelHandler: pixelHandler,
-                                                          localBrokerProvider: localBrokerJSONService)
+                                                          localBrokerProvider: localBrokerJSONService,
+                                                          privacyConfigurationManager: privacyConfigurationManager,
+                                                          signingKeys: signingKeys)
     }
 
     override func tearDown() {
@@ -153,26 +161,14 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
         }
     }
 
-    func testCheckForUpdatesThrowsJSONDecodingErrorWhenResponseIsInvalid() async {
-        let expectation = XCTestExpectation(description: "JSON decoding error")
-
-        MockURLProtocol.requestHandlerQueue.append { _ in (HTTPURLResponse.okWithETag, Data()) }
-        do {
-            try await remoteBrokerJSONService.checkForUpdates()
-            XCTFail("Unexpected error")
-        } catch DecodingError.dataCorrupted {
-            expectation.fulfill()
-        } catch {
-            XCTFail("Unexpected error")
-        }
-    }
-
     func testCheckForUpdatesDetectsNoChangesInRemoteJSONs() async {
         let mainConfig = MainConfig(mainConfigETag: "",
                                     activeDataBrokers: [],
                                     jsonETags: .init(current: [:]),
-                                    testDataBrokers: [])
-        MockURLProtocol.requestHandlerQueue.append { _ in (HTTPURLResponse.okWithETag, try! JSONEncoder().encode(mainConfig)) }
+                                    jsonSHA256: [:],
+                                    testDataBrokers: [],
+                                    manifestVersion: 1)
+        appendSignedMainConfigResponses(try! JSONEncoder().encode(mainConfig))
         MockURLProtocol.requestHandlerQueue.append { _ in (HTTPURLResponse.noAuth, nil) }
 
         do {
@@ -190,8 +186,10 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
         let mainConfig = MainConfig(mainConfigETag: "",
                                     activeDataBrokers: [],
                                     jsonETags: .init(current: ["fakebroker.com": "something"]),
-                                    testDataBrokers: [])
-        MockURLProtocol.requestHandlerQueue.append { _ in (HTTPURLResponse.okWithETag, try! JSONEncoder().encode(mainConfig)) }
+                                    jsonSHA256: [:],
+                                    testDataBrokers: [],
+                                    manifestVersion: 1)
+        appendSignedMainConfigResponses(try! JSONEncoder().encode(mainConfig))
         MockURLProtocol.requestHandlerQueue.append { _ in (HTTPURLResponse.noAuth, nil) }
 
         do {
@@ -207,8 +205,10 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
         let mainConfig = MainConfig(mainConfigETag: "",
                                     activeDataBrokers: [],
                                     jsonETags: .init(current: ["fakebroker.com": "something", "fakebroker2.com": "something", "fakebroker3.com": "something"]),
-                                    testDataBrokers: [])
-        MockURLProtocol.requestHandlerQueue.append { _ in (HTTPURLResponse.okWithETag, try! JSONEncoder().encode(mainConfig)) }
+                                    jsonSHA256: [:],
+                                    testDataBrokers: [],
+                                    manifestVersion: 1)
+        appendSignedMainConfigResponses(try! JSONEncoder().encode(mainConfig))
         MockURLProtocol.requestHandlerQueue.append { _ in (HTTPURLResponse.ok, nil) }
 
         do {
@@ -231,13 +231,16 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
             urlSession: urlSession,
             authenticationManager: authenticationManager,
             pixelHandler: pixelHandler,
-            localBrokerProvider: localBrokerJSONService
+            localBrokerProvider: localBrokerJSONService,
+            privacyConfigurationManager: privacyConfigurationManager,
+            signingKeys: signingKeys
         )
 
         try testRemoteService.processBrokerJSONs(
-            eTag: "test-etag",
+            directoryURL: mockFileManager.temporaryDirectory.appendingPathComponent("test-etag/json"),
             fileNames: ["\(fixtureFileName).json"],
             eTagMapping: ["\(fixtureFileName).json": "etag123"],
+            sha256Mapping: try fixtureSHA256Mapping(for: fixtureFileName),
             activeBrokers: ["\(fixtureFileName).json"],
             testBrokers: [],
             isFreeScan: false
@@ -273,13 +276,16 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
             urlSession: urlSession,
             authenticationManager: authenticationManager,
             pixelHandler: pixelHandler,
-            localBrokerProvider: localBrokerJSONService
+            localBrokerProvider: localBrokerJSONService,
+            privacyConfigurationManager: privacyConfigurationManager,
+            signingKeys: signingKeys
         )
 
         try testRemoteService.processBrokerJSONs(
-            eTag: "test-etag-removed",
+            directoryURL: mockFileManager.temporaryDirectory.appendingPathComponent("test-etag-removed/json"),
             fileNames: ["\(fixtureFileName).json"],
             eTagMapping: ["\(fixtureFileName).json": "etag456"],
+            sha256Mapping: try fixtureSHA256Mapping(for: fixtureFileName),
             activeBrokers: ["\(fixtureFileName).json"],
             testBrokers: [],
             isFreeScan: false
@@ -323,14 +329,17 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
             urlSession: urlSession,
             authenticationManager: authenticationManager,
             pixelHandler: pixelHandler,
-            localBrokerProvider: localBrokerJSONService
+            localBrokerProvider: localBrokerJSONService,
+            privacyConfigurationManager: privacyConfigurationManager,
+            signingKeys: signingKeys
         )
 
         // When: processing JSONs for an existing broker (update path, not insert path).
         try testRemoteService.processBrokerJSONs(
-            eTag: "test-etag-raw-payload",
+            directoryURL: mockFileManager.temporaryDirectory.appendingPathComponent("test-etag-raw-payload/json"),
             fileNames: ["\(fixtureFileName).json"],
             eTagMapping: ["\(fixtureFileName).json": "etag-raw"],
+            sha256Mapping: try fixtureSHA256Mapping(for: fixtureFileName),
             activeBrokers: ["\(fixtureFileName).json"],
             testBrokers: [],
             isFreeScan: false
@@ -381,13 +390,16 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
             urlSession: urlSession,
             authenticationManager: authenticationManager,
             pixelHandler: pixelHandler,
-            localBrokerProvider: localBrokerJSONService
+            localBrokerProvider: localBrokerJSONService,
+            privacyConfigurationManager: privacyConfigurationManager,
+            signingKeys: signingKeys
         )
 
         try testRemoteService.processBrokerJSONs(
-            eTag: "test-etag-invalid",
+            directoryURL: mockFileManager.temporaryDirectory.appendingPathComponent("test-etag-invalid/json"),
             fileNames: ["\(fixtureFileName).json"],
             eTagMapping: ["\(fixtureFileName).json": "etag789"],
+            sha256Mapping: try fixtureSHA256Mapping(for: fixtureFileName),
             activeBrokers: ["\(fixtureFileName).json"],
             testBrokers: [],
             isFreeScan: false
@@ -426,14 +438,17 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
             urlSession: urlSession,
             authenticationManager: authenticationManager,
             pixelHandler: pixelHandler,
-            localBrokerProvider: localBrokerJSONService
+            localBrokerProvider: localBrokerJSONService,
+            privacyConfigurationManager: privacyConfigurationManager,
+            signingKeys: signingKeys
         )
 
         // This should throw due to upsert failure, but should fire a failure pixel
         XCTAssertThrowsError(try testRemoteService.processBrokerJSONs(
-            eTag: "test-etag-upsert-fail",
+            directoryURL: mockFileManager.temporaryDirectory.appendingPathComponent("test-etag-upsert-fail/json"),
             fileNames: ["\(fixtureFileName).json"],
             eTagMapping: ["\(fixtureFileName).json": "etag999"],
+            sha256Mapping: try fixtureSHA256Mapping(for: fixtureFileName),
             activeBrokers: ["\(fixtureFileName).json"],
             testBrokers: [],
             isFreeScan: false))
@@ -482,7 +497,9 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
             urlSession: urlSession,
             authenticationManager: authenticationManager,
             pixelHandler: pixelHandler,
-            localBrokerProvider: localBrokerJSONService
+            localBrokerProvider: localBrokerJSONService,
+            privacyConfigurationManager: privacyConfigurationManager,
+            signingKeys: signingKeys
         )
 
         let tempDir = realFileManager.temporaryDirectory.appendingPathComponent("test-etag-freescan")
@@ -494,9 +511,10 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
 
         // isFreeScan = true (unauthenticated)
         try testRemoteService.processBrokerJSONs(
-            eTag: "test-etag-freescan",
+            directoryURL: jsonDir,
             fileNames: ["broker.com.json"],
             eTagMapping: ["broker.com.json": "etag-fs"],
+            sha256Mapping: ["broker.com.json": Data(testBrokerContent.utf8).sha256HexString],
             activeBrokers: ["broker.com.json"],
             testBrokers: [],
             isFreeScan: true
@@ -510,9 +528,10 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
 
         // isFreeScan = false (authenticated)
         try testRemoteService.processBrokerJSONs(
-            eTag: "test-etag-freescan",
+            directoryURL: jsonDir,
             fileNames: ["broker.com.json"],
             eTagMapping: ["broker.com.json": "etag-fs2"],
+            sha256Mapping: ["broker.com.json": Data(testBrokerContent.utf8).sha256HexString],
             activeBrokers: ["broker.com.json"],
             testBrokers: [],
             isFreeScan: false
@@ -551,6 +570,16 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
         }
     }
 
+    private func appendSignedMainConfigResponses(_ mainConfig: Data) {
+        let signature = try! signingKey.signature(for: mainConfig).derRepresentation.base64EncodedData()
+        MockURLProtocol.requestHandlerQueue.append { _ in (HTTPURLResponse.okWithETag, mainConfig) }
+        MockURLProtocol.requestHandlerQueue.append { _ in (HTTPURLResponse.ok, signature) }
+    }
+
+    private func fixtureSHA256Mapping(for fixtureFileName: String) throws -> [String: String] {
+        let url = try XCTUnwrap(Bundle.module.url(forResource: fixtureFileName, withExtension: "json", subdirectory: "BundleResources"))
+        return ["\(fixtureFileName).json": try Data(contentsOf: url).sha256HexString]
+    }
 }
 
 extension HTTPURLResponse {

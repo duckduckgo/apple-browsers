@@ -152,6 +152,12 @@ final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProvidin
         dismissLauncherPromoCallCount += 1
     }
 
+    private(set) var chatSubmittedCallCount = 0
+    @MainActor
+    func chatSubmitted() {
+        chatSubmittedCallCount += 1
+    }
+
     private(set) var launcherPromoIgnoredCallCount = 0
     @MainActor
     func launcherPromoIgnored() {
@@ -224,5 +230,14 @@ final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProvidin
     let suggestedPromptsSubject = PassthroughSubject<Void, Never>()
     var suggestedPromptsPublisher: AnyPublisher<Void, Never> {
         suggestedPromptsSubject.eraseToAnyPublisher()
+    }
+
+    @Published var isPastedTextEnabled: Bool = false
+    @Published var pastedTextLimits: NewTabPageDataModel.OmnibarPastedTextLimits?
+
+    var pastedTextConfigPublisher: AnyPublisher<Void, Never> {
+        $isPastedTextEnabled.dropFirst().map { _ in () }
+            .merge(with: $pastedTextLimits.dropFirst().map { _ in () })
+            .eraseToAnyPublisher()
     }
 }

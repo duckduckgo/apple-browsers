@@ -60,9 +60,11 @@ struct PromoServiceFactory {
 
     @MainActor
     static func makeAllPromos(dependencies: PromoDependencies) -> [Promo] {
-        var promos: [Promo] = [
+        let orderedPromos: [Promo?] = [
+            declaredAge(dependencies: dependencies),
             sessionRestore(coordinator: dependencies.sessionRestoreCoordinator),
             updateAvailable(dependencies: dependencies),
+            browserUpdated(dependencies: dependencies),
             remoteMessageNewTabPage(model: dependencies.activeRemoteMessageModel),
             freemiumDBP,
             remoteMessageTabBar(model: dependencies.activeRemoteMessageModel),
@@ -71,6 +73,7 @@ struct PromoServiceFactory {
             autofillToolbarPinning(dependencies: dependencies),
             brokenSite(coordinator: dependencies.brokenSitePromptPresentationCoordinator),
             subscriptionPromo(delegate: dependencies.subscriptionPromoDelegate),
+            defaultBrowserAndDockWinBackModal(dependencies: dependencies),
             defaultBrowserAndDockPopover(service: dependencies.defaultBrowserAndDockPromptService),
             defaultBrowserAndDockBanner(service: dependencies.defaultBrowserAndDockPromptService),
             defaultBrowserAndDockInactiveModal(service: dependencies.defaultBrowserAndDockPromptService),
@@ -90,10 +93,7 @@ struct PromoServiceFactory {
             bookmarksEmptyStateImportSync(dependencies: dependencies),
             autofillEmptyStateImportSync(dependencies: dependencies)
         ]
-
-        if let browserUpdatedPromo = browserUpdated(dependencies: dependencies) {
-            promos.insert(browserUpdatedPromo, at: 2)
-        }
+        var promos = orderedPromos.compactMap { $0 }
 
         if includeTestPromos {
             promos.append(contentsOf: testPromos)

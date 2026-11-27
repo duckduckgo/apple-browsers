@@ -50,8 +50,9 @@ final class BrowserTabViewController: NSViewController {
 
     private lazy var browserTabView = BrowserTabView(frame: .zero, backgroundColor: NSColor(resource: .browserTabBackground))
     private(set) lazy var sidebarContainer = ColorView(frame: .zero, backgroundColor: NSColor(resource: .browserTabBackground), borderWidth: 0)
-    private lazy var hoverLabel = NSTextField(string: URL.duckDuckGo.absoluteString)
-    private lazy var hoverLabelContainer = ColorView(frame: .zero, backgroundColor: NSColor(resource: .browserTabBackground), borderWidth: 0)
+    /// Created on the first hovered link: most tab view controllers never need a tooltip window.
+    private var hoveredLinkTooltip: HoveredLinkTooltipPresenter?
+    private var hoveredLinkMouseMonitor: AnyCancellable?
 
     private let activeRemoteMessageModel: ActiveRemoteMessageModel
     private let newTabPageActionsManager: () -> NewTabPageActionsManager
@@ -132,18 +133,19 @@ final class BrowserTabViewController: NSViewController {
     private var keyWindowSelectedTabCancellable: AnyCancellable?
     private var contentOverlayWindowResizeCancellable: AnyCancellable?
     private var cancellables = Set<AnyCancellable>()
-    private var contextualCompletionCancellable: AnyCancellable?
 
     private weak var previouslySelectedTab: Tab?
 
-    private var hoverLabelWorkItem: DispatchWorkItem?
-
-    private var lastURL: URL?
-    private weak var lastTab: Tab?
-    private let subscriptionUpsellMetrics: OnboardingSubscriptionUpsellMetricsReporting
-    private var wasContextualOnboardingDialogDismissed = false
     private var presentedContextualOnboardingDialogType: ContextualDialogType?
     private let onboardingPixelReporter: OnboardingPixelReporting
+    private lazy var contextualOnboardingScheduler: ContextualOnboardingDialogScheduler = {
+        let scheduler = ContextualOnboardingDialogScheduler(
+            dialogProvider: onboardingDialogTypeProvider,
+            featureFlagger: featureFlagger,
+            isInPopUpWindow: { [weak self] in self?.isInPopUpWindow ?? false })
+        scheduler.onUpdate = { [weak self] in self?.apply($0) }
+        return scheduler
+    }()
 
     private(set) var transientTabContentViewController: NSViewController?
 
@@ -181,7 +183,6 @@ final class BrowserTabViewController: NSViewController {
          onboardingPixelReporter: OnboardingPixelReporting = OnboardingPixelReporter(),
          onboardingDialogTypeProvider: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater = Application.appDelegate.onboardingContextualDialogsManager,
          onboardingDialogFactory: ContextualDaxDialogsFactory = ContextualDaxDialogsProvider(fireCoordinator: NSApp.delegateTyped.fireCoordinator),
-         subscriptionUpsellMetrics: OnboardingSubscriptionUpsellMetricsReporting = OnboardingSubscriptionUpsellMetricsReporter(),
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
          newTabPageActionsManager: @autoclosure @escaping @MainActor () -> NewTabPageActionsManager = NSApp.delegateTyped.newTabPageCoordinator.actionsManager,
          newTabPageCustomizationModel: NewTabPageCustomBackgroundPublishing = NSApp.delegateTyped.newTabPageCustomizationModel,
@@ -215,7 +216,6 @@ final class BrowserTabViewController: NSViewController {
         self.onboardingPixelReporter = onboardingPixelReporter
         self.onboardingDialogTypeProvider = onboardingDialogTypeProvider
         self.onboardingDialogFactory = onboardingDialogFactory
-        self.subscriptionUpsellMetrics = subscriptionUpsellMetrics
         self.featureFlagger = featureFlagger
         self.newTabPageActionsManager = newTabPageActionsManager
         self.newTabPageCustomizationModel = newTabPageCustomizationModel
@@ -246,49 +246,15 @@ final class BrowserTabViewController: NSViewController {
         containerStackView = NSStackView()
 
         super.init(nibName: nil, bundle: nil)
-
-        contextualCompletionCancellable = onboardingDialogTypeProvider.isContextualOnboardingCompletedPublisher
-            .sink { [weak self] completed in
-                guard let self, completed,
-                      NonBlockingOnboarding(featureFlagger: self.featureFlagger).isNonBlocking,
-                      self.presentedContextualOnboardingDialogType != nil else { return }
-                self.delegate?.dismissViewHighlight()
-                self.removeExistingDialog()
-            }
     }
 
     override func loadView() {
         view = browserTabView
 
-        hoverLabelContainer.cornerRadius = 4
-        view.addSubview(hoverLabelContainer)
-
-        hoverLabel.focusRingType = .none
-        hoverLabel.translatesAutoresizingMaskIntoConstraints = false
-        hoverLabel.font = .systemFont(ofSize: 13)
-        hoverLabel.drawsBackground = false
-        hoverLabel.isEditable = false
-        hoverLabel.isBordered = false
-        hoverLabel.lineBreakMode = .byClipping
-        hoverLabel.textColor = .labelColor
-        hoverLabelContainer.addSubview(hoverLabel)
-
         setupLayout()
     }
 
     private func setupLayout() {
-        hoverLabelContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: -2).isActive = true
-        view.bottomAnchor.constraint(equalTo: hoverLabelContainer.bottomAnchor, constant: -4).isActive = true
-
-        hoverLabel.setContentHuggingPriority(.defaultHigh, for: .vertical)
-        hoverLabel.setContentHuggingPriority(.init(rawValue: 251), for: .horizontal)
-        hoverLabel.setContentCompressionResistancePriority(.defaultHigh, for: .vertical)
-        hoverLabel.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
-        hoverLabelContainer.bottomAnchor.constraint(equalTo: hoverLabel.bottomAnchor, constant: 10).isActive = true
-        hoverLabel.leadingAnchor.constraint(equalTo: hoverLabelContainer.leadingAnchor, constant: 12).isActive = true
-        hoverLabelContainer.trailingAnchor.constraint(equalTo: hoverLabel.trailingAnchor, constant: 8).isActive = true
-        hoverLabel.topAnchor.constraint(equalTo: hoverLabelContainer.topAnchor, constant: 6).isActive = true
-
         view.addSubview(sidebarContainer)
 
         sidebarContainerLeadingConstraint = sidebarContainer.leadingAnchor.constraint(equalTo: browserTabView.trailingAnchor)
@@ -313,8 +279,6 @@ final class BrowserTabViewController: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        hoverLabelContainer.alphaValue = 0
-
         if let webViewContainer {
             removeChild(in: self.containerStackView, webViewContainer: webViewContainer)
         }
@@ -324,6 +288,7 @@ final class BrowserTabViewController: NSViewController {
 
     override func viewDidLayout() {
         super.viewDidLayout()
+        hoveredLinkTooltip?.updatePosition()
 
         // Only adjust sidebar width when it is visually on-screen (leading < 0 means pulled into view)
         if let leading = sidebarContainerLeadingConstraint?.constant, leading < 0 {
@@ -361,6 +326,7 @@ final class BrowserTabViewController: NSViewController {
 
     override func viewWillDisappear() {
         super.viewWillDisappear()
+        hoveredLinkTooltip?.reset()
 
         remoteMessageWindowStateCancellable?.cancel()
         remoteMessageWindowStateCancellable = nil
@@ -373,12 +339,6 @@ final class BrowserTabViewController: NSViewController {
 #if DEBUG
         if isLazyVar(named: "browserTabView", initializedIn: self) {
             browserTabView.ensureObjectDeallocated(after: 1.0, do: .interrupt)
-        }
-        if isLazyVar(named: "hoverLabel", initializedIn: self) {
-            hoverLabel.ensureObjectDeallocated(after: 1.0, do: .interrupt)
-        }
-        if isLazyVar(named: "hoverLabelContainer", initializedIn: self) {
-            hoverLabelContainer.ensureObjectDeallocated(after: 1.0, do: .interrupt)
         }
         if isLazyVar(named: "sidebarContainer", initializedIn: self) {
             sidebarContainer.ensureObjectDeallocated(after: 1.0, do: .interrupt)
@@ -552,8 +512,7 @@ final class BrowserTabViewController: NSViewController {
                 subscribeToHoveredLink(of: selectedTabViewModel)
                 subscribeToUserDialogs(of: selectedTabViewModel)
 
-                // changing tab is considered equivalent to dismissing the dialog
-                wasContextualOnboardingDialogDismissed = true
+                contextualOnboardingScheduler.selectedTabDidChange()
 
                 adjustFirstResponder(force: true)
             }
@@ -696,8 +655,7 @@ final class BrowserTabViewController: NSViewController {
         containerStackView.distribution = .fill
         containerStackView.spacing = 0
 
-        // Make sure link preview (tooltip shown in the bottom-left) is on top
-        view.addSubview(containerStackView, positioned: .below, relativeTo: hoverLabelContainer)
+        view.addSubview(containerStackView, positioned: .below, relativeTo: sidebarContainer)
 
         containerStackView.translatesAutoresizingMaskIntoConstraints = false
 
@@ -732,8 +690,7 @@ final class BrowserTabViewController: NSViewController {
     private func abandonContextualOnboardingDialog() {
         if presentedContextualOnboardingDialogType == .subscriptionUpsell,
            onboardingDialogTypeProvider.lastDialog == .subscriptionUpsell {
-            subscriptionUpsellMetrics.report(.upsellDismissed)
-            onboardingDialogTypeProvider.gotItPressed()
+            contextualOnboardingScheduler.gotItPressed(displayed: presentedContextualOnboardingDialogType, in: tabViewModel?.tab)
         }
         removeExistingDialog()
     }
@@ -841,38 +798,21 @@ final class BrowserTabViewController: NSViewController {
         return cookiePopupProtectionPreferences.cookiePopupPreference
     }
 
-    private func presentContextualOnboarding(showLastDialog: Bool = false) {
-        // Remove any existing highlights animation
-        delegate?.dismissViewHighlight()
-
-        // Checks if the feature is on
-        guard featureFlagger.isFeatureOn(.contextualOnboarding) else {
-            onboardingDialogTypeProvider.turnOffFeature()
-            removeExistingDialog()
-            return
-        }
-
-        guard !isInPopUpWindow else {
-            removeExistingDialog()
-            return
-        }
-
-        guard let tab = tabViewModel?.tab else {
-            removeExistingDialog()
-            return
-        }
-
-        // if showLastDialog is true it asks the onboardingDialogTypeProvider for the lastDialog if the last dialog was shown on this tab
-        // If there is it will show it
-        // This allow seeing the dialog when leaving and coming back to the Window but will avoid reloading the same when opening a new Window
-        guard let dialogType = showLastDialog ? onboardingDialogTypeProvider.lastDialogForTab(tab) : onboardingDialogTypeProvider.dialogTypeForTab(tab, privacyInfo: tab.privacyInfo) else {
+    /// Applies what the scheduler decided to the dialog on screen.
+    private func apply(_ update: ContextualOnboardingDialogUpdate) {
+        switch update {
+        case .show(let dialogType):
+            guard let tab = tabViewModel?.tab else { return }
+            delegate?.dismissViewHighlight()
+            showContextualOnboardingDialog(dialogType, in: tab)
+        case .hide:
             delegate?.dismissViewHighlight()
             removeExistingDialog()
-            return
         }
-        // once a dialog is presented we reset the is dismissed flag
-        self.wasContextualOnboardingDialogDismissed = false
+    }
 
+    /// Draws `dialogType` in place of any dialog on screen, with its highlight.
+    private func showContextualOnboardingDialog(_ dialogType: ContextualDialogType, in tab: Tab) {
         removeExistingDialog()
         presentedContextualOnboardingDialogType = dialogType
 
@@ -907,7 +847,7 @@ final class BrowserTabViewController: NSViewController {
         containerStackView.layoutSubtreeIfNeeded()
         webViewContainer?.layoutSubtreeIfNeeded()
 
-        if dialogType == .tryFireButton {
+        if dialogType == .tryFireButton || dialogType == .thatsDuckAI {
             delegate?.highlightFireButton()
         } else if case .trackers = dialogType {
             delegate?.highlightPrivacyShield()
@@ -917,65 +857,50 @@ final class BrowserTabViewController: NSViewController {
     /// `dialogType` is captured at presentation time rather than read back off the provider, which
     /// `gotItPressed()` may already have advanced.
     private func handleContextualOnboardingOnDismiss(dialogType: ContextualDialogType) {
-        wasContextualOnboardingDialogDismissed = true
         delegate?.dismissViewHighlight()
         removeChild(in: containerStackView, webViewContainer: webViewContainer)
         // Kept in step with the teardown so the got-it handler can tell whether dismiss already ran.
         presentedContextualOnboardingDialogType = nil
         onboardingPixelReporter.measureDialogDismissed(dialogType: dialogType)
-        // Both facts matter, or dismissing the upsell would re-present it.
-        if dialogType == .highFive, onboardingDialogTypeProvider.lastDialog == .subscriptionUpsell {
-            presentContextualOnboarding(showLastDialog: true)
-        }
+        // Last, so a dialog the scheduler shows next isn't removed with this one.
+        contextualOnboardingScheduler.dialogDismissed(dialogType, in: tabViewModel?.tab)
     }
 
     private func handleContextualOnboardingOnManualDismiss(dialogType: ContextualDialogType) {
         let displayedDialogType = displayedDialogType(forRoot: dialogType)
         onboardingPixelReporter.measureDialogManuallyDismissed(dialogType: displayedDialogType)
-        let onboarding = NonBlockingOnboarding(featureFlagger: featureFlagger)
-        if onboarding.isNonBlocking {
-            onboardingPixelReporter.measureDialogDismissed(dialogType: displayedDialogType)
-            PixelKit.fire(GeneralPixel.onboardingContextualDismissed, frequency: .uniqueByName)
-            onboardingDialogTypeProvider.turnOffFeature()
-        } else {
-            if displayedDialogType == .subscriptionUpsell,
-               onboardingDialogTypeProvider.lastDialog == displayedDialogType {
-                onboardingDialogTypeProvider.gotItPressed()
-            }
-            handleContextualOnboardingOnDismiss(dialogType: displayedDialogType)
+        if displayedDialogType == .subscriptionUpsell,
+           onboardingDialogTypeProvider.lastDialog == displayedDialogType {
+            contextualOnboardingScheduler.gotItPressed(displayed: presentedContextualOnboardingDialogType, in: tabViewModel?.tab)
         }
+        handleContextualOnboardingOnDismiss(dialogType: displayedDialogType)
     }
 
     private func handleContextualOnboardingOnGotItPressed(dialogType: ContextualDialogType) {
-        if NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking,
-           onboardingDialogTypeProvider.state == .onboardingCompleted { return }
         let displayedDialogType = displayedDialogType(forRoot: dialogType)
-        onboardingDialogTypeProvider.gotItPressed()
+        // Legacy dismisses before this runs, rebranded after its fade: a nil presented type means the
+        // teardown already happened, so the scheduler shows the upsell now instead of on dismiss.
+        contextualOnboardingScheduler.gotItPressed(displayed: presentedContextualOnboardingDialogType, in: tabViewModel?.tab)
         onboardingPixelReporter.measureGotItPressed(dialogType: displayedDialogType)
         let currentState = onboardingDialogTypeProvider.lastDialog
         delegate?.dismissViewHighlight()
         if case .tryFireButton = currentState {
             delegate?.highlightFireButton()
         }
-        // The rebranded Fire dialog transitions to High Five in place. Remember the visible content
-        // so its later callbacks remain High Five even after the manager advances to the upsell.
-        if case .highFive = currentState {
-            presentedContextualOnboardingDialogType = .highFive
-        }
-        // Legacy dismisses before this runs, rebranded after its fade. A nil presented type means the
-        // teardown already happened; otherwise the dismiss handler presents instead.
-        if case .subscriptionUpsell = currentState, presentedContextualOnboardingDialogType == nil {
-            presentContextualOnboarding(showLastDialog: true)
+        // The rebranded Fire dialog transitions to its ending (High Five or Try Duck.ai) in place. Remember the
+        // visible content so its later callbacks remain the ending even after the manager advances to the upsell.
+        if currentState == .highFive || currentState == .tryDuckAI {
+            presentedContextualOnboardingDialogType = currentState
         }
     }
 
     private func displayedDialogType(forRoot rootDialogType: ContextualDialogType) -> ContextualDialogType {
         if let presentedContextualOnboardingDialogType,
-           presentedContextualOnboardingDialogType == .highFive || presentedContextualOnboardingDialogType == .subscriptionUpsell {
+           [.highFive, .tryDuckAI, .subscriptionUpsell].contains(presentedContextualOnboardingDialogType) {
             return presentedContextualOnboardingDialogType
         }
         switch rootDialogType {
-        case .highFive, .subscriptionUpsell:
+        case .highFive, .tryDuckAI, .subscriptionUpsell:
             return rootDialogType
         default:
             return onboardingDialogTypeProvider.lastDialog ?? rootDialogType
@@ -1098,7 +1023,7 @@ final class BrowserTabViewController: NSViewController {
 
                 // If the current content is the native internal site, delay the webview presentation
                 // until a website renders (or edge cases) to avoid white flash
-                if [URL.newtab, URL.settings, URL.bookmarks].contains(self?.lastURL) &&
+                if [URL.newtab, URL.settings, URL.bookmarks].contains(self?.contextualOnboardingScheduler.lastURL) &&
                     self?.featureFlagger.isFeatureOn(.delayedWebviewPresentation) == true {
                     return Publishers.Merge5(
                         tabViewModel.tab.webViewDidReceiveRedirectPublisher,
@@ -1139,17 +1064,16 @@ final class BrowserTabViewController: NSViewController {
             guard let self else { return }
             // keep the web content sized to the sidebar-adjusted bounds after navigation
             self.reconcileWebContentLayoutForSidebarIfNeeded()
-            // remove dialog on reload
-            if tabViewModel?.tab == lastTab && self.lastURL == tabViewModel?.tab.url && self.lastURL != nil {
-                self.abandonContextualOnboardingDialog()
-                return
-            }
-            // present contextual onboarding dialog if needed
             self.abandonContextualOnboardingDialog()
-            self.presentContextualOnboarding()
-            self.lastURL = self.tabViewModel?.tab.url
-            self.lastTab = self.tabViewModel?.tab
+            self.contextualOnboardingScheduler.navigationDidFinish(in: self.tabViewModel?.tab)
         }.store(in: &tabViewModelCancellables)
+
+        tabViewModel?.tab.aiChat?.responseReceivedPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                self?.contextualOnboardingScheduler.firstDuckAIAnswerReceived()
+            }
+            .store(in: &tabViewModelCancellables)
 
         // Same-document (SPA) navigations don't emit on webViewDidFinishNavigationPublisher,
         // so reconcile the web content layout for them here too.
@@ -1193,13 +1117,30 @@ final class BrowserTabViewController: NSViewController {
         .store(in: &tabViewModelCancellables)
     }
 
+    private func updateHoveredLinkTooltip(url: URL?) {
+        if hoveredLinkTooltip == nil {
+            guard url != nil else { return }
+            hoveredLinkTooltip = makeHoveredLinkTooltip()
+        }
+        hoveredLinkTooltip?.update(url: url)
+    }
+
+    private func makeHoveredLinkTooltip() -> HoveredLinkTooltipPresenter {
+        let sidebarWidth: () -> CGFloat = { [weak self] in
+            max(0, -(self?.sidebarContainerLeadingConstraint?.constant ?? 0))
+        }
+        let isWindowAccessible = featureFlagger.isFeatureOn(.hoveredLinkTooltipAccessibility)
+        return HoveredLinkTooltipPresenter(hostView: view, backgroundColor: NSColor(resource: .browserTabBackground),
+                                           isWindowAccessible: isWindowAccessible, trailingInset: sidebarWidth)
+    }
+
     func subscribeToHoveredLink(of tabViewModel: TabViewModel?) {
         tabViewModel?.tab.hoveredLinkPublisher.sink { [weak self] in
-            self?.scheduleHoverLabelUpdatesForUrl($0)
+            self?.updateHoveredLinkTooltip(url: $0)
         }.store(in: &tabViewModelCancellables)
 #if DEBUG
         if case .xcPreviews = AppVersion.runType {
-            self.scheduleHoverLabelUpdatesForUrl(.duckDuckGo)
+            self.updateHoveredLinkTooltip(url: .duckDuckGo)
         }
 #endif
     }
@@ -1344,17 +1285,14 @@ final class BrowserTabViewController: NSViewController {
         transientTabContentViewController = vc
     }
 
-    private func requestDisableUI() {
-        (view.window?.windowController as? MainWindowController)?.userInteraction(prevented: true)
-    }
-
     private func showTabContent(of tabViewModel: TabViewModel?) {
         // window closing is handled in the MainWindowController
         guard delegate?.closeWindowIfNeeded() != true else { return }
 
-        scheduleHoverLabelUpdatesForUrl(nil)
+        hoveredLinkTooltip?.reset()
         defer {
             adjustFirstResponderAfterAddingContentViewIfNeeded()
+            restoreHoveredLinkTooltipIfPointerIsOverPage()
         }
 
         if let tabID = tabViewModel?.tab.uuid {
@@ -1838,61 +1776,17 @@ extension BrowserTabViewController: TabDelegate {
         keyWindowSelectedTabCancellable = nil
         subscribeToPinnedTabs()
         hideWebViewSnapshotIfNeeded()
+        restoreHoveredLinkTooltipIfPointerIsOverPage()
 
-        // When a window becomes key it will reload the last contextual onboarding dialog if needed
-        // This helps keep dialogs consistent when moving between Windows
-        //  - If the dialog was dismissed it will not reload when leaving and coming back to the Window
-        //  - It tells presentContextualOnboarding that should show the lastDialog if possible
-        //  - Skip for pop-up windows; contextual onboarding is excluded there
-        //  - Skip if the displayed dialog already matches the expected one; re-creating the
-        //    hosting controller would restart the typewriter animation. If they differ, fall
-        //    through so the stale dialog gets replaced (or cleared if expected is nil).
-        let tab = tabViewModel?.tab
-        let expectedDialogType = tab.flatMap { onboardingDialogTypeProvider.lastDialogForTab($0) }
-        let displayedMatchesExpected = presentedContextualOnboardingDialogType != nil
-            && presentedContextualOnboardingDialogType == expectedDialogType
-        if !isInPopUpWindow
-            && !wasContextualOnboardingDialogDismissed
-            && onboardingDialogTypeProvider.state != .onboardingCompleted
-            && !displayedMatchesExpected {
-            presentContextualOnboarding(showLastDialog: true)
-        }
+        // Brings back the last contextual onboarding dialog of this tab when returning to the window.
+        contextualOnboardingScheduler.windowDidBecomeKey(tab: tabViewModel?.tab,
+                                                         displayed: presentedContextualOnboardingDialogType)
     }
 
     func windowDidResignKey() {
         pinnedTabsDelegatesCancellable = nil
-        scheduleHoverLabelUpdatesForUrl(nil)
+        hoveredLinkTooltip?.reset()
         subscribeToTabSelectedInCurrentKeyWindow()
-    }
-
-    private func scheduleHoverLabelUpdatesForUrl(_ url: URL?) {
-        // cancel previous animation, if any
-        hoverLabelWorkItem?.cancel()
-
-        // schedule an animation if needed
-        var animationItem: DispatchWorkItem?
-        var delay: Double = 0
-        if url == nil && hoverLabelContainer.alphaValue > 0 {
-            // schedule a fade out
-            delay = 0.1
-            animationItem = DispatchWorkItem { [weak self] in
-                self?.hoverLabelContainer.animator().alphaValue = 0
-            }
-        } else if url != nil && hoverLabelContainer.alphaValue < 1 {
-            // schedule a fade in
-            delay = 0.5
-            animationItem = DispatchWorkItem { [weak self] in
-                self?.hoverLabel.stringValue = url?.absoluteString ?? ""
-                self?.hoverLabelContainer.animator().alphaValue = 1
-            }
-        } else {
-            hoverLabel.stringValue = url?.absoluteString ?? ""
-        }
-
-        if let item = animationItem {
-            hoverLabelWorkItem = item
-            DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: item)
-        }
     }
 
     func tab(_ tab: Tab, requestedSaveAutofillData autofillData: AutofillData) {
@@ -2117,10 +2011,46 @@ extension BrowserTabViewController: BrowserTabSelectionDelegate {
 extension BrowserTabViewController {
 
     func addMouseMonitors() {
+        // Assigning replaces (and cancels) the monitor from an earlier appearance.
+        hoveredLinkMouseMonitor = NSEvent.addLocalCancellableMonitor(forEventsMatching: [.mouseMoved, .leftMouseDragged]) { [weak self] event in
+            // Skip hit testing unless the tooltip has something to show, hide or restore.
+            guard let self, let tooltip = self.hoveredLinkTooltip, !tooltip.isIdle else { return event }
+            // The pointer over another window (a popover, for instance) is not over the page.
+            guard event.window === self.view.window else {
+                tooltip.mouseDidExit()
+                return event
+            }
+            if let window = event.window, self.isPointerOverWebView(atWindowPoint: event.locationInWindow, in: window) {
+                tooltip.mouseDidMove()
+            } else {
+                tooltip.mouseDidExit()
+            }
+            return event
+        }
+
         NSEvent.addLocalCancellableMonitor(forEventsMatching: .leftMouseDown) { [weak self] event in
             guard let self else { return event }
             return self.mouseDown(with: event)
         }.store(in: &cancellables)
+    }
+
+    /// Views stacked above the web view (find bar, overlays) take the pointer away from it.
+    private func isPointerOverWebView(atWindowPoint windowPoint: NSPoint, in window: NSWindow) -> Bool {
+        guard let webView, let contentView = window.contentView else { return false }
+        let point = contentView.superview?.convert(windowPoint, from: nil) ?? windowPoint
+        return contentView.hitTest(point)?.isDescendant(of: webView) == true
+    }
+
+    /// Switching tabs or windows hides the tooltip, and the page reports nothing while the pointer stays still.
+    /// So once the page is on screen, show the link it last reported if the pointer is over it.
+    private func restoreHoveredLinkTooltipIfPointerIsOverPage() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self, let window = self.view.window, let url = self.tabViewModel?.tab.currentHoveredLink else { return }
+            // A just added web view has no frame until layout runs, and hit testing would miss it.
+            window.contentView?.layoutSubtreeIfNeeded()
+            guard self.isPointerOverWebView(atWindowPoint: window.mouseLocationOutsideOfEventStream, in: window) else { return }
+            self.updateHoveredLinkTooltip(url: url)
+        }
     }
 
     func mouseDown(with event: NSEvent) -> NSEvent? {

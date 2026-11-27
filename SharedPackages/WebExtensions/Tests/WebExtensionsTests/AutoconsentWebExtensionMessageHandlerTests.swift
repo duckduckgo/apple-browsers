@@ -108,7 +108,7 @@ final class AutoconsentWebExtensionMessageHandlerTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenRefreshCpmDashboardStateThenForwardsTabIdentifierAndURLToHealthMonitor() async {
+    func testWhenRefreshCpmDashboardStateThenForwardsURLAndExtensionToHealthMonitor() async {
         let monitor = RecordingCPMMessagingHealthMonitor()
         let handler = AutoconsentWebExtensionMessageHandler(
             privacyConfigurationManager: mockPrivacyConfigurationManager,
@@ -132,9 +132,147 @@ final class AutoconsentWebExtensionMessageHandlerTests: XCTestCase {
 
         _ = await handler.handleMessage(message)
 
-        XCTAssertEqual(monitor.extensionTabIdentifier, 42)
         XCTAssertEqual(monitor.extensionIdentifier, message.extensionIdentifier)
         XCTAssertEqual(monitor.url, URL(string: "https://example.com/article"))
+    }
+
+    @MainActor
+    func testWhenCpmStageMeansNoAnswerWillComeThenTheRefreshIsNotAnAnswer() async {
+        for stage in ["config_unavailable", "settings_missing"] {
+            let monitor = RecordingCPMMessagingHealthMonitor()
+            let handler = AutoconsentWebExtensionMessageHandler(
+                privacyConfigurationManager: mockPrivacyConfigurationManager,
+                autoconsentPreferences: mockAutoconsentPreferences,
+                cpmMessagingHealthMonitor: monitor
+            )
+            let message = createMessage(method: "refreshCpmDashboardState", params: [
+                "tabId": NSNumber(value: 7),
+                "url": "https://example.com/article",
+                "consentStatus": ["consentManaged": false, "cpmStage": stage]
+            ])
+
+            _ = await handler.handleMessage(message)
+
+            XCTAssertEqual(monitor.url, URL(string: "https://example.com/article"))
+            XCTAssertEqual(monitor.isAnswer, false, "\(stage) must not count as the page's answer")
+        }
+    }
+
+    @MainActor
+    func testWhenCpmInitProgressArrivesThenItReachesTheMonitorAsAMarkAndNeverAsAResponse() async {
+        enableInitProgress()
+        let monitor = RecordingCPMMessagingHealthMonitor()
+        let handler = AutoconsentWebExtensionMessageHandler(
+            privacyConfigurationManager: mockPrivacyConfigurationManager,
+            autoconsentPreferences: mockAutoconsentPreferences,
+            cpmMessagingHealthMonitor: monitor
+        )
+
+        let result = await handler.handleMessage(createMessage(method: "cpmInitProgress", params: [
+            "tabId": NSNumber(value: 9), "url": "https://example.com/a", "stage": "config_read"
+        ]))
+
+        guard case .success = result else { return XCTFail("a mark is always acknowledged") }
+        XCTAssertEqual(monitor.progress.map(\.stage), [.configRead])
+        XCTAssertEqual(monitor.progress.map(\.url), [URL(string: "https://example.com/a")])
+        XCTAssertNil(monitor.url, "a mark is not a dashboard response")
+    }
+
+    @MainActor
+    func testWhenCpmInitProgressIsMalformedThenItIsIgnoredWithoutAnError() async {
+        enableInitProgress()
+        let monitor = RecordingCPMMessagingHealthMonitor()
+        let handler = AutoconsentWebExtensionMessageHandler(
+            privacyConfigurationManager: mockPrivacyConfigurationManager,
+            autoconsentPreferences: mockAutoconsentPreferences,
+            cpmMessagingHealthMonitor: monitor
+        )
+        let malformed: [[String: Any]] = [
+            ["url": "https://example.com/a"],
+            ["url": "https://example.com/a", "stage": "from_a_newer_extension"],
+            ["stage": "background_received"],
+            ["url": "no host", "stage": "background_received"]
+        ]
+
+        for params in malformed {
+            let result = await handler.handleMessage(createMessage(method: "cpmInitProgress", params: params))
+            guard case .success = result else { return XCTFail("\(params) must not be an error") }
+        }
+
+        XCTAssertTrue(monitor.progress.isEmpty)
+    }
+
+    @MainActor
+    func testWhenCpmInitProgressComesFromAnExtensionThenItsIdentifierIsPassedOn() async {
+        enableInitProgress()
+        let monitor = RecordingCPMMessagingHealthMonitor()
+        let handler = AutoconsentWebExtensionMessageHandler(
+            privacyConfigurationManager: mockPrivacyConfigurationManager,
+            autoconsentPreferences: mockAutoconsentPreferences,
+            cpmMessagingHealthMonitor: monitor
+        )
+
+        _ = await handler.handleMessage(createMessage(method: "cpmInitProgress", params: [
+            "url": "https://example.com/a", "stage": "background_received"
+        ]))
+
+        XCTAssertEqual(monitor.progress.map(\.extensionIdentifier), ["test-extension-id"])
+    }
+
+    @MainActor
+    func testWhenTheInitProgressSubfeatureIsOffThenMarksAreIgnoredAndAcknowledged() async {
+        mockPrivacyConfiguration.isSubfeatureEnabledCheck = { _, _ in false }
+        let monitor = RecordingCPMMessagingHealthMonitor()
+        let handler = AutoconsentWebExtensionMessageHandler(
+            privacyConfigurationManager: mockPrivacyConfigurationManager,
+            autoconsentPreferences: mockAutoconsentPreferences,
+            cpmMessagingHealthMonitor: monitor
+        )
+
+        let result = await handler.handleMessage(createMessage(method: "cpmInitProgress", params: [
+            "url": "https://example.com/a", "stage": "config_read"
+        ]))
+
+        guard case .success = result else { return XCTFail("a mark is always acknowledged") }
+        XCTAssertTrue(monitor.progress.isEmpty)
+    }
+
+    @MainActor
+    func testWhenTheInitProgressSubfeatureIsOnThenTheExtensionIsToldThroughTheSettingsAndTheSubfeatureCheck() async {
+        enableInitProgress()
+
+        let settings = await handler.handleMessage(createMessage(method: "isAutoconsentSettingEnabled"))
+        let check = await handler.handleMessage(createMessage(method: "isSubFeatureEnabled", params: [
+            "featureName": "autoconsent", "subfeatureName": "cpmInitProgress"
+        ]))
+
+        guard case .success(let settingsResponse) = settings,
+              let flags = (settingsResponse as? [String: Any])?["featureFlags"] as? [String: Bool] else {
+            return XCTFail("settings carry the feature flags")
+        }
+        XCTAssertEqual(flags["cpmInitProgress"], true)
+        guard case .success(let checkResponse) = check else { return XCTFail("the check is answered") }
+        XCTAssertEqual((checkResponse as? [String: Bool])?["enabled"], true)
+    }
+
+    @MainActor
+    func testWhenCpmStageIsOrdinaryThenTheRefreshIsAResponse() async {
+        let monitor = RecordingCPMMessagingHealthMonitor()
+        let handler = AutoconsentWebExtensionMessageHandler(
+            privacyConfigurationManager: mockPrivacyConfigurationManager,
+            autoconsentPreferences: mockAutoconsentPreferences,
+            cpmMessagingHealthMonitor: monitor
+        )
+        let message = createMessage(method: "refreshCpmDashboardState", params: [
+            "tabId": NSNumber(value: 7),
+            "url": "https://example.com/article",
+            "consentStatus": ["consentManaged": false, "cpmStage": "site_disabled"]
+        ])
+
+        _ = await handler.handleMessage(message)
+
+        XCTAssertEqual(monitor.url, URL(string: "https://example.com/article"))
+        XCTAssertEqual(monitor.isAnswer, true)
     }
 
     // MARK: - showCpmAnimation
@@ -406,6 +544,65 @@ final class AutoconsentWebExtensionMessageHandlerTests: XCTestCase {
         } else {
             XCTFail("Expected success result")
         }
+    }
+
+    // MARK: - isSubFeatureEnabled: trackerProtection.appleSurrogateRedirection
+
+    private func appleSurrogateRedirectionResponse(isEnabled: Bool, subfeatureName: String = "appleSurrogateRedirection") async -> Bool? {
+        let handler = AutoconsentWebExtensionMessageHandler(
+            privacyConfigurationManager: mockPrivacyConfigurationManager,
+            autoconsentPreferences: mockAutoconsentPreferences,
+            isAppleSurrogateRedirectionEnabled: { isEnabled }
+        )
+        let message = createMessage(
+            method: "isSubFeatureEnabled",
+            params: ["featureName": "trackerProtection", "subfeatureName": subfeatureName]
+        )
+
+        guard case .success(let response) = await handler.handleMessage(message) else { return nil }
+        return (response as? [String: Bool])?["enabled"]
+    }
+
+    func testWhenAppleSurrogateRedirectionIsEnabledThenReturnsEnabled() async {
+        let enabled = await appleSurrogateRedirectionResponse(isEnabled: true)
+        XCTAssertEqual(enabled, true)
+    }
+
+    func testWhenAppleSurrogateRedirectionIsDisabledThenReturnsDisabled() async {
+        let enabled = await appleSurrogateRedirectionResponse(isEnabled: false)
+        XCTAssertEqual(enabled, false)
+    }
+
+    // The app's answer reads WKWebExtensionController state, which is main-actor only, so it must be read there even
+    // when the message is handled off the main thread. The stub answers `true` only when it runs on the main thread.
+    func testWhenMessageArrivesOffMainThreadThenAppleSurrogateRedirectionIsReadOnMainThread() async {
+        let handler = AutoconsentWebExtensionMessageHandler(
+            privacyConfigurationManager: mockPrivacyConfigurationManager,
+            autoconsentPreferences: mockAutoconsentPreferences,
+            isAppleSurrogateRedirectionEnabled: { Thread.isMainThread }
+        )
+        let message = createMessage(
+            method: "isSubFeatureEnabled",
+            params: ["featureName": "trackerProtection", "subfeatureName": "appleSurrogateRedirection"]
+        )
+
+        let result = await Task.detached { await handler.handleMessage(message) }.value
+
+        guard case .success(let response) = result else { return XCTFail("Expected success result") }
+        XCTAssertEqual((response as? [String: Bool])?["enabled"], true)
+    }
+
+    func testWhenAppleSurrogateRedirectionAnswerComesFromAppNotRawConfig() async {
+        // The raw subfeature being on must not be enough: the app's check also covers OS version and the embedded flag.
+        mockPrivacyConfiguration.isSubfeatureEnabledCheck = { _, _ in true }
+        let enabled = await appleSurrogateRedirectionResponse(isEnabled: false)
+        XCTAssertEqual(enabled, false)
+    }
+
+    func testWhenOtherTrackerProtectionSubfeatureIsQueriedThenReturnsDisabled() async {
+        mockPrivacyConfiguration.isSubfeatureEnabledCheck = { _, _ in true }
+        let enabled = await appleSurrogateRedirectionResponse(isEnabled: true, subfeatureName: "somethingElse")
+        XCTAssertEqual(enabled, false)
     }
 
     func testWhenIsSubFeatureEnabledWithUnknownSubfeatureThenReturnsDisabled() async {
@@ -830,6 +1027,12 @@ final class AutoconsentWebExtensionMessageHandlerTests: XCTestCase {
         }
     }
 
+    private func enableInitProgress() {
+        mockPrivacyConfiguration.isSubfeatureEnabledCheck = { subfeature, _ in
+            subfeature.rawValue == AutoconsentSubfeature.cpmInitProgress.rawValue
+        }
+    }
+
     private func createMessage(
         method: String,
         params: [String: Any]? = nil
@@ -848,15 +1051,19 @@ final class AutoconsentWebExtensionMessageHandlerTests: XCTestCase {
 @available(macOS 15.4, iOS 18.4, *)
 @MainActor
 private final class RecordingCPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
-    private(set) var extensionTabIdentifier: Int?
     private(set) var extensionIdentifier: String?
     private(set) var url: URL?
+    private(set) var isAnswer: Bool?
+    private(set) var progress: [(url: URL, stage: CPMInitStage, extensionIdentifier: String?)] = []
 
     func handle(_ event: CPMMessagingHealthEvent) {
-        guard case .dashboardResponse(let extensionTabIdentifier, let url, let extensionIdentifier) = event else { return }
-        self.extensionTabIdentifier = extensionTabIdentifier
+        if case .initProgress(let url, let stage, let extensionIdentifier) = event {
+            progress.append((url, stage, extensionIdentifier))
+        }
+        guard case .dashboardResponse(let url, let extensionIdentifier, let isAnswer) = event else { return }
         self.extensionIdentifier = extensionIdentifier
         self.url = url
+        self.isAnswer = isAnswer
     }
 }
 

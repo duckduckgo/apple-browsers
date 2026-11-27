@@ -17,6 +17,8 @@
 //  limitations under the License.
 //
 
+import Combine
+import DesignResourcesKit
 import DesignResourcesKitIcons
 import DuckUI
 import SwiftUI
@@ -182,7 +184,7 @@ extension SimplifiedSyncSettingsView {
                     .padding(.horizontal, 10)
                     .padding(.vertical, 2)
                     .foregroundColor(.white)
-                    .background(Color(baseColor: .red40))
+                    .background(Color(designSystemColor: .statusRed))
                     .clipShape(RoundedRectangle(cornerRadius: 10))
             })
             .alert(isPresented: $isEnvironmentSwitcherInstructionsVisible) {

@@ -193,8 +193,10 @@ final class FireCoordinator {
 
         // Use Fire dialog for regular windows, popover for Fire windows
         if !mainViewController.isBurner {
+            let isWaitingForDuckAIChatDeletion = onboardingContextualDialogsManager?().isWaitingForDuckAIChatDeletion ?? false
+            let mode: FireDialogViewModel.Mode = isWaitingForDuckAIChatDeletion ? .duckAIOnboarding : .fireButton
             Task { @MainActor in
-                _=await self.presentFireDialog(mode: .fireButton, in: burningWindow)
+                _=await self.presentFireDialog(mode: mode, in: burningWindow)
             }
         } else {
             // Fire windows continue to use the legacy popover
@@ -240,7 +242,7 @@ extension FireCoordinator {
 
         let scopeQuery: DataModel.HistoryQueryKind
         switch mode {
-        case .fireButton, .mainMenuAll:
+        case .fireButton, .mainMenuAll, .duckAIOnboarding:
             scopeQuery = .rangeFilter(.all)
         case .historyView(let query):
             scopeQuery = query
@@ -259,7 +261,16 @@ extension FireCoordinator {
             // Fallback to querying provider
             scopeVisits = await historyProvider.visits(matching: scopeQuery)
         }
-        let scopeCookieDomains = scopeVisits.lazy.compactMap(\.historyEntry?.url.host).convertedToETLDPlus1(tld: tld)
+        var scopeCookieDomains = scopeVisits.lazy.compactMap(\.historyEntry?.url.host).convertedToETLDPlus1(tld: tld)
+        if scopeQuery == .rangeFilter(.all) {
+            // "Ask about page" on a link reads pages with the user's session without recording a visit.
+            let tabDomains = windowControllersManager.allTabCollectionViewModels
+                .filter { !$0.burnerMode.isBurner }
+                .reduce(into: Set<String>()) { $0.formUnion($1.localHistoryDomains) }
+            scopeCookieDomains.formUnion(tabDomains.convertedToETLDPlus1(tld: tld))
+        }
+        // The Duck.ai onboarding dialog deletes the chats only, and closes the tab so the path moves on.
+        let isDuckAIOnboarding = mode == .duckAIOnboarding
 
         let vm = FireDialogViewModel(
             fireViewModel: self.fireViewModel,
@@ -274,8 +285,11 @@ extension FireCoordinator {
             faviconManagement: self.faviconManagement,
             featureFlagger: self.featureFlagger,
             clearingOption: mode.shouldShowSegmentedControl ? nil /* last selected */ : .allData,
-            includeTabsAndWindows: mode.shouldShowCloseTabsToggle ? nil /* last selected */ : false,
-            includeChatHistory: mode.shouldShowChatHistoryToggle(featureFlagger) ? nil /* last selected */ : false,
+            includeTabsAndWindows: isDuckAIOnboarding ? true : (mode.shouldShowCloseTabsToggle ? nil /* last selected */ : false),
+            includeHistory: isDuckAIOnboarding ? false : nil,
+            includeCookiesAndSiteData: isDuckAIOnboarding ? false : nil,
+            includeChatHistory: isDuckAIOnboarding ? true : (mode.shouldShowChatHistoryToggle(featureFlagger) ? nil /* last selected */ : false),
+            sectionsExpanded: isDuckAIOnboarding ? true : nil,
             mode: mode,
             settings: settings,
             scopeCookieDomains: scopeCookieDomains,
@@ -350,7 +364,7 @@ extension FireCoordinator {
 
             await self.handleDialogResult(options, tabCollectionViewModel: tabCollectionViewModel, isAllHistorySelected: isAllHistorySelected)
 
-            if [.fireButton, .mainMenuAll].contains(mode) {
+            if [.fireButton, .mainMenuAll, .duckAIOnboarding].contains(mode) {
                 // Record fire button usage for contextual onboarding flows
                 onboardingContextualDialogsManager?().fireButtonUsed()
             }

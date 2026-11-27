@@ -82,9 +82,11 @@ public class DBPIOSInterface {
         func resetAllNotificationStatesForDebug()
 
         @discardableResult
-        func startDebugServer() async -> Bool
+        func startDebugServer(contentBlocking: DBPWebViewContentBlocking?) async -> Bool
         func stopDebugServer()
         var debugServerPort: UInt16? { get }
+
+        func makeDebugModeRunner(contentBlocking: DBPWebViewContentBlocking?) throws -> DebugModeRunner
     }
 
     public protocol AuthenticationDelegate: AnyObject {
@@ -158,8 +160,9 @@ public class DBPIOSInterface {
 public enum FreemiumDBPEntryPoint: String, Equatable {
     case freeScanBanner = "freescanbanner"
     case viewResultsBanner = "viewresultsbanner"
-    case appMenuPreScan = "appmenuprescan"
-    case appMenuPostScan = "appmenupostscan"
+    case appSettingsPreScan = "appsettingsprescan"
+    case appSettingsPostScan = "appsettingspostscan"
+    case scanCompleteNotification = "scancompletenotification"
 }
 
 extension BGTask: DBPIOSInterface.BGTaskHandling {}
@@ -858,7 +861,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DebugCommandsDelegate 
     }
 
     @discardableResult
-    public func startDebugServer() async -> Bool {
+    public func startDebugServer(contentBlocking: DBPWebViewContentBlocking?) async -> Bool {
         guard canStartDebugServer else {
             Logger.dataBrokerProtection.error("Blocked PIR debug server start outside debug/internal-user context.")
             return false
@@ -872,8 +875,33 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DebugCommandsDelegate 
             self.debugServer = nil
         }
 
-        let server = DataBrokerProtectionDebugHTTPServer(provider: self, logReader: DataBrokerProtectionIOSLogReader())
         do {
+            var port = DataBrokerProtectionDebugHTTPServer.defaultPort
+            var instanceID: String?
+            #if DEBUG
+            let environment = ProcessInfo.processInfo.environment
+            if let value = environment["PIR_DEBUG_PORT"] {
+                guard let requestedPort = UInt16(value), requestedPort > 0 else { return false }
+                port = requestedPort
+            }
+            if let value = environment["PIR_DEBUG_INSTANCE_ID"] {
+                guard UUID(uuidString: value) != nil else { return false }
+                instanceID = value
+            }
+            #endif
+            let server = DataBrokerProtectionDebugHTTPServer(provider: self,
+                                                             logReader: DataBrokerProtectionIOSLogReader(),
+                                                             runManager: DebugModeRunManager(runner: try makeDebugModeRunner(contentBlocking: contentBlocking)),
+                                                             port: port,
+                                                             instanceID: instanceID)
+            #if DEBUG
+            let subscriptionManager = debugRunnerSubscriptionManager
+            let settings = settings
+            server.prerequisiteReader = {
+                await Self.readDebugPrerequisites(subscriptionManager: subscriptionManager, settings: settings)
+            }
+            installDebugMaintenance(on: server)
+            #endif
             try server.start()
             debugServer = server
             return true
@@ -881,6 +909,43 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DebugCommandsDelegate 
             Logger.dataBrokerProtection.error("Failed to start PIR debug server: \(error.localizedDescription, privacy: .public)")
             return false
         }
+    }
+
+    #if DEBUG
+    @MainActor
+    private static func readDebugPrerequisites(subscriptionManager: DataBrokerProtectionSubscriptionManaging,
+                                               settings: DataBrokerProtectionSettings) async -> DebugPrerequisiteResult {
+        guard let manager = subscriptionManager as? DataBrokerProtectionSubscriptionManager else {
+            return DebugPrerequisiteResult(status: .unavailable, backend: "subscription", environment: "unknown")
+        }
+        return await DebugPrerequisiteResult.subscription(manager, settings: settings)
+    }
+
+    private var debugRunnerSubscriptionManager: DataBrokerProtectionSubscriptionManaging {
+        (subscriptionManager as? DataBrokerProtectionSubscriptionManager)?.debugRunnerManager() ?? subscriptionManager
+    }
+
+    private var debugRunnerAuthenticationManager: DataBrokerProtectionAuthenticationManaging {
+        guard let manager = subscriptionManager as? DataBrokerProtectionSubscriptionManager else { return authenticationManager }
+        let debugManager = manager.debugRunnerManager()
+        return debugManager === manager ? authenticationManager : DataBrokerProtectionAuthenticationManager(subscriptionManager: debugManager)
+    }
+    #endif
+
+    public func makeDebugModeRunner(contentBlocking: DBPWebViewContentBlocking?) throws -> DebugModeRunner {
+        let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName)
+        let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: nil, databaseFileURL: databaseURL)
+        let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: sharedPixelsHandler)
+        #if DEBUG
+        let authenticationManager = debugRunnerAuthenticationManager
+        #endif
+        return DebugModeRunner(authenticationManager: authenticationManager,
+                               featureFlagger: featureFlagger,
+                               privacyConfigManager: privacyConfigManager,
+                               pixelHandler: sharedPixelsHandler,
+                               vault: try vaultFactory.makeVault(reporter: reporter),
+                               settings: settings,
+                               contentBlocking: contentBlocking)
     }
 
     public func stopDebugServer() {
@@ -896,6 +961,72 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DebugCommandsDelegate 
         return debugServer.port
     }
 }
+
+#if DEBUG
+extension DataBrokerProtectionIOSManager {
+    private func installDebugMaintenance(on server: DataBrokerProtectionDebugHTTPServer) {
+        server.brokerJSONRefresher = { [weak self] resetDelivery in
+            guard let self else { throw CancellationError() }
+            let resources = try self.vaultResources()
+            BrokerUpdaterUserDefaults().resetLastCheckedVersion()
+            if resetDelivery { resources.jobDependencies.dataBrokerProtectionSettings.resetBrokerDeliveryData() }
+            try await resources.brokerUpdater?.checkForUpdates(skipsLimiter: true)
+            return try resources.database.fetchAllDataBrokers().map(DebugBrokerState.init)
+        }
+        server.immediateScanStarter = { [weak self] brokerURLs in
+            guard let self else { throw CancellationError() }
+            let resources = try self.vaultResources()
+            let settings = resources.jobDependencies.dataBrokerProtectionSettings
+            let isAuthenticated = await self.refreshFreeScanState()
+            // Free scans skip maintenance scans when they run, so they aren't planned either.
+            let jobs = try PIRDebugLaunchOptions.scanJobs(database: resources.database, isAuthenticatedUser: isAuthenticated,
+                                                          brokerURLs: brokerURLs, includesMaintenance: isAuthenticated)
+            try PIRDebugLaunchOptions.makeScansDue(jobs, database: resources.database)
+            let previousBrokerURLs = settings.debugTestBrokerURLs
+            settings.debugTestBrokerURLs = brokerURLs
+            resources.queueManager.startImmediateScanOperationsIfPermitted(showWebView: false, isAuthenticatedUser: isAuthenticated,
+                                                                           jobDependencies: resources.jobDependencies, errorHandler: nil) {
+                settings.debugTestBrokerURLs = previousBrokerURLs
+            }
+            return DebugImmediateScans(queued: jobs, requested: brokerURLs)
+        }
+    }
+
+    /// Mirrors `saveProfile`, capturing the scan plan between the save and the initial scans that change it.
+    @MainActor
+    public func seedProfileForDebugLaunch(_ profile: DataBrokerProtectionCore.DataBrokerProtectionProfile,
+                                          managedSeed: PIRDebugLaunchOptions.ManagedSeed,
+                                          rawAuthenticated: Bool) async throws -> [PIRDebugLaunchOptions.DebugScanJob] {
+        try managedSeed.validateAccount(rawAuthenticated: rawAuthenticated,
+                                        pirAuthenticated: await authenticationManager.isUserAuthenticated)
+        let resources = try await vaultResources(reason: .dashboard)
+        try managedSeed.validateExistingProfile(try resources.database.fetchProfile() != nil)
+        if managedSeed.resetBeforeSeeding {
+            try deleteAllUserProfileData()
+            freemiumDBPUserStateManager.resetAllState()
+        }
+        managedSeed.applyBrokerSelection(to: resources.jobDependencies.dataBrokerProtectionSettings)
+        // A fresh install's first broker update can remove bundled brokers after the plan names them.
+        try? await refreshRemoteBrokerJSON()
+        try await saveProfileAndPrepareForInitialScans(profile)
+        let jobs = try managedSeed.scanJobs(database: resources.database)
+
+        if shouldUseContinuedProcessingForInitialRun() {
+            do {
+                if let scanPlan = try makeContinuedProcessingInitialRunPlan() {
+                    try await continuedProcessingCoordinator.startInitialRun(scanPlan: scanPlan)
+                }
+                return jobs
+            } catch {
+                Logger.dataBrokerProtection.error("Continued processing start failed after preparation, falling back to immediate scans. Error: \(error.localizedDescription, privacy: .public)")
+            }
+        }
+
+        await startImmediateScanOperations()
+        return jobs
+    }
+}
+#endif
 
 // MARK: - Debug HTTP server read access
 
@@ -1105,8 +1236,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.BackgroundTaskHandling
 
 #if targetEnvironment(simulator)
             Logger.dataBrokerProtection.log("Background task not supported in simulator")
-            return
-#endif
+#else
 
             let isAuthenticatedUser = await refreshFreeScanState()
 
@@ -1138,6 +1268,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.BackgroundTaskHandling
                 Logger.dataBrokerProtection.log("Scheduling background task failed with error: \(error)")
                 self.iOSPixelsHandler.fire(.backgroundTaskSchedulingFailed(error: error))
             }
+#endif
         }
     }
 

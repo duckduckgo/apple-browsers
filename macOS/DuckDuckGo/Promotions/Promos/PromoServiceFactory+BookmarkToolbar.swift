@@ -33,7 +33,6 @@ extension PromoServiceFactory {
             context: .global,
             coexistingPromoIDs: [PromoServiceFactory.nextSteps.id],
             delegate: BookmarkToolbarPromoDelegate(
-                featureFlagger: dependencies.featureFlagger,
                 windowControllersManager: dependencies.windowControllersManager
             )
         )

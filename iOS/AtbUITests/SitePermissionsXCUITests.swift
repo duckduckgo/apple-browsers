@@ -46,6 +46,8 @@ final class SitePermissionsXCUITests: XCTestCase {
         server["/t/:pixelName"] = { _ in .accepted }
         server["/geolocation-frame"] = { _ in .ok(.html(Self.geolocationFrameHTML)) }
         frameServer["/geolocation-frame"] = { _ in .ok(.html(Self.geolocationFrameHTML)) }
+        frameServer["/camera-frame"] = { _ in .ok(.html(Self.cameraFrameHTML)) }
+        frameServer["/camera-frame-tampered"] = { _ in .ok(.html(Self.tamperedCameraFrameHTML)) }
         try frameServer.start(0, forceIPv4: true, priority: .userInitiated)
         let framePort = try frameServer.port()
         server["/iframe-same-origin"] = { _ in
@@ -59,8 +61,31 @@ final class SitePermissionsXCUITests: XCTestCase {
         server["/camera-frame"] = { _ in .ok(.html(Self.cameraFrameHTML)) }
         server["/iframe-camera"] = { _ in .ok(.html(Self.iframeHTML(src: "/camera-frame", allow: "camera"))) }
         server["/iframe-camera-blocked"] = { _ in .ok(.html(Self.iframeHTML(src: "/camera-frame", allow: "camera 'none'"))) }
+        server["/iframe-camera-cross-origin"] = { _ in
+            .ok(.html(Self.iframeHTML(src: "http://127.0.0.1:\(framePort)/camera-frame", allow: "camera")))
+        }
+        server["/iframe-camera-cross-origin-not-delegated"] = { _ in
+            .ok(.html(Self.iframeHTML(src: "http://127.0.0.1:\(framePort)/camera-frame")))
+        }
+        server["/iframe-camera-cross-origin-not-delegated-tampered"] = { _ in
+            .ok(.html(Self.iframeHTML(src: "http://127.0.0.1:\(framePort)/camera-frame-tampered")))
+        }
+        // Top page → cross-origin frame → frame back on the top page's origin.
+        server["/iframe-camera-nested-same-origin"] = { _ in
+            .ok(.html(Self.iframeHTML(src: "http://127.0.0.1:\(framePort)/relay-camera", allow: "camera *")))
+        }
+        server["/iframe-camera-nested-same-origin-not-delegated"] = { _ in
+            .ok(.html(Self.iframeHTML(src: "http://127.0.0.1:\(framePort)/relay-camera-not-delegated", allow: "camera *")))
+        }
         try server.start(0, forceIPv4: true, priority: .userInitiated)
         port = try server.port()
+        let topPort = port
+        frameServer["/relay-camera"] = { _ in
+            .ok(.html(Self.iframeHTML(src: "http://127.0.0.1:\(topPort)/camera-frame", allow: "camera")))
+        }
+        frameServer["/relay-camera-not-delegated"] = { _ in
+            .ok(.html(Self.iframeHTML(src: "http://127.0.0.1:\(topPort)/camera-frame")))
+        }
     }
 
     override func tearDownWithError() throws {
@@ -70,24 +95,12 @@ final class SitePermissionsXCUITests: XCTestCase {
         try super.tearDownWithError()
     }
 
-    func testWhenFlagIsOffThenWebKitPromptsAndPermissionManagementIsHidden() {
-        // Existing records must stay hidden after rollback too.
-        launchApp(flagEnabled: false, seedPermissions: "{ \"127.0.0.1\" = { camera = allow; }; }")
-        openPermissionPage()
-        request("camera")
-        denyWebKitPrompt(for: "camera")
-
-        openMenu()
-        XCTAssertFalse(element("BrowsingMenu.SitePermissions").exists)
-        assertSitePermissionSettingsHidden()
+    func testWhenOrdinaryTabRunsOnIOS15ThenItUsesLegacyPermissions() throws {
+        try assertIOS15UsesLegacyPermissions(fireMode: false)
     }
 
-    func testWhenFlagOverrideIsOnThenOrdinaryTabUsesLegacyPermissionsOnIOS15() throws {
-        try assertIOS15OverrideUsesLegacyPermissions(fireMode: false)
-    }
-
-    func testWhenFlagOverrideIsOnThenFireTabUsesLegacyPermissionsOnIOS15() throws {
-        try assertIOS15OverrideUsesLegacyPermissions(fireMode: true)
+    func testWhenFireTabRunsOnIOS15ThenItUsesLegacyPermissions() throws {
+        try assertIOS15UsesLegacyPermissions(fireMode: true)
     }
 
     func testWhenCameraIsAllowedThenSiteDialogPrecedesSystemPromptAndDecisionPersists() {
@@ -736,6 +749,46 @@ final class SitePermissionsXCUITests: XCTestCase {
         assertResult("Frame result: success video=1")
     }
 
+    func testWhenCrossOriginIframeIsDelegatedCameraThenSiteDialogPrecedesSystemPromptAndFrameGetsVideo() {
+        launchApp()
+        openPermissionPage(path: "/iframe-camera-cross-origin")
+        assertResult("Frame result: ready")
+        tap(app.webViews.buttons["Frame camera"])
+        assertSiteDialog(permission: "camera")
+        tap(element("SitePermissions.Dialog.AllowOnce"))
+        answerSystemAlert(for: "camera", allow: true)
+        assertResult("Frame result: success video=1")
+    }
+
+    func testWhenCrossOriginIframeIsNotDelegatedCameraThenItIsDeniedWithoutSiteOrSystemPrompt() {
+        assertIframeIsDeniedWithoutSiteOrSystemPrompt(path: "/iframe-camera-cross-origin-not-delegated",
+                                                      button: "Frame camera",
+                                                      result: "Frame result: NotAllowedError")
+    }
+
+    func testWhenSameOriginIframeInsideCrossOriginIframeIsDelegatedCameraThenSiteDialogPrecedesSystemPromptAndFrameGetsVideo() {
+        launchApp()
+        openPermissionPage(path: "/iframe-camera-nested-same-origin")
+        assertResult("Frame result: ready")
+        tap(app.webViews.buttons["Frame camera"])
+        assertSiteDialog(permission: "camera")
+        tap(element("SitePermissions.Dialog.AllowOnce"))
+        answerSystemAlert(for: "camera", allow: true)
+        assertResult("Frame result: success video=1")
+    }
+
+    func testWhenSameOriginIframeInsideCrossOriginIframeIsNotDelegatedCameraThenItIsDeniedWithoutSiteOrSystemPrompt() {
+        assertIframeIsDeniedWithoutSiteOrSystemPrompt(path: "/iframe-camera-nested-same-origin-not-delegated",
+                                                      button: "Frame camera",
+                                                      result: "Frame result: NotAllowedError")
+    }
+
+    func testWhenNotDelegatedCrossOriginIframeTampersWithPromisesThenItIsStillDeniedWithoutSiteOrSystemPrompt() {
+        assertIframeIsDeniedWithoutSiteOrSystemPrompt(path: "/iframe-camera-cross-origin-not-delegated-tampered",
+                                                      button: "Frame camera",
+                                                      result: "Frame result: NotAllowedError")
+    }
+
     func testWhenIframeAllowAttributeBlocksCameraThenItIsDeniedWithoutSiteOrSystemPrompt() {
         assertIframeIsDeniedWithoutSiteOrSystemPrompt(path: "/iframe-camera-blocked",
                                                       button: "Frame camera",
@@ -841,10 +894,6 @@ final class SitePermissionsXCUITests: XCTestCase {
         }
     }
 
-    func testWhenFlagIsOffThenMicrophoneUsesWebKitDespiteSavedDenial() {
-        assertWebKitMediaRollback(permission: "microphone")
-    }
-
     func testWhenRemovalIsUndoneThenPermissionsSheetReopensForTheSite() {
         launchApp(seedPermissions: "{ \"127.0.0.1\" = { camera = allow; microphone = deny; }; }")
         openPermissionPage()
@@ -896,29 +945,6 @@ final class SitePermissionsXCUITests: XCTestCase {
         assertSheetDecision("Camera", contains: "Ask Each Time")
         assertSheetDecision("Microphone", contains: "Ask Each Time")
         XCTAssertFalse(element("SitePermissions.Sheet.Geolocation").exists)
-    }
-
-    func testWhenFlagIsOffThenCombinedMediaUsesWebKitDespiteSavedDenials() {
-        assertWebKitMediaRollback(permission: "camera and microphone")
-    }
-
-    func testWhenFlagIsOffThenLocationUsesWebKitDespiteSavedDenial() throws {
-        try simulateLocation(latitude: 37.3317, longitude: -122.0301)
-        launchApp()
-        openPermissionPage()
-        request("location")
-        tap(element("SitePermissions.Dialog.AllowWhileUsingSite"))
-        answerSystemAlert(for: "location", allow: true)
-        try assertLocationResult("location success 1", latitude: 37.3317, longitude: -122.0301)
-
-        // Establish OS authorization first so this checks the native site prompt independently.
-        app.terminate()
-        launchApp(flagEnabled: false, seedPermissions: "{ \"127.0.0.1\" = { geolocation = deny; }; }")
-        openPermissionPage()
-        request("location")
-        denyWebKitPrompt(for: "location")
-        assertResult("location error 1 1")
-        assertNoPermissionPrompt()
     }
 
     func testWhenFireClearsDataThenFireproofPermissionsAndGlobalDefaultsAreKept() {
@@ -982,26 +1008,6 @@ final class SitePermissionsXCUITests: XCTestCase {
         enablePrivateVoiceSearch()
         tap(element("SitePermissions.Reminder.ChangePermissions"))
         XCTAssertTrue(XCUIApplication(bundleIdentifier: "com.apple.Preferences").wait(for: .runningForeground, timeout: timeout))
-    }
-
-    func testWhenSettingsVoiceSearchMicrophoneIsDeniedWithFeatureOffThenLegacyAlertIsUsed() {
-        launchApp(flagEnabled: false)
-        openVoiceSearchSettings()
-        enablePrivateVoiceSearch()
-        answerSystemAlert(for: "microphone", allow: false)
-
-        let alert = app.alerts["Microphone Access Required"]
-        XCTAssertTrue(alert.waitForExistence(timeout: timeout))
-        XCTAssertTrue(alert.staticTexts["Please allow Microphone access in iOS System Settings for DuckDuckGo to use voice features."].exists)
-        XCTAssertEqual(alert.buttons.count, 1)
-        XCTAssertFalse(element("SitePermissions.Reminder").exists)
-        tap(alert.buttons["OK"])
-        XCTAssertTrue(alert.waitForNonExistence(timeout: timeout))
-
-        enablePrivateVoiceSearch()
-        XCTAssertTrue(alert.waitForExistence(timeout: timeout))
-        assertNoSystemAlert()
-        tap(alert.buttons["OK"])
     }
 
     private func showAndCancelVoicePermissionReminder(duckAI: Bool, isVoiceChat: Bool) {
@@ -1128,15 +1134,14 @@ final class SitePermissionsXCUITests: XCTestCase {
         assertNoPermissionPrompt()
     }
 
-    private func launchApp(flagEnabled: Bool = true, seedPermissions: String? = nil, additionalArguments: [String] = []) {
+    private func launchApp(seedPermissions: String? = nil, additionalArguments: [String] = []) {
         app.launchArguments = [
             "-clearAllDefaults", "isRunningUITests",
             "-isOnboardingCompleted", "true",
-            "-ff.sitePermissions", String(flagEnabled),
             "-ff.floatingUIiOS26", "true",
             "-ff.floatingUIiOS27", "true",
-            // The app-open keyboard can cover the toolbar, including the Tab Switcher.
-            "-ff.alwaysShowKeyboardOnNewTabPage", "false",
+            // These tests don't cover the keyboard; keep the New Tab page's launch keyboard from covering the toolbar.
+            "-com.duckduckgo.ios.keyboard.newtab", "<false/>",
             "-AppleLanguages", "(en)", "-AppleLocale", "en_GB"
         ]
         if ProcessInfo.processInfo.environment["INTERNAL_USER_MODE"] == "true" {
@@ -1442,16 +1447,6 @@ final class SitePermissionsXCUITests: XCTestCase {
         tap(app.buttons[decision == "deny" ? "Never Allow" : "Ask Each Time"])
     }
 
-    private func assertWebKitMediaRollback(permission: String) {
-        launchApp(flagEnabled: false, seedPermissions: "{ \"127.0.0.1\" = { camera = deny; microphone = deny; geolocation = deny; }; }")
-        openPermissionPage()
-        request(permission)
-        denyWebKitPrompt(for: permission)
-        assertResult("NotAllowedError 1")
-        assertResult("tracks video=0 audio=0")
-        assertNoPermissionPrompt()
-    }
-
     private func denyWebKitPrompt(for permission: String) {
         let alert = app.alerts.containing(NSPredicate(format: "label CONTAINS[c] %@", "127.0.0.1")).firstMatch
         XCTAssertTrue(alert.waitForExistence(timeout: timeout), app.debugDescription)
@@ -1490,12 +1485,11 @@ final class SitePermissionsXCUITests: XCTestCase {
         XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: timeout))
     }
 
-    private func assertIOS15OverrideUsesLegacyPermissions(fireMode: Bool) throws {
+    private func assertIOS15UsesLegacyPermissions(fireMode: Bool) throws {
         if #available(iOS 16.0, *) {
-            throw XCTSkip("Legacy permissions with a forced-on override require iOS 15")
+            throw XCTSkip("Legacy permissions require iOS 15")
         }
-        launchApp(flagEnabled: true,
-                  seedPermissions: "{ \"127.0.0.1\" = { camera = ask; }; }",
+        launchApp(seedPermissions: "{ \"127.0.0.1\" = { camera = ask; }; }",
                   additionalArguments: ["-ff.fireMode", String(fireMode)])
         if fireMode {
             openNewPermissionTab(fireMode: true)
@@ -1732,4 +1726,22 @@ final class SitePermissionsXCUITests: XCTestCase {
     </body>
     </html>
     """
+
+    /// Makes the next promise built by `then` resolve `true` before the request, which fakes a
+    /// "delegated" result unless the delegation check ignores promises the page can build.
+    private static let tamperedCameraFrameHTML = cameraFrameHTML.replacingOccurrences(
+        of: "const stream = await",
+        with: """
+        const nativeSpecies = Object.getOwnPropertyDescriptor(Promise, Symbol.species);
+                class AlwaysTrue extends Promise {
+                  constructor(executor) {
+                    Object.defineProperty(Promise, Symbol.species, nativeSpecies);
+                    super(resolve => resolve(true));
+                    executor(() => {}, () => {});
+                  }
+                }
+                Object.defineProperty(Promise, Symbol.species, { configurable: true, get: () => AlwaysTrue });
+                const stream = await
+        """
+    )
 }

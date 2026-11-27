@@ -47,7 +47,7 @@ final class SubscriptionTierOptionsProviderTests: XCTestCase {
             subscriptionEndpointService: mockEndpointService
         )
 
-        let result = await sut.subscriptionTierOptions(includeProTier: false, currentSubscription: nil)
+        let result = await sut.subscriptionTierOptions(currentSubscription: nil)
 
         guard case .success(let options) = result else {
             XCTFail("Expected success, got \(result)")
@@ -67,7 +67,7 @@ final class SubscriptionTierOptionsProviderTests: XCTestCase {
             subscriptionEndpointService: mockEndpointService
         )
 
-        let result = await sut.subscriptionTierOptions(includeProTier: false, currentSubscription: nil)
+        let result = await sut.subscriptionTierOptions(currentSubscription: nil)
 
         guard case .success(let options) = result else {
             XCTFail("Expected success, got \(result)")
@@ -88,7 +88,7 @@ final class SubscriptionTierOptionsProviderTests: XCTestCase {
             subscriptionEndpointService: mockEndpointService
         )
 
-        let result = await sut.subscriptionTierOptions(includeProTier: false, currentSubscription: activeStripeSubscription)
+        let result = await sut.subscriptionTierOptions(currentSubscription: activeStripeSubscription)
 
         guard case .success(let options) = result else {
             XCTFail("Expected success, got \(result)")
@@ -109,7 +109,7 @@ final class SubscriptionTierOptionsProviderTests: XCTestCase {
             subscriptionEndpointService: mockEndpointService
         )
 
-        let result = await sut.subscriptionTierOptions(includeProTier: false, currentSubscription: activeAppleSubscription)
+        let result = await sut.subscriptionTierOptions(currentSubscription: activeAppleSubscription)
 
         guard case .success(let options) = result else {
             XCTFail("Expected success, got \(result)")
@@ -127,7 +127,7 @@ final class SubscriptionTierOptionsProviderTests: XCTestCase {
             subscriptionEndpointService: mockEndpointService
         )
 
-        let result = await sut.subscriptionTierOptions(includeProTier: false, currentSubscription: activeAppleSubscription)
+        let result = await sut.subscriptionTierOptions(currentSubscription: activeAppleSubscription)
 
         guard case .failure(let error) = result else {
             XCTFail("Expected failure for Apple subscription on non–App Store app")
@@ -146,7 +146,7 @@ final class SubscriptionTierOptionsProviderTests: XCTestCase {
             subscriptionEndpointService: mockEndpointService
         )
 
-        let result = await sut.subscriptionTierOptions(includeProTier: false, currentSubscription: activeGoogleSubscription)
+        let result = await sut.subscriptionTierOptions(currentSubscription: activeGoogleSubscription)
 
         guard case .failure(let error) = result else {
             XCTFail("Expected failure for Google subscription")
@@ -164,7 +164,7 @@ final class SubscriptionTierOptionsProviderTests: XCTestCase {
             subscriptionEndpointService: mockEndpointService
         )
 
-        let result = await sut.subscriptionTierOptions(includeProTier: false, currentSubscription: activeUnknownSubscription)
+        let result = await sut.subscriptionTierOptions(currentSubscription: activeUnknownSubscription)
 
         guard case .failure(let error) = result else {
             XCTFail("Expected failure for unknown subscription platform")
@@ -182,13 +182,65 @@ final class SubscriptionTierOptionsProviderTests: XCTestCase {
             subscriptionEndpointService: mockEndpointService
         )
 
-        let result = await sut.subscriptionTierOptions(includeProTier: false, currentSubscription: nil)
+        let result = await sut.subscriptionTierOptions(currentSubscription: nil)
 
         guard case .failure(let error) = result else {
             XCTFail("Expected failure when App Store app has no store")
             return
         }
         XCTAssertEqual(error as? SubscriptionTierOptionsProviderError, .tierOptionsNotAvailableForPlatform)
+    }
+
+    // MARK: - Stripe path: country parameter
+
+    func testWhenStripeSubscriptionHasPlanCountryThenSendsLowercasedPlanCountry() async throws {
+        let location = await sentLocation(forActiveStripeSubscriptionWithPlanCountry: "FR")
+        XCTAssertEqual(location, .country("fr"))
+    }
+
+    func testWhenStripeSubscriptionHasNoPlanCountryThenSendsUS() async throws {
+        let location = await sentLocation(forActiveStripeSubscriptionWithPlanCountry: nil)
+        XCTAssertEqual(location, .country("us"))
+    }
+
+    func testWhenStripeSubscriptionHasInvalidPlanCountryThenSendsUS() async throws {
+        let location = await sentLocation(forActiveStripeSubscriptionWithPlanCountry: "FRA")
+        XCTAssertEqual(location, .country("us"))
+    }
+
+    func testWhenNoSubscriptionAndAppPlatformStripeThenSendsUS() async throws {
+        mockEndpointService.getTierProductsResult = .success(SubscriptionMockFactory.tierProductsResponse)
+
+        let sut = DefaultSubscriptionTierOptionsProvider(
+            subscriptionEnvironmentPlatform: .stripe,
+            storePurchaseManager: nil,
+            subscriptionEndpointService: mockEndpointService
+        )
+
+        _ = await sut.subscriptionTierOptions(currentSubscription: nil)
+
+        XCTAssertEqual(mockEndpointService.getTierProductsLocation, .country("us"))
+    }
+
+    func testWhenStripeProductsByPlanCountryDisabledThenSendsLegacyUSRegion() async throws {
+        let location = await sentLocation(forActiveStripeSubscriptionWithPlanCountry: "FR", isStripeProductsByPlanCountryEnabled: false)
+        XCTAssertEqual(location, .legacyUSRegion)
+    }
+
+    private func sentLocation(forActiveStripeSubscriptionWithPlanCountry planCountry: String?,
+                              isStripeProductsByPlanCountryEnabled: Bool = true) async -> TierProductsLocation? {
+        mockEndpointService.getTierProductsResult = .success(SubscriptionMockFactory.tierProductsResponse)
+        let subscription = SubscriptionMockFactory.subscription(status: .autoRenewable, platform: .stripe, planCountry: planCountry)
+
+        let sut = DefaultSubscriptionTierOptionsProvider(
+            subscriptionEnvironmentPlatform: .appStore,
+            storePurchaseManager: mockStorePurchaseManager,
+            subscriptionEndpointService: mockEndpointService,
+            isStripeProductsByPlanCountryEnabled: { isStripeProductsByPlanCountryEnabled }
+        )
+
+        _ = await sut.subscriptionTierOptions(currentSubscription: subscription)
+        return mockEndpointService.getTierProductsLocation
     }
 
     // MARK: - Stripe path: API failure and empty products
@@ -202,7 +254,7 @@ final class SubscriptionTierOptionsProviderTests: XCTestCase {
             subscriptionEndpointService: mockEndpointService
         )
 
-        let result = await sut.subscriptionTierOptions(includeProTier: false, currentSubscription: nil)
+        let result = await sut.subscriptionTierOptions(currentSubscription: nil)
 
         guard case .failure = result else {
             XCTFail("Expected failure when Stripe API fails")
@@ -219,7 +271,7 @@ final class SubscriptionTierOptionsProviderTests: XCTestCase {
             subscriptionEndpointService: mockEndpointService
         )
 
-        let result = await sut.subscriptionTierOptions(includeProTier: false, currentSubscription: nil)
+        let result = await sut.subscriptionTierOptions(currentSubscription: nil)
 
         guard case .failure(let error) = result else {
             XCTFail("Expected failure when Stripe API returns empty products")
@@ -240,7 +292,7 @@ final class SubscriptionTierOptionsProviderTests: XCTestCase {
             subscriptionEndpointService: mockEndpointService
         )
 
-        let result = await sut.subscriptionTierOptions(includeProTier: false, currentSubscription: expiredStripeSubscription)
+        let result = await sut.subscriptionTierOptions(currentSubscription: expiredStripeSubscription)
 
         guard case .success(let options) = result else {
             XCTFail("Expected success using app platform when subscription is expired")

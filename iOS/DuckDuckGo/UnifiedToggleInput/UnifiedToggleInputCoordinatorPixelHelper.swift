@@ -130,7 +130,7 @@ extension Tab {
     }
 }
 
-private enum UnifiedPromptSubmittedSelectedToolPixelValue: String {
+enum UnifiedPromptSubmittedSelectedToolPixelValue: String {
     case webSearch = "web_search"
     case imageGeneration = "image_generation"
     case none
@@ -187,6 +187,18 @@ extension UTIToolsMenu.Item.Identifier {
 
 final class UnifiedToggleInputCoordinatorPixelHelper {
     private init() {}
+
+    static let addressBarPositionKey = "address_bar_position"
+    static let resubmitOfSearchKey = "resubmit_of_search"
+    static let resubmitOfPromptKey = "resubmit_of_prompt"
+
+    /// Temporary, for the `unifiedToggleInputSimplifiedPromptBox` rollout: `on` when the iPhone prompt box is the
+    /// simplified one, so dashboards can compare flag-on and flag-off devices. Remove after monitoring.
+    static let simplifiedPromptBoxKey = "simplified_prompt_box"
+
+    static func simplifiedPromptBoxValue(_ isOn: Bool) -> String {
+        isOn ? "on" : "off"
+    }
 
     static func fireAttachmentRemovedPixel(for attachment: UnifiedToggleInputAttachment,
                                            surface: UnifiedToggleInputPixelSurface,
@@ -248,12 +260,17 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
         }
     }
 
-    static func fireToolSelectedPixel(for tool: AIChatRAGTool, surface: UnifiedToggleInputPixelSurface, firing: UTIPixelFiring = .live) {
+    static func fireToolSelectedPixel(for tool: AIChatRAGTool,
+                                      surface: UnifiedToggleInputPixelSurface,
+                                      simplifiedPromptBox: Bool,
+                                      firing: UTIPixelFiring = .live) {
+        var parameters = surfaceParameters(surface)
+        parameters[simplifiedPromptBoxKey] = simplifiedPromptBoxValue(simplifiedPromptBox)
         switch tool {
         case .imageGeneration:
-            firing.fireDailyAndCount(.unifiedToggleInputImageGenerationSelected, surfaceParameters(surface))
+            firing.fireDailyAndCount(.unifiedToggleInputImageGenerationSelected, parameters)
         case .webSearch:
-            firing.fireDailyAndCount(.unifiedToggleInputWebSearchSelected, surfaceParameters(surface))
+            firing.fireDailyAndCount(.unifiedToggleInputWebSearchSelected, parameters)
         default:
             break
         }
@@ -282,6 +299,10 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
         defaultMode: DefaultOmnibarMode? = nil,
         isFirstPromptNewInstall: Bool = false,
         usageContext: UsageContext? = nil,
+        addressBarPosition: AddressBarPosition? = nil,
+        resubmitOfSearch: CrossModeResubmitDetector.DelayBucket? = nil,
+        simplifiedPromptBox: Bool,
+        modelSource: DuckAINewChatModelSource? = nil,
         firing: UTIPixelFiring = .live
     ) {
         let selectedToolValue = UnifiedPromptSubmittedSelectedToolPixelValue(selectedTool: selectedTool).rawValue
@@ -304,6 +325,10 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
         parameters["default_mode"] = defaultMode?.rawValue
         parameters[PixelParameters.aiChatFirstPromptNewInstall] = isFirstPromptNewInstall ? "true" : nil
         parameters.merge(usageContext?.parameters ?? [:]) { $1 }
+        parameters[Self.addressBarPositionKey] = addressBarPosition?.rawValue
+        parameters[Self.resubmitOfSearchKey] = resubmitOfSearch?.rawValue
+        parameters[Self.simplifiedPromptBoxKey] = simplifiedPromptBoxValue(simplifiedPromptBox)
+        parameters[DuckAINewChatModelSource.pixelParameterKey] = modelSource?.rawValue
 
         firing.fireDailyAndCount(.unifiedToggleInputPromptSubmitted, parameters)
     }
@@ -315,6 +340,8 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
         defaultMode: DefaultOmnibarMode? = nil,
         queryType: UnifiedToggleInputQueryType,
         usageContext: UsageContext? = nil,
+        addressBarPosition: AddressBarPosition? = nil,
+        resubmitOfPrompt: CrossModeResubmitDetector.DelayBucket? = nil,
         firing: UTIPixelFiring = .live
     ) {
         var parameters = [
@@ -325,6 +352,8 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
         parameters["page_type"] = pageType?.rawValue
         parameters["default_mode"] = defaultMode?.rawValue
         parameters.merge(usageContext?.parameters ?? [:]) { $1 }
+        parameters[Self.addressBarPositionKey] = addressBarPosition?.rawValue
+        parameters[Self.resubmitOfPromptKey] = resubmitOfPrompt?.rawValue
 
         firing.fireDailyAndCount(.unifiedToggleInputQuerySubmitted, parameters)
     }

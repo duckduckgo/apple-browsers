@@ -1211,6 +1211,34 @@ class AddressBarTests: XCTestCase {
     }
 
     @MainActor
+    func test_WhenSwitchingFromProtectedSiteToLocalFile_ThenShieldAnimationIsHidden() async throws {
+        // GIVEN
+        let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent("\(UUID().uuidString).html")
+        try Self.testHtml.write(to: fileURL, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: fileURL) }
+
+        let siteTab = Tab(content: .url(.duckDuckGo, credential: nil, source: .userEntered("")), webViewConfiguration: schemeHandler.webViewConfiguration(), certificateTrustEvaluator: MockCertificateEvaluator(), maliciousSiteDetector: MockMaliciousSiteProtectionManager())
+        let fileTab = Tab(content: .url(fileURL, credential: nil, source: .userEntered("")), webViewConfiguration: schemeHandler.webViewConfiguration(), maliciousSiteDetector: MockMaliciousSiteProtectionManager())
+        let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [siteTab, fileTab]))
+        let siteLoadedPromise = siteTab.webViewDidFinishNavigationPublisher.timeout(10).first().promise()
+
+        window = WindowsManager.openNewWindow(with: viewModel)!
+        _ = try await siteLoadedPromise.value
+
+        let addressBarButtonsVC = mainViewController.navigationBarViewController.addressBarViewController!.addressBarButtonsViewController!
+        XCTAssertFalse(addressBarButtonsVC.shieldAnimationView.isHidden)
+
+        // WHEN
+        let fileLoadedPromise = fileTab.webViewDidFinishNavigationPublisher.timeout(10).first().promise()
+        viewModel.select(at: .unpinned(1))
+        _ = try await fileLoadedPromise.value
+
+        // THEN
+        XCTAssertTrue(addressBarButtonsVC.shieldAnimationView.isHidden)
+        XCTAssertTrue(addressBarButtonsVC.shieldDotAnimationView.isHidden)
+    }
+
+    @MainActor
     func test_ZoomLevelNonDefault_ThenZoomButtonIsVisible() async throws {
         // GIVEN
         let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .userEntered("")), webViewConfiguration: schemeHandler.webViewConfiguration(), maliciousSiteDetector: MockMaliciousSiteProtectionManager())
@@ -1279,13 +1307,23 @@ class AddressBarTests: XCTestCase {
         weak var suggestionWindow: NSWindow?
 
         autoreleasepool {
+            // Suggestion windows left over from earlier tests aren't this test's concern:
+            // remember them (weakly) so the lookup below finds only the new window's one
+            let preexistingSuggestionWindows = NSHashTable<NSWindow>.weakObjects()
+            NSApp.windows
+                .filter { $0.contentViewController is SuggestionViewController }
+                .forEach { preexistingSuggestionWindows.add($0) }
+
             // GIVEN the Ask AI Chat button is expanded because the address bar has a user-typed value
             let tab = Tab(content: .newtab, privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: MockMaliciousSiteProtectionManager())
             let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [tab]))
             window = WindowsManager.openNewWindow(with: viewModel)!
             addressBarButtonsViewController = mainViewController.navigationBarViewController.addressBarViewController!.addressBarButtonsViewController!
             tabCollectionViewModel = viewModel
-            suggestionWindow = NSApp.windows.first(where: { $0.contentViewController is SuggestionViewController })
+            suggestionWindow = NSApp.windows.first(where: {
+                $0.contentViewController is SuggestionViewController && !preexistingSuggestionWindows.contains($0)
+            })
+            XCTAssertNotNil(suggestionWindow, "The new window should have its own suggestion window")
 
             _=window.makeFirstResponder(addressBarTextField)
             XCTAssertTrue(isAddressBarFirstResponder)

@@ -2723,6 +2723,49 @@ final class AIChatOmnibarControllerTests: XCTestCase {
                        "With the upsell off there is nothing to route to — the row must not open the purchase dialog")
     }
 
+    /// Where the storefront sells nothing, the purchase page would only fail.
+    func testModelPickerItems_freeUserWithoutAppStoreProducts_hidesGatedModels() async {
+        featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarSubscriptionUpsell.rawValue] = true
+        mockSubscriptionManager.hasAppStoreProductsAvailable = false
+        await loadModels([
+            makeRemoteModel(id: "free-a", accessTier: ["free"]),
+            makeRemoteModel(id: "gated-pro", accessTier: ["pro"]),
+        ], tier: nil, trialEligible: true)
+
+        let items = controller.modelPickerItems(selectedModelId: nil)
+
+        XCTAssertEqual(accessibleRows(items).map(\.id), ["free-a"])
+        XCTAssertTrue(gatedRows(items).isEmpty)
+        XCTAssertEqual(separatorCount(items), 0)
+    }
+
+    func testReasoningPickerItems_freeUserWithoutAppStoreProducts_hidesGatedEfforts() async {
+        featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarReasoningEffort.rawValue] = true
+        featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarSubscriptionUpsell.rawValue] = true
+        mockSubscriptionManager.hasAppStoreProductsAvailable = false
+        mockPreferences.selectedModelId = "reasoning-model"
+        await loadModels([gatedEffortModel()], tier: nil, trialEligible: true)
+
+        let items = controller.reasoningPickerItems()
+
+        XCTAssertFalse(items.isEmpty)
+        XCTAssertFalse(items.contains(where: \.isGated))
+    }
+
+    /// A subscriber may have bought on Stripe, so an empty storefront doesn't stop the upgrade.
+    func testModelPickerItems_plusUserWithoutAppStoreProducts_stillRoutesToUpgrade() async {
+        featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarSubscriptionUpsell.rawValue] = true
+        mockSubscriptionManager.hasAppStoreProductsAvailable = false
+        await loadModels([
+            makeRemoteModel(id: "plus-a", accessTier: ["plus", "pro"]),
+            makeRemoteModel(id: "gated-pro", accessTier: ["pro"]),
+        ], tier: .plus)
+
+        let items = controller.modelPickerItems(selectedModelId: nil)
+
+        XCTAssertEqual(gatedRows(items).first?.routesToUpsell, true)
+    }
+
     func testModelPickerItems_noGatedModels_noSeparatorHeaderOrImpression() async {
         featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarSubscriptionUpsell.rawValue] = true
         await loadModels([
@@ -2939,7 +2982,8 @@ final class AIChatOmnibarControllerTests: XCTestCase {
             activeOffers: [],
             tier: tier,
             availableChanges: nil,
-            pendingPlans: nil
+            pendingPlans: nil,
+            planCountry: nil
         )
         mockSubscriptionManager.resultSubscription = .success(subscription)
     }
@@ -3341,19 +3385,364 @@ private class MockAIChatPreferencesPersisting: AIChatPreferencesPersisting {
     var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
 }
 
+// MARK: - New Chat Default
+
+extension AIChatOmnibarControllerTests {
+
+    private func makeNewChatDefaultController(surface: DuckAIPromptSurface = .addressBar,
+                                              usageLimitsStore: DuckAiUsageLimitsStore? = nil,
+                                              userDefaultStorage: DuckAiNativeStorageHandler? = nil) -> AIChatOmnibarController {
+        featureFlagger.featuresStub[FeatureFlag.aiChatNewChatDefaultModel.rawValue] = true
+        featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarReasoningEffort.rawValue] = true
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "luna", supportedReasoningEffort: [.none, .high]),
+            makeRemoteModel(id: "terra", supportedReasoningEffort: [.none, .high])
+        ]
+        mockModelsService.newChatDefaultToReturn = .model(id: "terra", reasoningEffort: AIChatReasoningEffort.none)
+        let isPromptBar = surface == .promptBar
+        return AIChatOmnibarController(
+            aiChatTabOpener: mockTabOpener,
+            surface: surface,
+            draftSource: isPromptBar
+                ? StaticPromptDraftSource(store: EphemeralPromptDraftStore())
+                : TabPromptDraftSource(tabCollectionViewModel: tabCollectionViewModel),
+            origin: isPromptBar ? nil : WindowPromptOrigin(tabCollectionViewModel: tabCollectionViewModel),
+            pixelHandler: pixelHandler,
+            featureFlagger: featureFlagger,
+            searchPreferencesPersistor: searchPreferencesPersistor,
+            preferences: mockPreferences,
+            modelsService: mockModelsService,
+            subscriptionManager: mockSubscriptionManager,
+            subscriptionUpsellPresenter: mockSubscriptionUpsellPresenter,
+            usageLimitsStore: usageLimitsStore,
+            userDefaultModelStorage: userDefaultStorage
+        )
+    }
+
+    /// Built the way `MainViewController` and `PromptBarContentFactory` build it, over a storage holding an over-limit snapshot.
+    private func makeOverLimitUsageLimitsStore() throws -> DuckAiUsageLimitsStore {
+        let storage = DuckAiNativeMemoryStorageHandler()
+        try storage.putEntry(key: DuckAiNativeStorageReservedEntryKeys.usageLimits.rawValue, value: """
+        {"notice": {"id": "weeklyReachedDegraded", "window": "weekly", "resetsAt": "2030-01-01T00:00:00Z"}, \
+        "newChatDefault": {"modelId": "luna"}}
+        """)
+        return DuckAiUsageLimitsStore(storageHandler: storage, featureFlagger: featureFlagger)
+    }
+
+    private func makeUserDefaultStorage(_ modelId: String) throws -> DuckAiNativeStorageHandler {
+        let storage = try DuckAiNativeStorageHandler(.memory())
+        try storage.putUserDefaultModel(modelId)
+        return storage
+    }
+
+    private func submittedQuery() -> AIChatNativePrompt.Query? {
+        guard case .query(let query)? = AIChatPromptHandler.shared.consumeData()?.tool else { return nil }
+        return query
+    }
+
+    func testWhenNewChatDefaultIsOnAndNothingPicked_ThenServerDefaultModelAndEffortAreSelected() async {
+        let controller = makeNewChatDefaultController()
+        mockPreferences.selectedModelId = "luna"
+        mockPreferences.selectedReasoningEffort = AIChatReasoningEffort.high.rawValue
+
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        XCTAssertEqual(controller.persistedModelId, "terra")
+        XCTAssertEqual(controller.currentModelId, "terra")
+        XCTAssertEqual(controller.selectedReasoningEffort, AIChatReasoningEffort.none)
+    }
+
+    func testWhenUserDefaultIsSet_ThenNewChatStartsOnItAndFollowsChanges() async throws {
+        let storage = try makeUserDefaultStorage("luna")
+        let controller = makeNewChatDefaultController(userDefaultStorage: storage)
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        XCTAssertEqual(controller.currentModelId, "luna")
+        XCTAssertNil(controller.selectedReasoningEffort)
+
+        let changed = expectation(description: "selected model changed")
+        controller.onSelectedModelChanged = {
+            XCTAssertTrue(Thread.isMainThread)
+            changed.fulfill()
+        }
+        DispatchQueue.global().async {
+            try? storage.deleteEntry(key: DuckAiNativeStorageReservedEntryKeys.defaultDuckaiModel.rawValue)
+        }
+
+        await fulfillment(of: [changed], timeout: 1)
+        XCTAssertEqual(controller.currentModelId, "terra")
+    }
+
+    func testWhenUserDefaultSubmitted_ThenPixelReportsUserDefaultSource() async throws {
+        let controller = makeNewChatDefaultController(userDefaultStorage: try makeUserDefaultStorage("luna"))
+        controller.onOmnibarActivated()
+        await waitForModels()
+        controller.updateText("hello")
+
+        controller.submit()
+
+        XCTAssertEqual(submittedNewChatModelParameters()??["model_source"], "user_default")
+    }
+
+    func testWhenUserDefaultIsUnavailable_ThenChatStartsOnServerDefaultAndPixelReportsIt() async throws {
+        let controller = makeNewChatDefaultController(userDefaultStorage: try makeUserDefaultStorage("gone-model"))
+        controller.onOmnibarActivated()
+        await waitForModels()
+        controller.updateText("hello")
+
+        XCTAssertEqual(controller.currentModelId, "terra")
+        controller.submit()
+
+        XCTAssertEqual(submittedNewChatModelParameters()??["model_source"], "user_default_unavailable")
+    }
+
+    func testWhenNewChatDefaultIsOnAndModelPicked_ThenPreferencesAreNotWritten() async {
+        let controller = makeNewChatDefaultController()
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        controller.updateSelectedModel("luna")
+        controller.updateSelectedReasoningEffort(.high)
+
+        XCTAssertEqual(controller.persistedModelId, "luna")
+        XCTAssertEqual(controller.selectedReasoningEffort, .high)
+        XCTAssertNil(mockPreferences.selectedModelId)
+        XCTAssertNil(mockPreferences.selectedReasoningEffort)
+    }
+
+    func testWhenNewChatDefaultIsOnAndOtherModelPicked_ThenDefaultEffortNoLongerApplies() async {
+        let controller = makeNewChatDefaultController()
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        controller.updateSelectedModel("luna")
+
+        XCTAssertNil(controller.selectedReasoningEffort)
+    }
+
+    func testWhenNewChatDefaultIsOnAndPickMadeOnOneTab_ThenOtherTabStartsOnDefault() async {
+        let controller = makeNewChatDefaultController()
+        controller.onOmnibarActivated()
+        await waitForModels()
+        controller.updateSelectedModel("luna")
+
+        tabCollectionViewModel.appendNewTab()
+        XCTAssertEqual(controller.persistedModelId, "terra")
+
+        tabCollectionViewModel.select(at: .unpinned(0))
+        XCTAssertEqual(controller.persistedModelId, "luna")
+    }
+
+    func testWhenNewChatDefaultIsOnAndPickedTabIsSelectedAgain_ThenSelectedModelChangeIsReported() async {
+        let controller = makeNewChatDefaultController()
+        controller.onOmnibarActivated()
+        await waitForModels()
+        controller.updateSelectedModel("luna")
+        var changeCount = 0
+        controller.onSelectedModelChanged = { changeCount += 1 }
+
+        tabCollectionViewModel.appendNewTab()
+        tabCollectionViewModel.select(at: .unpinned(0))
+
+        XCTAssertEqual(changeCount, 2)
+    }
+
+    func testWhenNewChatDefaultIsOnAndNothingPicked_ThenSubmitSendsDefaultModelAndEffort() async {
+        let controller = makeNewChatDefaultController()
+        controller.onOmnibarActivated()
+        await waitForModels()
+        controller.updateText("hello")
+
+        controller.submit()
+        try? await Task.sleep(nanoseconds: 100_000_000)
+
+        let query = submittedQuery()
+        XCTAssertEqual(query?.modelId, "terra")
+        XCTAssertEqual(query?.reasoningEffort, AIChatReasoningEffort.none)
+    }
+
+    func testWhenNewChatDefaultIsOnAndPromptSubmitted_ThenPickResetsToDefault() async {
+        let controller = makeNewChatDefaultController()
+        controller.onOmnibarActivated()
+        await waitForModels()
+        controller.updateSelectedModel("luna")
+        controller.updateText("hello")
+
+        controller.submit()
+        try? await Task.sleep(nanoseconds: 100_000_000)
+
+        XCTAssertEqual(submittedQuery()?.modelId, "luna")
+        XCTAssertEqual(controller.persistedModelId, "terra")
+        XCTAssertEqual(tabCollectionViewModel.selectedTabViewModel?.addressBarSharedTextState.aiChatModelPick, .empty)
+    }
+
+    func testWhenNewChatDefaultIsOnAndDraftIsResetWithoutSending_ThenPickIsKept() async {
+        let controller = makeNewChatDefaultController()
+        controller.onOmnibarActivated()
+        await waitForModels()
+        controller.updateSelectedModel("luna")
+
+        tabCollectionViewModel.selectedTabViewModel?.addressBarSharedTextState.reset()
+
+        XCTAssertEqual(controller.persistedModelId, "luna")
+    }
+
+    private func submittedNewChatModelParameters() -> [String: String]?? {
+        for event in pixelHandler.events {
+            if case .promptSubmitted(let newChatModel) = event { return .some(newChatModel?.parameters) }
+        }
+        return nil
+    }
+
+    func testWhenNewChatDefaultIsOnAndDefaultSubmitted_ThenPixelReportsDefaultSource() async {
+        let controller = makeNewChatDefaultController()
+        controller.onOmnibarActivated()
+        await waitForModels()
+        controller.updateText("hello")
+
+        controller.submit()
+
+        XCTAssertEqual(submittedNewChatModelParameters(), ["model_source": "default", "model_id": "terra", "reasoning_effort": "none"])
+    }
+
+    func testWhenNewChatDefaultIsOnAndOtherModelSubmitted_ThenPixelReportsPickedSource() async {
+        let controller = makeNewChatDefaultController()
+        controller.onOmnibarActivated()
+        await waitForModels()
+        controller.updateSelectedModel("luna")
+        controller.updateSelectedReasoningEffort(.high)
+        controller.updateText("hello")
+
+        controller.submit()
+
+        XCTAssertEqual(submittedNewChatModelParameters(), ["model_source": "picked", "model_id": "luna", "reasoning_effort": "high"])
+    }
+
+    func testWhenNewChatDefaultIsOnAndModelsHaveNotLoaded_ThenSubmitSendsLocalTierDefaultModelAndEffort() async {
+        let controller = makeNewChatDefaultController()
+        mockModelsService.errorToThrow = NSError(domain: "test", code: -1)
+        controller.onOmnibarActivated()
+        await waitForModels()
+        controller.updateText("hello")
+
+        controller.submit()
+        try? await Task.sleep(nanoseconds: 100_000_000)
+
+        let query = submittedQuery()
+        XCTAssertEqual(query?.modelId, "gpt-6-luna")
+        XCTAssertEqual(query?.reasoningEffort, AIChatReasoningEffort.none)
+        XCTAssertEqual(submittedNewChatModelParameters(), ["model_source": "fallback", "model_id": "gpt-6-luna", "reasoning_effort": "none"])
+    }
+
+    func testWhenNewChatDefaultIsOnAndAddressBarIsBuiltWithAUsageLimitsStore_ThenOverLimitDefaultIsSelected() async throws {
+        let controller = makeNewChatDefaultController(usageLimitsStore: try makeOverLimitUsageLimitsStore())
+
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        XCTAssertEqual(controller.persistedModelId, "luna")
+    }
+
+    func testWhenNewChatDefaultIsOnAndPromptBarIsBuiltWithAUsageLimitsStore_ThenOverLimitDefaultIsSelected() async throws {
+        let controller = makeNewChatDefaultController(surface: .promptBar, usageLimitsStore: try makeOverLimitUsageLimitsStore())
+
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        XCTAssertEqual(controller.persistedModelId, "luna")
+    }
+
+    func testWhenNewChatDefaultIsOnAndPaidUserModelsFailToLoad_ThenSubmitSendsPaidLocalDefault() async {
+        let controller = makeNewChatDefaultController()
+        setUserTier(.plus)
+        mockModelsService.errorToThrow = NSError(domain: "test", code: -1)
+        controller.onOmnibarActivated()
+        await waitForModels()
+        controller.updateText("hello")
+
+        controller.submit()
+        try? await Task.sleep(nanoseconds: 100_000_000)
+
+        let query = submittedQuery()
+        XCTAssertEqual(query?.modelId, "gpt-5.6-terra")
+        XCTAssertEqual(query?.reasoningEffort, AIChatReasoningEffort.none)
+        XCTAssertEqual(submittedNewChatModelParameters(), ["model_source": "fallback", "model_id": "gpt-5.6-terra", "reasoning_effort": "none"])
+    }
+
+    func testWhenNewChatDefaultIsOnAndTierIsNotKnownYet_ThenSubmitSendsNoModelOrEffort() async {
+        let controller = makeNewChatDefaultController()
+        controller.updateText("hello")
+
+        controller.submit()
+        try? await Task.sleep(nanoseconds: 100_000_000)
+
+        let query = submittedQuery()
+        XCTAssertNil(query?.modelId)
+        XCTAssertNil(query?.reasoningEffort)
+        XCTAssertEqual(submittedNewChatModelParameters(), .some(nil))
+    }
+
+    func testWhenNewChatDefaultIsOffAndModelsHaveNotLoaded_ThenSubmitSendsNoModelOrEffort() async {
+        featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarReasoningEffort.rawValue] = true
+        mockModelsService.errorToThrow = NSError(domain: "test", code: -1)
+        controller.onOmnibarActivated()
+        await waitForModels()
+        controller.updateText("hello")
+
+        controller.submit()
+        try? await Task.sleep(nanoseconds: 100_000_000)
+
+        let query = submittedQuery()
+        XCTAssertNil(query?.modelId)
+        XCTAssertNil(query?.reasoningEffort)
+    }
+
+    func testWhenNewChatDefaultIsOff_ThenPixelHasNoModelParameters() async {
+        mockModelsService.modelsToReturn = [makeRemoteModel(id: "luna")]
+        controller.onOmnibarActivated()
+        await waitForModels()
+        controller.updateSelectedModel("luna")
+        controller.updateText("hello")
+
+        controller.submit()
+
+        XCTAssertEqual(submittedNewChatModelParameters(), .some(nil))
+    }
+
+    func testWhenNewChatDefaultIsOff_ThenPickIsPersistedAndNotKeptOnTab() async {
+        mockModelsService.newChatDefaultToReturn = .model(id: "terra", reasoningEffort: AIChatReasoningEffort.none)
+        mockModelsService.modelsToReturn = [makeRemoteModel(id: "luna"), makeRemoteModel(id: "terra")]
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        XCTAssertNil(controller.currentModelId)
+        XCTAssertEqual(controller.persistedModelId, "luna")
+
+        controller.updateSelectedModel("terra")
+
+        XCTAssertEqual(mockPreferences.selectedModelId, "terra")
+        XCTAssertEqual(tabCollectionViewModel.selectedTabViewModel?.addressBarSharedTextState.aiChatModelPick, .empty)
+    }
+}
+
 // MARK: - Mock Models Service
 
 @MainActor
 private class MockAIChatModelsProviding: AIChatModelsProviding {
     var modelsToReturn: [AIChatRemoteModel] = []
     var attachmentLimitsToReturn: AIChatAttachmentLimits?
+    var newChatDefaultToReturn: AIChatNewChatDefault = .unavailable
     var errorToThrow: Error?
 
     func fetchModels() async throws -> AIChatModelsResponse {
         if let error = errorToThrow {
             throw error
         }
-        return AIChatModelsResponse(models: modelsToReturn, attachmentLimits: attachmentLimitsToReturn)
+        return AIChatModelsResponse(models: modelsToReturn,
+                                    attachmentLimits: attachmentLimitsToReturn,
+                                    newChatDefault: newChatDefaultToReturn)
     }
 }
 
@@ -3386,5 +3775,13 @@ private final class RecordingInputOutcomePixelFiring: DuckAiInputOutcomePixelFir
 
     func fire(_ event: DuckAiInputOutcomeEvent) {
         events.append(event)
+    }
+}
+
+extension DuckAiNativeStorageHandling {
+
+    /// Writes the "Default AI Model" setting the way web does, as a JSON-encoded model id.
+    func putUserDefaultModel(_ modelId: String) throws {
+        try putEntry(key: DuckAiNativeStorageReservedEntryKeys.defaultDuckaiModel.rawValue, value: "\"\(modelId)\"")
     }
 }

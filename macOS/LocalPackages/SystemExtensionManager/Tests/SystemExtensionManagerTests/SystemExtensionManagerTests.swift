@@ -72,6 +72,60 @@ final class SystemExtensionManagerTests: XCTestCase {
         XCTAssertEqual(result, .enabled)
     }
 
+    func testShouldOpenSystemSettingsWhenOnlyEntryAwaitsApproval() {
+        XCTAssertTrue(SystemExtensionManager.shouldOpenSystemSettingsBeforeActivation(for: [
+            .init(isEnabled: false, isAwaitingUserApproval: true, isUninstalling: false)
+        ]))
+    }
+
+    func testShouldOpenSystemSettingsWhenUninstallingCopyAndNewCopyAwaitsApproval() {
+        let properties: [SystemExtensionPropertiesSnapshot] = [
+            .init(isEnabled: false, isAwaitingUserApproval: false, isUninstalling: true),
+            .init(isEnabled: false, isAwaitingUserApproval: true, isUninstalling: false)
+        ]
+
+        XCTAssertEqual(SystemExtensionManager.activationState(from: properties), .uninstalling)
+        XCTAssertTrue(SystemExtensionManager.shouldOpenSystemSettingsBeforeActivation(for: properties))
+    }
+
+    func testShouldNotOpenSystemSettingsWhenStaleVersionAwaitsApprovalButAnotherIsEnabled() {
+        XCTAssertFalse(SystemExtensionManager.shouldOpenSystemSettingsBeforeActivation(for: [
+            .init(isEnabled: false, isAwaitingUserApproval: true, isUninstalling: false),
+            .init(isEnabled: true, isAwaitingUserApproval: false, isUninstalling: false)
+        ]))
+    }
+
+    func testShouldNotOpenSystemSettingsWhenNoEntryAwaitsApproval() {
+        let cases: [[SystemExtensionPropertiesSnapshot]] = [
+            [],
+            [.init(isEnabled: true, isAwaitingUserApproval: false, isUninstalling: false)],
+            [.init(isEnabled: false, isAwaitingUserApproval: false, isUninstalling: false)],
+            [.init(isEnabled: false, isAwaitingUserApproval: false, isUninstalling: true)]
+        ]
+
+        for properties in cases {
+            XCTAssertFalse(SystemExtensionManager.shouldOpenSystemSettingsBeforeActivation(for: properties), "\(properties)")
+        }
+    }
+
+    func testActivateChecksStateBeforeSubmittingActivationRequest() async {
+        let manager = CapturingSystemExtensionRequestManager()
+        let systemExtensionManager = SystemExtensionManager(
+            extensionBundleID: "com.duckduckgo.test.extension",
+            manager: manager,
+            requestTimeout: 0.01
+        )
+
+        do {
+            _ = try await systemExtensionManager.activate(waitingForUserApproval: {})
+            XCTFail("Expected activation request to time out")
+        } catch {
+            XCTAssertEqual(error as? SystemExtensionRequestError, .requestTimedOut)
+        }
+
+        XCTAssertEqual(manager.submittedRequests.count, 2)
+    }
+
     func testSystemSettingsURLStringTargetsNetworkExtensionOnSequoia() throws {
         guard #available(macOS 15, *) else {
             throw XCTSkip("Specific ExtensionsPreferences URL is only used on macOS 15 and above")
@@ -145,6 +199,123 @@ final class SystemExtensionManagerTests: XCTestCase {
         } catch {
             XCTAssertTrue(error is CancellationError)
         }
+    }
+
+    // MARK: - Replacing the active extension
+
+    private let build = SystemExtensionBuild(shortVersion: "1.217.0", version: "880", codeDirectoryHash: Data([0xD4, 0x53]))
+
+    func testWhenTheBuildIsIdenticalThenTheActiveExtensionIsKept() {
+        let request = makeActivationRequest(manager: CapturingSystemExtensionRequestManager())
+
+        XCTAssertEqual(request.replacementAction(replacing: build, existingIsActive: true, with: build), .cancel)
+        XCTAssertNil(request.version)
+    }
+
+    func testWhenTheCodeDiffersWithTheSameVersionThenTheExtensionIsReplaced() {
+        let request = makeActivationRequest(manager: CapturingSystemExtensionRequestManager())
+        let rebuilt = SystemExtensionBuild(shortVersion: build.shortVersion, version: build.version, codeDirectoryHash: Data([0x65, 0x35]))
+
+        XCTAssertEqual(request.replacementAction(replacing: build, existingIsActive: true, with: rebuilt), .replace)
+        XCTAssertEqual(request.version, "1.217.0.880")
+    }
+
+    func testWhenTheVersionDiffersThenTheExtensionIsReplaced() {
+        let request = makeActivationRequest(manager: CapturingSystemExtensionRequestManager())
+        let upgrade = SystemExtensionBuild(shortVersion: "1.218.0", version: "881", codeDirectoryHash: build.codeDirectoryHash)
+
+        XCTAssertEqual(request.replacementAction(replacing: build, existingIsActive: true, with: upgrade), .replace)
+        XCTAssertEqual(request.version, "1.218.0.881")
+    }
+
+    func testWhenTheIdenticalInstalledExtensionIsNotActiveThenItIsReplaced() {
+        let request = makeActivationRequest(manager: CapturingSystemExtensionRequestManager())
+
+        XCTAssertEqual(request.replacementAction(replacing: build, existingIsActive: false, with: build), .replace)
+        XCTAssertEqual(request.version, "1.217.0.880")
+    }
+
+    func testWhenTheIdenticalInstalledExtensionIsNotActiveThenACancelledRequestFails() async throws {
+        let manager = CapturingSystemExtensionRequestManager()
+        let request = makeActivationRequest(manager: manager)
+        let submitted = expectation(description: "Request submitted")
+        manager.onSubmit = { _ in submitted.fulfill() }
+
+        let activation = Task { try await request.submit() }
+        await fulfillment(of: [submitted], timeout: 1)
+        _ = request.replacementAction(replacing: build, existingIsActive: false, with: build)
+        request.request(try XCTUnwrap(manager.submittedRequests.first), didFailWithError: OSSystemExtensionError(.requestCanceled))
+
+        do {
+            try await activation.value
+            XCTFail("Expected the activation to fail")
+        } catch {
+            XCTAssertEqual((error as? OSSystemExtensionError)?.code, .requestCanceled)
+        }
+    }
+
+    func testWhenTheCodeHashCannotBeReadThenTheExtensionIsReplaced() {
+        let request = makeActivationRequest(manager: CapturingSystemExtensionRequestManager())
+        let unreadable = SystemExtensionBuild(shortVersion: build.shortVersion, version: build.version, codeDirectoryHash: nil)
+
+        XCTAssertEqual(request.replacementAction(replacing: unreadable, existingIsActive: true, with: unreadable), .replace)
+    }
+
+    func testWhenTheIdenticalActiveExtensionIsKeptThenActivationThrowsRequestCanceled() async throws {
+        let manager = CapturingSystemExtensionRequestManager()
+        let request = makeActivationRequest(manager: manager)
+        let submitted = expectation(description: "Request submitted")
+        manager.onSubmit = { _ in submitted.fulfill() }
+
+        let activation = Task { try await request.submit() }
+        await fulfillment(of: [submitted], timeout: 1)
+        _ = request.replacementAction(replacing: build, existingIsActive: true, with: build)
+        request.request(try XCTUnwrap(manager.submittedRequests.first), didFailWithError: OSSystemExtensionError(.requestCanceled))
+
+        do {
+            try await activation.value
+            XCTFail("Expected the activation request to be cancelled")
+        } catch {
+            XCTAssertEqual((error as? OSSystemExtensionError)?.code, .requestCanceled)
+        }
+        XCTAssertNil(request.version)
+    }
+
+    func testWhenTheRequestIsCancelledWithoutKeepingTheExtensionThenActivationFails() async throws {
+        let manager = CapturingSystemExtensionRequestManager()
+        let request = makeActivationRequest(manager: manager)
+        let submitted = expectation(description: "Request submitted")
+        manager.onSubmit = { _ in submitted.fulfill() }
+
+        let activation = Task { try await request.submit() }
+        await fulfillment(of: [submitted], timeout: 1)
+        request.request(try XCTUnwrap(manager.submittedRequests.first), didFailWithError: OSSystemExtensionError(.requestCanceled))
+
+        do {
+            try await activation.value
+            XCTFail("Expected the activation to fail")
+        } catch {
+            XCTAssertEqual((error as? OSSystemExtensionError)?.code, .requestCanceled)
+        }
+    }
+
+    func testCodeDirectoryHashIsReadFromASignedBundle() {
+        let bundleURL = URL(fileURLWithPath: "/System/Applications/Calculator.app")
+
+        let hash = SystemExtensionBuild.codeDirectoryHash(ofBundleAt: bundleURL)
+
+        XCTAssertNotNil(hash)
+        XCTAssertEqual(hash, SystemExtensionBuild.codeDirectoryHash(ofBundleAt: bundleURL))
+        XCTAssertNil(SystemExtensionBuild.codeDirectoryHash(ofBundleAt: URL(fileURLWithPath: "/nonexistent.systemextension")))
+    }
+
+    private func makeActivationRequest(manager: CapturingSystemExtensionRequestManager) -> SystemExtensionRequest {
+        SystemExtensionRequest.activationRequest(
+            forExtensionWithIdentifier: "com.duckduckgo.test.extension",
+            manager: manager,
+            waitingForUserApproval: nil,
+            requestTimeout: 10
+        )
     }
 
     func testActivationStateReturnsUnknownWhenPropertiesRequestTimesOut() async {

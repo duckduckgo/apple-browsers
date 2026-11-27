@@ -38,13 +38,22 @@ import Subscription
 /// how `instantiate` is consumed.
 extension UpdateControllerFactory: AppStoreUpdateControllerFactory {
     /// Instantiates the App Store update controller.
+    @MainActor
     public static func instantiate(internalUserDecider: InternalUserDecider,
+                                   featureFlagger: FeatureFlagger,
+                                   privacyConfigurationManager: PrivacyConfigurationManaging,
                                    pixelFiring: PixelFiring?,
                                    notificationPresenter: any UpdateNotificationPresenting,
+                                   keyValueStore: any ThrowingKeyValueStoring,
+                                   applicationUpdateDetector: any ApplicationUpdateDetecting,
                                    isOnboardingFinished: @escaping () -> Bool) -> any UpdateController {
         AppStoreUpdateController(internalUserDecider: internalUserDecider,
+                                 featureFlagger: featureFlagger,
+                                 privacyConfigurationManager: privacyConfigurationManager,
                                  pixelFiring: pixelFiring,
                                  notificationPresenter: notificationPresenter,
+                                 keyValueStore: keyValueStore,
+                                 applicationUpdateDetector: applicationUpdateDetector,
                                  isOnboardingFinished: isOnboardingFinished)
     }
 }
@@ -56,8 +65,11 @@ extension UpdateControllerFactory: AppStoreUpdateControllerFactory {
     @Published public private(set) var hasPendingUpdate = false
     public var hasPendingUpdatePublisher: Published<Bool>.Publisher { $hasPendingUpdate }
 
-    public var mustShowUpdateIndicators: Bool { hasPendingUpdate }
-    public let clearsNotificationDotOnMenuOpen = true
+    public var mustShowUpdateIndicators: Bool {
+        hasPendingUpdate && (!isMoreProminentUpdatesOn || promptStage.showsMenuUpdate)
+    }
+    public var clearsNotificationDotOnMenuOpen: Bool { !isMoreProminentUpdatesOn }
+    private var promptStage: UpdatePromptStage = .none
 
     @Published public var needsNotificationDot: Bool = false
     private let notificationDotSubject = CurrentValueSubject<Bool, Never>(false)
@@ -73,6 +85,8 @@ extension UpdateControllerFactory: AppStoreUpdateControllerFactory {
     @Published public private(set) var updateProgress = UpdateCycleProgress.default
     public var updateProgressPublisher: Published<UpdateCycleProgress>.Publisher { $updateProgress }
 
+    public let updatePromptStageTracker: UpdatePromptStageTracker?
+
     private var cancellables = Set<AnyCancellable>()
 
     // MARK: - Dependencies
@@ -82,25 +96,46 @@ extension UpdateControllerFactory: AppStoreUpdateControllerFactory {
     private let releaseChecker: LatestReleaseChecker
     private let pixelFiring: PixelFiring?
     private let internalUserDecider: InternalUserDecider
+    private let featureFlagger: FeatureFlagger
+    private let promptSettings: () -> MoreProminentUpdatesSettings
     private let appStoreOpener: AppStoreOpener?
     private let isOnboardingFinished: () -> Bool
+    private let appVersion: AppVersion
+    private let now: () -> Date
+
+    private var isMoreProminentUpdatesOn: Bool {
+        featureFlagger.isFeatureOn(.moreProminentUpdates)
+    }
 
     // MARK: - Initialization
 
     /// Protocol-conforming initializer for production use.
-    public init(internalUserDecider: InternalUserDecider,
-                pixelFiring: PixelFiring?,
-                notificationPresenter: any UpdateNotificationPresenting,
-                isOnboardingFinished: @escaping () -> Bool) {
-        self.updateCheckState = UpdateCheckState()
-        self.updaterChecker = AppStoreUpdaterAvailabilityChecker()
-        self.notificationPresenter = notificationPresenter
-        self.releaseChecker = LatestReleaseChecker()
-        self.pixelFiring = pixelFiring
-        self.internalUserDecider = internalUserDecider
-        self.appStoreOpener = DefaultAppStoreOpener()
-        self.isOnboardingFinished = isOnboardingFinished
-        super.init()
+    @MainActor
+    public convenience init(internalUserDecider: InternalUserDecider,
+                            featureFlagger: FeatureFlagger,
+                            privacyConfigurationManager: PrivacyConfigurationManaging,
+                            pixelFiring: PixelFiring?,
+                            notificationPresenter: any UpdateNotificationPresenting,
+                            keyValueStore: any ThrowingKeyValueStoring,
+                            applicationUpdateDetector: any ApplicationUpdateDetecting,
+                            isOnboardingFinished: @escaping () -> Bool) {
+        let promptSettings = {
+            MoreProminentUpdatesSettings(privacyConfig: privacyConfigurationManager.privacyConfig,
+                                         isInternalUser: internalUserDecider.isInternalUser)
+        }
+        let tracker = UpdatePromptStageTracker(store: keyValueStore.throwingKeyedStoring(),
+                                               internalUserDecider: internalUserDecider,
+                                               featureFlagger: featureFlagger,
+                                               privacyConfigurationManager: privacyConfigurationManager)
+
+        self.init(appStoreOpener: DefaultAppStoreOpener(),
+                  internalUserDecider: internalUserDecider,
+                  featureFlagger: featureFlagger,
+                  promptSettings: promptSettings,
+                  updatePromptStageTracker: tracker,
+                  pixelFiring: pixelFiring,
+                  notificationPresenter: notificationPresenter,
+                  isOnboardingFinished: isOnboardingFinished)
 
         // Observe needsNotificationDot changes
         $needsNotificationDot
@@ -109,28 +144,48 @@ extension UpdateControllerFactory: AppStoreUpdateControllerFactory {
             }
             .store(in: &cancellables)
 
+        reportCompletedUpdate(status: applicationUpdateDetector.isApplicationUpdated(),
+                              promptAttribution: UpdatePromptAttribution(settings: keyValueStore.throwingKeyedStoring()))
+
         // Start automatic update checking
         checkForUpdateAutomatically()
         subscribeToWindowResignKeyNotifications()
     }
 
-    // MARK: - Convenience Initializers
-
-    /// Convenience internal initializer for testing with minimal dependencies.
+    /// Internal initializer for testing with minimal dependencies. Doesn't start automatic update checks.
+    @MainActor
     init(appStoreOpener: AppStoreOpener? = nil,
          internalUserDecider: InternalUserDecider? = nil,
+         featureFlagger: FeatureFlagger = MockFeatureFlagger(),
+         promptSettings: @escaping () -> MoreProminentUpdatesSettings = { MoreProminentUpdatesSettings(.external) },
+         updatePromptStageTracker: UpdatePromptStageTracker? = nil,
+         releaseChecker: LatestReleaseChecker = LatestReleaseChecker(),
          pixelFiring: PixelFiring? = nil,
          notificationPresenter: any UpdateNotificationPresenting,
-         isOnboardingFinished: @escaping () -> Bool = { true }) {
+         isOnboardingFinished: @escaping () -> Bool = { true },
+         appVersion: AppVersion = AppVersion(),
+         now: @escaping () -> Date = Date.init) {
         self.updateCheckState = UpdateCheckState()
         self.updaterChecker = AppStoreUpdaterAvailabilityChecker()
         self.notificationPresenter = notificationPresenter
-        self.releaseChecker = LatestReleaseChecker()
+        self.releaseChecker = releaseChecker
         self.pixelFiring = pixelFiring
         self.internalUserDecider = internalUserDecider ?? MockInternalUserDecider(isInternalUser: false)
+        self.featureFlagger = featureFlagger
+        self.promptSettings = promptSettings
+        self.updatePromptStageTracker = updatePromptStageTracker
         self.appStoreOpener = appStoreOpener
         self.isOnboardingFinished = isOnboardingFinished
+        self.appVersion = appVersion
+        self.now = now
         super.init()
+
+        updatePromptStageTracker?.$stage
+            .removeDuplicates()
+            .sink { [weak self] stage in
+                self?.updateNotificationDot(for: stage)
+            }
+            .store(in: &cancellables)
     }
 
     // MARK: - Automatic Check for Updates Subscriptions
@@ -174,7 +229,7 @@ extension UpdateControllerFactory: AppStoreUpdateControllerFactory {
     // MARK: - Private Update Logic
 
     @UpdateCheckActor
-    private func performUpdateCheck(dismissRateLimiting: Bool = false) async {
+    func performUpdateCheck(dismissRateLimiting: Bool = false) async {
         // Check if we can start a new check (rate limiting for automatic checks)
         if !dismissRateLimiting {
             guard await updateCheckState.canStartNewCheck(updater: updaterChecker, latestUpdate: latestUpdate) else {
@@ -185,9 +240,10 @@ extension UpdateControllerFactory: AppStoreUpdateControllerFactory {
 
         do {
             updateProgress = .updateCycleDidStart
-            let releaseMetadata = try await releaseChecker.getLatestReleaseAvailable(for: .macOSAppStore)
+            let releases = try await releaseChecker.getAppStoreReleases()
             let currentVersion = getCurrentAppVersion()
             let currentBuild = getCurrentAppBuild()
+            let releaseMetadata = await releaseToOffer(from: releases, currentVersion: currentVersion, currentBuild: currentBuild)
 
             Logger.updates.log("Checking App Store update: current=\(currentVersion ?? "unknown"), remote=\(releaseMetadata.latestVersion)")
 
@@ -205,19 +261,22 @@ extension UpdateControllerFactory: AppStoreUpdateControllerFactory {
                     let update = Update(releaseMetadata: releaseMetadata, isInstalled: false)
                     self.latestUpdate = update
                     self.hasPendingUpdate = true
-                    self.needsNotificationDot = true
 
                     Logger.updates.log("App Store update available: \(releaseMetadata.latestVersion)")
                     updateProgress = .updateCycleDone(.finishedWithNoError)
                 } else {
                     self.hasPendingUpdate = false
-                    self.needsNotificationDot = false
 
                     Logger.updates.log("App Store: no update available")
                     updateProgress = .updateCycleDone(.finishedWithNoUpdateFound)
                 }
 
-                showUpdateNotificationIfNeeded(isOnboardingFinished: isOnboardingFinished)
+                updatePromptStageTracker?.updateCheckDidFinish(isUpdateAvailable: isUpdateAvailable, isCritical: releaseMetadata.isCritical)
+                updateNotificationDot(for: updatePromptStageTracker?.stage ?? .none)
+
+                if !isMoreProminentUpdatesOn {
+                    showUpdateNotificationIfNeeded(isOnboardingFinished: isOnboardingFinished)
+                }
             }
 
             // Record check time for rate limiting
@@ -237,6 +296,24 @@ extension UpdateControllerFactory: AppStoreUpdateControllerFactory {
         }
     }
 
+    /// Fires the update success pixel on the first launch after the App Store installs a newer version.
+    /// The App Store doesn't tell the app how the update started, so only the prompt surface is known.
+    func reportCompletedUpdate(status: AppUpdateStatus, promptAttribution: UpdatePromptAttribution) {
+        guard status == .updated else { return }
+
+        let osVersion = ProcessInfo.processInfo.operatingSystemVersion
+        pixelFiring?.fire(UpdateFlowPixels.updateApplicationSuccess(
+            sourceVersion: "unknown",
+            sourceBuild: "unknown",
+            targetVersion: appVersion.versionNumber,
+            targetBuild: appVersion.buildNumber,
+            initiationType: "unknown",
+            updateConfiguration: "unknown",
+            osVersion: "\(osVersion.majorVersion).\(osVersion.minorVersion).\(osVersion.patchVersion)",
+            promptSurface: promptAttribution.consumePromptSurface()
+        ), frequency: .dailyAndCount)
+    }
+
     @objc public func openUpdatesPage() {
         appStoreOpener?.openAppStore()
     }
@@ -247,12 +324,39 @@ extension UpdateControllerFactory: AppStoreUpdateControllerFactory {
 
     // MARK: - Private Methods
 
+    private func updateNotificationDot(for stage: UpdatePromptStage) {
+        promptStage = stage
+        needsNotificationDot = hasPendingUpdate && (!isMoreProminentUpdatesOn || stage.showsNotificationDot)
+    }
+
+    /// The rolling-out release once it's past the buffer, otherwise the latest release.
+    /// The offer is critical if the user hasn't installed a critical latest release yet,
+    /// so offering a newer release doesn't hide it.
+    private func releaseToOffer(from releases: AppStoreReleases, currentVersion: String?, currentBuild: String?) async -> ReleaseMetadata {
+        let offered = isMoreProminentUpdatesOn
+            ? releases.releaseToOffer(availableAfter: promptSettings().appStoreUpdateAvailableDelay, now: now())
+            : releases.latest
+
+        guard !offered.isCritical, releases.latest.isCritical,
+              await isUpdateAvailable(currentVersion: currentVersion,
+                                      currentBuild: currentBuild,
+                                      remoteVersion: releases.latest.latestVersion,
+                                      remoteBuild: String(releases.latest.buildNumber)) else {
+            return offered
+        }
+
+        return ReleaseMetadata(latestVersion: offered.latestVersion,
+                               buildNumber: offered.buildNumber,
+                               releaseDate: offered.releaseDate,
+                               isCritical: true)
+    }
+
     private func getCurrentAppVersion() -> String? {
-        return AppVersion().versionNumber.isEmpty ? nil : AppVersion().versionNumber
+        return appVersion.versionNumber.isEmpty ? nil : appVersion.versionNumber
     }
 
     private func getCurrentAppBuild() -> String? {
-        return AppVersion().buildNumber.isEmpty ? nil : AppVersion().buildNumber
+        return appVersion.buildNumber.isEmpty ? nil : appVersion.buildNumber
     }
 
     internal func isUpdateAvailable(currentVersion: String?,

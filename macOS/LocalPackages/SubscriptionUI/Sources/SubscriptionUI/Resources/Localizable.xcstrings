@@ -1916,6 +1916,486 @@
         }
       }
     },
+    "subscription.dialog.withdraw.confirm.button" : {
+      "comment" : "Button that confirms withdrawal from the subscription contract",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Widerruf bestätigen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Confirm Withdrawal"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Confirmar cancelación"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Confirmer la rétractation"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conferma recesso"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opzeggen bevestigen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Potwierdź rezygnację"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Confirmar desistência"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подтвердить отказ"
+          }
+        }
+      }
+    },
+    "subscription.dialog.withdraw.error.message" : {
+      "comment" : "Message of the dialog shown when withdrawing from the subscription contract fails. The text in square brackets is a link; keep the square brackets and the (%@) right after them. Parameter is the help page URL.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wir konnten deinen Widerruf nicht automatisch bearbeiten. Bitte besuche unsere [Hilfeseite](%@), um deinen Widerruf abzuschließen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "We couldn’t process your withdrawal automatically. Please visit our [help page](%@) to complete your withdrawal."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hemos podido procesar tu cancelación automáticamente. Visita nuestra [página de ayuda](%@) para completar la cancelación."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nous n'avons pas pu traiter automatiquement votre demande de rétractation. Veuillez visiter notre [help page](%@) pour finaliser votre demande de rétractation."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non siamo riusciti a elaborare automaticamente la tua richiesta di recesso. Visita la nostra [pagina di assistenza](%@) per completare la procedura di recesso."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We konden je opzegging niet automatisch verwerken. Bezoek onze [helppagina](%@) om je opzegging af te ronden."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie udało nam się automatycznie przetworzyć Twojej rezygnacji. Odwiedź naszą [stronę pomocy](%@), aby dokończyć proces rezygnacji."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não conseguimos processar automaticamente a tua desistência. Visita a nossa [página de ajuda](%@) para concluíres a desistência."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось обработать запрос на отказ от подписки автоматически. Перейдите на нашу [страницу справки](%@), чтобы завершить отказ от подписки."
+          }
+        }
+      }
+    },
+    "subscription.dialog.withdraw.feature.advanced.duckai" : {
+      "comment" : "Duck.ai item in the list of features that stop working after withdrawing from the subscription contract, e.g. VPN, Personal Information Removal and advanced Duck.ai models",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "fortschrittliche Duck.ai-Modelle"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "advanced Duck.ai models"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "modelos avanzados de Duck.ai"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "modèles avancés Duck.ai"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "modelli avanzati di Duck.ai"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "geavanceerde Duck.ai-modellen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "zaawansowane modele Duck.ai"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "modelos avançados do Duck.ai"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "передовые модели Duck.ai"
+          }
+        }
+      }
+    },
+    "subscription.dialog.withdraw.features.message" : {
+      "comment" : "Second paragraph of the dialog confirming withdrawal from the subscription contract. Parameter is a localized list of features, e.g. VPN, Personal Information Removal and advanced Duck.ai models.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ funktionieren nicht mehr, sobald du bestätigst."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ stop working once you confirm."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ dejarán de funcionar una vez que confirmes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ cesse de fonctionner une fois que vous avez confirmé."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dopo aver confermato, %@ smetteranno di funzionare."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ werken niet meer zodra je bevestigt."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Po potwierdzeniu funkcje %@ przestaną działać."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ deixarão de funcionar assim que confirmares."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "После подтверждения вы потеряете доступ к таким функциям: %@."
+          }
+        }
+      }
+    },
+    "subscription.dialog.withdraw.keep.button" : {
+      "comment" : "Button that dismisses the withdrawal confirmation and keeps the subscription",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abonnement behalten"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Keep Subscription"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mantener suscripción"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conserver l'abonnement"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mantieni l'abbonamento"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abonnement behouden"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zachowaj subskrypcję"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manter subscrição"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Оставить подписку"
+          }
+        }
+      }
+    },
+    "subscription.dialog.withdraw.message" : {
+      "comment" : "Message of the dialog confirming withdrawal from the subscription contract. Parameters are the tier name (e.g. Plus) and the refund amount with currency.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein %1$@-Abonnement endet sofort und dir wird %2$@ innerhalb von 14 Tagen auf deine ursprüngliche Zahlungsmethode zurückerstattet."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your %1$@ subscription will end right away and you’ll be refunded %2$@ to your original payment method within 14 days."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu suscripción a %1$@ finalizará de inmediato y recibirás el reembolso de %2$@ en el método de pago original en un plazo de 14 días."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre abonnement à 1$@ prendra fin immédiatement et vous recevrez un remboursement de %2$@ sur votre moyen de paiement initial sous 14 jours."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il tuo abbonamento %1$@ terminerà immediatamente e riceverai un rimborso di %2$@ sul metodo di pagamento originale entro 14 giorni."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je %1$@-abonnement wordt direct beëindigd en %2$@ wordt binnen 14 dagen teruggestort op je oorspronkelijke betaalmethode."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoja subskrypcja %1$@ zakończy się od razu, a kwota %2$@ zostanie zwrócona na pierwotną metodę płatności w ciągu 14 dni."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A tua subscrição %1$@ terminará de imediato e receberás um reembolso de %2$@ através do teu método de pagamento original no prazo de 14 dias."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваша подписка %1$@ сразу же завершится, а в течение 14 дней вам вернут %2$@ на исходный способ оплаты."
+          }
+        }
+      }
+    },
+    "subscription.dialog.withdraw.message.no.amount" : {
+      "comment" : "Message of the dialog confirming withdrawal from the subscription contract, used when the refund amount is unknown. Parameter is the tier name (e.g. Plus).",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein %@-Abonnement endet sofort und dir wird innerhalb von 14 Tagen der volle Betrag auf deine ursprüngliche Zahlungsmethode zurückerstattet."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your %@ subscription will end right away and you’ll get a full refund to your original payment method within 14 days."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu suscripción a %@ finalizará de inmediato y recibirás un reembolso completo en el método de pago original en un plazo de 14 días."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre abonnement à %@ prendra fin immédiatement et vous recevrez un remboursement complet sur votre moyen de paiement initial sous 14 jours."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il tuo abbonamento %@ terminerà immediatamente e riceverai un rimborso completo sul metodo di pagamento originale entro 14 giorni."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je %@-abonnement wordt direct beëindigd en je krijgt het volledige bedrag binnen 14 dagen teruggestort op je oorspronkelijke betaalmethode."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoja subskrypcja %@ zakończy się od razu, a pełny zwrot środków zostanie przekazany na pierwotną metodę płatności w ciągu 14 dni."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A tua subscrição %@ terminará de imediato e receberás um reembolso total através do teu método de pagamento original no prazo de 14 dias."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваша подписка %@ сразу же завершится, а в течение 14 дней вам вернут полную сумму на исходный способ оплаты."
+          }
+        }
+      }
+    },
+    "subscription.dialog.withdraw.title" : {
+      "comment" : "Title of the dialog confirming withdrawal from the subscription contract",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Möchtest du dein Abonnement widerrufen?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Withdraw from your subscription?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Cancelar la suscripción?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous rétracter de votre abonnement ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vuoi recedere dall'abbonamento?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je abonnement opzeggen?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zrezygnować z subskrypcji?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desistir da tua subscrição?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отказаться от подписки?"
+          }
+        }
+      }
+    },
     "subscription.modal.restore.purchase.button" : {
       "comment" : "Button for restoring past subscription purchase",
       "extractionState" : "extracted_with_value",
@@ -6002,6 +6482,66 @@
         }
       }
     },
+    "subscription.preferences.subscription.settings.not.subscribed" : {
+      "comment" : "Title for the status indicator shown after the user withdrew from the subscription contract",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nicht abonniert"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Not Subscribed"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No suscrito"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non abonné(e)"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non iscritto"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Niet geabonneerd"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Brak subskrypcji"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não subscrito"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подписка не оформлена"
+          }
+        }
+      }
+    },
     "subscription.preferences.subscription.settings.section.title" : {
       "comment" : "Title for the subscription preferences settings section",
       "extractionState" : "extracted_with_value",
@@ -6182,66 +6722,6 @@
         }
       }
     },
-    "subscription.preferences.update.plan.or.cancel.button" : {
-      "comment" : "Button to update subscription plan or cancel",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tarif aktualisieren oder kündigen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Update Plan or Cancel"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Actualizar el plan o cancelar"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Modifier le forfait ou le résilier"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aggiorna o annulla il piano"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Plan bijwerken of annuleren"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aktualizuj lub anuluj plan"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Atualizar Plano ou Cancelar"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Изменить или отменить подписку"
-          }
-        }
-      }
-    },
     "subscription.preferences.view.faqs.button" : {
       "comment" : "Button to open page for FAQs",
       "extractionState" : "extracted_with_value",
@@ -6298,6 +6778,306 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ЧаВо и поддержка"
+          }
+        }
+      }
+    },
+    "subscription.preferences.withdraw.button" : {
+      "comment" : "Button that starts withdrawing from the subscription contract with a full refund",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vertrag widerrufen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Withdraw from contract"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desistir del contrato"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous rétracter du contrat"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recedi dal contratto"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Overeenkomst herroepen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Odstąp od umowy"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desistir do contrato"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отказаться от договора подписки"
+          }
+        }
+      }
+    },
+    "subscription.preferences.withdraw.section.caption" : {
+      "comment" : "Caption of the withdraw from contract section. Parameter is the last date the user can withdraw.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du kannst bis zum %@ widerrufen und erhältst eine vollständige Rückerstattung"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You can withdraw and get a full refund until %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Puedes desistir y obtener un reembolso completo hasta %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous pouvez vous rétracter et obtenir un remboursement complet jusqu'au %@."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Puoi recedere e ottenere un rimborso completo fino al %@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je kunt tot en met %@ herroepen en krijgt het volledige bedrag terug"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Możesz odstąpić od umowy i otrzymać pełny zwrot pieniędzy do %@"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Podes desistir e receber um reembolso total até %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вы можете отказаться и получить полный возврат средств до %@"
+          }
+        }
+      }
+    },
+    "subscription.preferences.withdraw.section.title" : {
+      "comment" : "Header of the subscription settings section that lets the user withdraw from the subscription contract with a full refund",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vertrag widerrufen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Withdraw from contract"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desistir del contrato"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous rétracter du contrat"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recedi dal contratto"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Overeenkomst herroepen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Odstąp od umowy"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desistir do contrato"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отказаться от договора подписки"
+          }
+        }
+      }
+    },
+    "subscription.preferences.withdrawn.info" : {
+      "comment" : "Confirmation shown after withdrawing from the subscription contract. Parameter is the withdrawal date.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du hast am %@ widerrufen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You withdrew on %@."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desististe el día %@."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous avez exercé votre droit de rétractation le %@."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hai receduto il %@."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je hebt opgezegd op %@."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rezygnacja nastąpiła w dniu %@."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desististe a %@."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вы отказались от подписки %@."
+          }
+        }
+      }
+    },
+    "subscription.preferences.withdrawn.refund.info" : {
+      "comment" : "Shown below the withdrawal confirmation. Parameter is the refunded amount with currency.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Rückerstattung in Höhe von %@ wird bearbeitet."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your refund of %@ is being processed."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se está procesando el reembolso de %@."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre remboursement de %@ est en cours de traitement."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il rimborso di %@ è in fase di elaborazione."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je terugbetaling van %@ wordt verwerkt."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trwa przetwarzanie zwrotu pieniędzy w wysokości %@."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O teu reembolso de %@ está a ser processado."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Возврат средств на сумму %@ обрабатывается."
           }
         }
       }

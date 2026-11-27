@@ -318,7 +318,7 @@ final class RulesCompilationPolicyTests: XCTestCase {
             let readyAssets = ContentBlockingUpdating.NewContent(
                 rulesUpdate: .init(rules: [], changes: [:], completionTokens: []),
                 sourceProvider: DefaultScriptSourceProvider(dependencies: .makeMock()), duckAiNativeStorageHandler: nil,
-                sponsorBlockPreferences: SponsorBlockPreferences(store: InMemoryKeyValueStore()))
+                segmentSkipPreferences: SegmentSkipPreferences(store: InMemoryKeyValueStore()))
             if rulesPreparedDuringExtensions {
                 let controller = try XCTUnwrap(tab.webView.configuration.userContentController as? UserContentController)
                 let installed = expectation(description: "Rules installed while extension still pending")
@@ -467,7 +467,7 @@ final class RulesCompilationPolicyTests: XCTestCase {
         defer { subscription.cancel() }
         assets.send(.init(rulesUpdate: .init(rules: [], changes: [:], completionTokens: []),
                           sourceProvider: DefaultScriptSourceProvider(dependencies: .makeMock()), duckAiNativeStorageHandler: nil,
-                          sponsorBlockPreferences: SponsorBlockPreferences(store: InMemoryKeyValueStore())))
+                          segmentSkipPreferences: SegmentSkipPreferences(store: InMemoryKeyValueStore())))
         await fulfillment(of: [installed], timeout: 5)
         return tab
     }

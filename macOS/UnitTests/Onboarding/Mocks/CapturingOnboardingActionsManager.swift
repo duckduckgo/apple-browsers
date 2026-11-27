@@ -56,6 +56,7 @@ class CapturingOnboardingActionsManager: OnboardingActionsManaging {
     var reportedTelemetryEvent: OnboardingUserScript.TelemetryEvent?
     var submittedQuery: OnboardingUserScript.SubmitQuery?
     var addedFavorites: [OnboardingUserScript.FavoriteSite]?
+    var topSitesPickerAnswerStub = TopSitesPickerAnswer(show: false, existingFavorites: nil)
 
     func onboardingStarted() {
         onboardingStartedCalled = true
@@ -125,6 +126,10 @@ class CapturingOnboardingActionsManager: OnboardingActionsManaging {
 
     func submitQuery(_ query: OnboardingUserScript.SubmitQuery) {
         submittedQuery = query
+    }
+
+    func topSitesPickerAnswer() -> TopSitesPickerAnswer {
+        topSitesPickerAnswerStub
     }
 
     func addFavorites(_ sites: [OnboardingUserScript.FavoriteSite]) {

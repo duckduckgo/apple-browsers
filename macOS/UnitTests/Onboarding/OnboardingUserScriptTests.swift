@@ -258,4 +258,24 @@ final class OnboardingUserScriptTests: XCTestCase {
         XCTAssertNil(mockManager.submittedQuery)
     }
 
+    @MainActor
+    func testShouldShowTopSitesPicker_ReturnsManagerAnswer() async throws {
+        mockManager.topSitesPickerAnswerStub = TopSitesPickerAnswer(show: true, existingFavorites: ["https://www.youtube.com/"])
+        let handler = try XCTUnwrap(script.handler(forMethodNamed: "shouldShowTopSitesPicker"))
+
+        let result = try await handler([:], WKScriptMessage.mock())
+
+        XCTAssertEqual(result as? TopSitesPickerAnswer, TopSitesPickerAnswer(show: true, existingFavorites: ["https://www.youtube.com/"]))
+    }
+
+    @MainActor
+    func testAddFavorites_CallsAddFavorites_WithPickedSites() async throws {
+        let params = ["favorites": [["id": "youtube", "url": "https://www.youtube.com/", "title": "YouTube"]]]
+        let handler = try XCTUnwrap(script.handler(forMethodNamed: "addFavorites"))
+
+        _ = try await handler(params, WKScriptMessage.mock())
+
+        XCTAssertEqual(mockManager.addedFavorites, [.init(id: "youtube", url: URL(string: "https://www.youtube.com/")!, title: "YouTube")])
+    }
+
 }

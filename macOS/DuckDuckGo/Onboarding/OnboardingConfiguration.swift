@@ -26,6 +26,8 @@ struct OnboardingConfiguration: Codable, Equatable {
     var order: String
     var env: String
     var locale: String
+    /// The OS region as an ISO 3166-1 alpha-2 code; the top sites picker uses it for regional site URLs
+    var region: String?
     var platform: OnboardingPlatform
 }
 
@@ -49,4 +51,11 @@ struct OnboardingPlatform: Codable, Equatable {
 
 struct OnboardingImportResponse: Codable, Equatable {
     var enabled: Bool
+}
+
+/// Answer to the page's `shouldShowTopSitesPicker` request, sent right before the user would reach the step
+struct TopSitesPickerAnswer: Encodable, Equatable {
+    let show: Bool
+    /// URLs of the user's favorites, which the page shows as picked and locked
+    let existingFavorites: [String]?
 }

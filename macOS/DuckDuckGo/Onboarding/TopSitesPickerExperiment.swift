@@ -20,20 +20,33 @@ import FeatureFlags_macOS
 import PrivacyConfig
 
 protocol TopSitesPickerExperimentProtocol {
-    /// Whether onboarding shows the step that adds popular sites to favorites.
-    var shouldShowStep: Bool { get }
+    /// Whether onboarding lists the step when it starts. The page still asks `shouldShowStep()` right before it.
+    var isStepOffered: Bool { get }
+    /// Whether to show the step, decided when the user reaches it, after the import step, so imported favorites count.
+    func shouldShowStep() -> Bool
 }
 
-/// POC: reads the local `onboardingTopSitesPicker` flag. The experiment will replace it with eligibility
-/// (fewer than 5 favorites after the import step), enrolment and the treatment cohort.
+/// POC: reads the local `onboardingTopSitesPicker` flag and shows the step to users with fewer than 5 favorites.
+/// The experiment adds enrolment and the treatment cohort.
 final class TopSitesPickerExperiment: TopSitesPickerExperimentProtocol {
+    private let favoritesLimit = 5
     private let featureFlagger: FeatureFlagger
+    private let bookmarkManager: BookmarkManager
 
-    init(featureFlagger: FeatureFlagger) {
+    init(featureFlagger: FeatureFlagger, bookmarkManager: BookmarkManager) {
         self.featureFlagger = featureFlagger
+        self.bookmarkManager = bookmarkManager
     }
 
-    var shouldShowStep: Bool {
+    var isStepOffered: Bool {
         featureFlagger.isFeatureOn(.onboardingTopSitesPicker)
+    }
+
+    func shouldShowStep() -> Bool {
+        isStepOffered && favoritesCount < favoritesLimit
+    }
+
+    private var favoritesCount: Int {
+        bookmarkManager.list?.favoriteBookmarks.count ?? 0
     }
 }

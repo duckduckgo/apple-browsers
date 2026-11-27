@@ -105,7 +105,10 @@ protocol OnboardingActionsManaging {
     /// At the end of the onboarding the user submits a search or a Duck.ai prompt
     func submitQuery(_ query: OnboardingUserScript.SubmitQuery)
 
-    /// At user input adds the sites picked on the top sites picker step as favorites, in pick order
+    /// Right before the top sites picker step, whether to show it and which favorites the user already has
+    func topSitesPickerAnswer() -> TopSitesPickerAnswer
+
+    /// At user input adds the sites picked on the top sites picker step as favorites, in the order the page sends them
     func addFavorites(_ sites: [OnboardingUserScript.FavoriteSite])
 }
 
@@ -134,6 +137,8 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     private let featureFlagger: FeatureFlagger
     private let chromeExtensionExperiment: OnboardingChromeExtensionExperiment
     private let topSitesPickerExperiment: TopSitesPickerExperimentProtocol
+    /// Read when the page starts: the OS region as an ISO 3166-1 alpha-2 code
+    private let regionCode: () -> String?
     private let onboardingSharedPixelHandler: OnboardingSharedPixelHandling
     private let chromeExtensionInstaller: ThirdPartyBrowserExtensionInstalling
     private var cancellables = Set<AnyCancellable>()
@@ -194,6 +199,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
                                        order: "v4",
                                        env: env,
                                        locale: preferredLocale,
+                                       region: regionCode(),
                                        platform: platform)
     }
 
@@ -203,7 +209,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         case .welcome, .getStarted, .makeDefaultSingle, .systemSettings, .customize, .addressBarMode:
             true
         case .topSitesPicker:
-            topSitesPickerExperiment.shouldShowStep
+            topSitesPickerExperiment.isStepOffered
         case .duckPlayerSingle:
             false
         case .searchOrChat:
@@ -255,7 +261,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
             bookmarkManager: bookmarkManager,
             aiChatPreferencesStorage: DefaultAIChatPreferencesStorage(),
             featureFlagger: featureFlagger,
-            topSitesPickerExperiment: TopSitesPickerExperiment(featureFlagger: featureFlagger),
+            topSitesPickerExperiment: TopSitesPickerExperiment(featureFlagger: featureFlagger, bookmarkManager: bookmarkManager),
             onboardingSharedPixelHandler: OnboardingSharedPixelHandler(
                 platform: .macOS,
                 installTypeProvider: {
@@ -281,6 +287,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         homepageSearchModeSeedPersistor: HomepageSearchModeSeedPersistor = HomepageSearchModeSeedUserDefaultsPersistor(),
         featureFlagger: FeatureFlagger,
         topSitesPickerExperiment: TopSitesPickerExperimentProtocol,
+        regionCode: @escaping () -> String? = { Locale.current.regionCode },
         onboardingSharedPixelHandler: OnboardingSharedPixelHandling,
         chromeExtensionInstaller: ThirdPartyBrowserExtensionInstalling
     ) {
@@ -298,6 +305,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         self.featureFlagger = featureFlagger
         self.chromeExtensionExperiment = OnboardingChromeExtensionExperiment(featureFlagger: featureFlagger)
         self.topSitesPickerExperiment = topSitesPickerExperiment
+        self.regionCode = regionCode
         self.onboardingSharedPixelHandler = onboardingSharedPixelHandler
         self.chromeExtensionInstaller = chromeExtensionInstaller
     }
@@ -377,6 +385,14 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
                 continuation.resume(returning: self.dataImportProvider.didImport)
             })
         }
+    }
+
+    func topSitesPickerAnswer() -> TopSitesPickerAnswer {
+        guard isStepActive(.topSitesPicker), topSitesPickerExperiment.shouldShowStep() else {
+            return TopSitesPickerAnswer(show: false, existingFavorites: nil)
+        }
+        let existingFavorites = bookmarkManager.list?.favoriteBookmarks.map(\.url) ?? []
+        return TopSitesPickerAnswer(show: true, existingFavorites: existingFavorites)
     }
 
     /// New bookmarks go in one batch: each bookmark store save uses its own context, so separate saves can land out of order.

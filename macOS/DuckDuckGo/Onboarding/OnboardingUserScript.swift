@@ -51,6 +51,7 @@ final class OnboardingUserScript: NSObject, Subfeature {
         case reportPageException
         case telemetryEvent
         case submitQuery
+        case shouldShowTopSitesPicker
         case addFavorites
     }
 
@@ -79,6 +80,7 @@ final class OnboardingUserScript: NSObject, Subfeature {
             .reportPageException: reportException,
             .telemetryEvent: reportTelemetryEvent,
             .submitQuery: submitQuery,
+            .shouldShowTopSitesPicker: shouldShowTopSitesPicker,
             .addFavorites: addFavorites
     ]
 
@@ -115,12 +117,13 @@ final class OnboardingUserScript: NSObject, Subfeature {
 
     // MARK: - AddFavorites
 
-    /// Sent by the top sites picker step when the user confirms; `sites` are in pick order.
+    /// Sent once by the top sites picker step when the user adds the picked sites, without the existing favorites.
     struct AddFavorites: Decodable, Equatable {
-        let sites: [FavoriteSite]
+        let favorites: [FavoriteSite]
     }
 
     struct FavoriteSite: Decodable, Equatable {
+        let id: String
         let url: URL
         let title: String
     }
@@ -225,9 +228,14 @@ extension OnboardingUserScript {
     }
 
     @MainActor
+    private func shouldShowTopSitesPicker(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        onboardingActionsManager.topSitesPickerAnswer()
+    }
+
+    @MainActor
     private func addFavorites(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         guard let addFavorites: AddFavorites = DecodableHelper.decode(from: params) else { return nil }
-        onboardingActionsManager.addFavorites(addFavorites.sites)
+        onboardingActionsManager.addFavorites(addFavorites.favorites)
         return nil
     }
 

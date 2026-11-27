@@ -86,7 +86,8 @@ class OnboardingManagerTests: XCTestCase {
             bookmarkManager: MockBookmarkManager(),
             aiChatURL: { URL(string: "https://duckduckgo.com/?ia=chat&duckai=5")! },
             featureFlagger: MockFeatureFlagger(),
-            topSitesPickerExperiment: TopSitesPickerExperiment(featureFlagger: MockFeatureFlagger()),
+            topSitesPickerExperiment: TopSitesPickerExperiment(featureFlagger: MockFeatureFlagger(), bookmarkManager: MockBookmarkManager()),
+            regionCode: { "GB" },
             onboardingSharedPixelHandler: onboardingSharedPixelHandler,
             chromeExtensionInstaller: chromeExtensionInstaller
         )
@@ -127,6 +128,7 @@ class OnboardingManagerTests: XCTestCase {
             order: "v4",
             env: "development",
             locale: "en",
+            region: "GB",
             platform: .init(name: "macos")
         )
 
@@ -183,7 +185,8 @@ class OnboardingManagerTests: XCTestCase {
             dataImportProvider: importProvider,
             bookmarkManager: MockBookmarkManager(),
             featureFlagger: MockFeatureFlagger(),
-            topSitesPickerExperiment: TopSitesPickerExperiment(featureFlagger: MockFeatureFlagger()),
+            topSitesPickerExperiment: TopSitesPickerExperiment(featureFlagger: MockFeatureFlagger(), bookmarkManager: MockBookmarkManager()),
+            regionCode: { "GB" },
             onboardingSharedPixelHandler: onboardingSharedPixelHandler,
             chromeExtensionInstaller: chromeExtensionInstaller
         )
@@ -198,6 +201,7 @@ class OnboardingManagerTests: XCTestCase {
             order: "v4",
             env: "development",
             locale: "en",
+            region: "GB",
             platform: .init(name: "macos")
         )
 
@@ -741,7 +745,7 @@ class OnboardingManagerTests: XCTestCase {
             dataImportProvider: importProvider,
             bookmarkManager: MockBookmarkManager(),
             featureFlagger: featureFlagger,
-            topSitesPickerExperiment: TopSitesPickerExperiment(featureFlagger: featureFlagger),
+            topSitesPickerExperiment: TopSitesPickerExperiment(featureFlagger: featureFlagger, bookmarkManager: MockBookmarkManager()),
             onboardingSharedPixelHandler: onboardingSharedPixelHandler,
             chromeExtensionInstaller: chromeExtensionInstaller
         )
@@ -814,7 +818,7 @@ class OnboardingManagerTests: XCTestCase {
             aiChatPreferencesStorage: aiChatPreferencesStorage,
             homepageSearchModeSeedPersistor: homepageSearchModeSeedPersistor,
             featureFlagger: featureFlagger,
-            topSitesPickerExperiment: TopSitesPickerExperiment(featureFlagger: featureFlagger),
+            topSitesPickerExperiment: TopSitesPickerExperiment(featureFlagger: featureFlagger, bookmarkManager: MockBookmarkManager()),
             onboardingSharedPixelHandler: onboardingSharedPixelHandler,
             chromeExtensionInstaller: chromeExtensionInstaller
         )
@@ -860,6 +864,26 @@ class OnboardingManagerTests: XCTestCase {
         XCTAssertEqual(navigationDelegate.preventUserInteraction, false)
     }
 
+
+    // MARK: - Top sites picker
+
+    @MainActor
+    func testTopSitesPickerAnswer_WhenFewerThanFiveFavorites_ShowsStepWithExistingFavorites() {
+        let manager = makeTopSitesPickerManager(favoriteURLs: ["https://www.youtube.com/", "https://mail.google.com/"])
+
+        let answer = manager.topSitesPickerAnswer()
+
+        XCTAssertEqual(answer, TopSitesPickerAnswer(show: true, existingFavorites: ["https://www.youtube.com/", "https://mail.google.com/"]))
+    }
+
+    @MainActor
+    func testTopSitesPickerAnswer_WhenFiveFavorites_HidesStep() {
+        let manager = makeTopSitesPickerManager(favoriteURLs: (1...5).map { "https://site\($0).com/" })
+
+        let answer = manager.topSitesPickerAnswer()
+
+        XCTAssertEqual(answer, TopSitesPickerAnswer(show: false, existingFavorites: nil))
+    }
 }
 
 // MARK: - Chrome extension experiment test helpers
@@ -881,7 +905,7 @@ private extension OnboardingManagerTests {
             dataImportProvider: importProvider,
             bookmarkManager: MockBookmarkManager(),
             featureFlagger: featureFlagger,
-            topSitesPickerExperiment: TopSitesPickerExperiment(featureFlagger: featureFlagger),
+            topSitesPickerExperiment: TopSitesPickerExperiment(featureFlagger: featureFlagger, bookmarkManager: MockBookmarkManager()),
             onboardingSharedPixelHandler: onboardingSharedPixelHandler,
             chromeExtensionInstaller: chromeExtensionInstaller
         )
@@ -889,5 +913,31 @@ private extension OnboardingManagerTests {
 
     func makeFeatureFlagger(cohort: FeatureFlag.OnboardingChromeExtensionCohort?) -> MockFeatureFlagger {
         MockFeatureFlagger(resolveCohortStub: cohort)
+    }
+}
+
+// MARK: - Top sites picker test helpers
+
+private extension OnboardingManagerTests {
+
+    @MainActor
+    func makeTopSitesPickerManager(favoriteURLs: [String]) -> OnboardingActionsManager {
+        let featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.onboardingTopSitesPicker.rawValue: true])
+        let favorites = favoriteURLs.map { Bookmark(id: UUID().uuidString, url: $0, title: $0, isFavorite: true) }
+        let bookmarkManager = MockBookmarkManager(list: BookmarkList(entities: favorites, favorites: favorites))
+        return OnboardingActionsManager(
+            navigationDelegate: navigationDelegate,
+            pathStarter: { [unowned self] in self.pathStarter },
+            dockCustomization: dockCustomization,
+            defaultBrowserProvider: defaultBrowserProvider,
+            appearancePreferences: appearancePreferences,
+            startupPreferences: startupPreferences,
+            dataImportProvider: importProvider,
+            bookmarkManager: bookmarkManager,
+            featureFlagger: featureFlagger,
+            topSitesPickerExperiment: TopSitesPickerExperiment(featureFlagger: featureFlagger, bookmarkManager: bookmarkManager),
+            onboardingSharedPixelHandler: onboardingSharedPixelHandler,
+            chromeExtensionInstaller: chromeExtensionInstaller
+        )
     }
 }

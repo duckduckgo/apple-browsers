@@ -45,9 +45,9 @@ final class TranslatePagesSetting {
         self.notificationCenter = notificationCenter
     }
 
-    /// Fires after every write, on the center the setting was given.
+    /// Fires after a write by any instance on the same center, so an open Settings pane follows the offer's writes.
     var changes: AnyPublisher<Void, Never> {
-        notificationCenter.publisher(for: Self.didChange, object: self).map { _ in }.eraseToAnyPublisher()
+        notificationCenter.publisher(for: Self.didChange).map { _ in }.eraseToAnyPublisher()
     }
 
     var mode: TranslatePagesMode {
@@ -121,9 +121,9 @@ final class TranslatePagesSetting {
 /// The languages the Settings menu lists, and how it names them.
 enum TranslatePagesLanguages {
 
-    /// The languages the app is localized into, from its bundle at runtime.
-    static func appLocalizations(bundle: Bundle = .main) -> [String] {
-        bundle.localizations.filter { $0 != "Base" }.map(TranslatePagesSetting.normalized)
+    /// The languages the app is localized into, as primary subtags. `Bundle.main.localizations` at runtime.
+    static func appLocalizations(from localizations: [String] = Bundle.main.localizations) -> [String] {
+        localizations.filter { $0 != "Base" }.map(TranslatePagesSetting.normalized)
     }
 
     /// The first preferred language's primary subtag, the one the offer never covers.
@@ -135,21 +135,23 @@ enum TranslatePagesLanguages {
         locale.localizedString(forLanguageCode: code)
     }
 
+    /// The codes the locale can name, without the system language, by name. The one ordering the menu and summary share.
+    private static func named(_ codes: [String], systemCode: String?, locale: Locale) -> [(code: String, name: String)] {
+        Set(codes).subtracting([systemCode].compactMap { $0 })
+            .compactMap { code in name(of: code, locale: locale).map { (code: code, name: $0) } }
+            .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+    }
+
     /// App localizations, offered and excluded languages, without the system language, by name.
     static func menuCodes(localizations: [String], offered: [String], excluded: [String], systemCode: String?,
                           locale: Locale = .current) -> [String] {
-        Set(localizations + offered + excluded).subtracting([systemCode].compactMap { $0 })
-            .compactMap { code in name(of: code, locale: locale).map { (code, $0) } }
-            .sorted { $0.1.localizedCaseInsensitiveCompare($1.1) == .orderedAscending }
-            .map(\.0)
+        named(localizations + offered + excluded, systemCode: systemCode, locale: locale).map(\.code)
     }
 
     /// The system language, then each excluded language by name.
     static func summary(excluded: [String], systemCode: String?, locale: Locale = .current) -> String {
         let system = systemCode.flatMap { name(of: $0, locale: locale) }
-        let names = Set(excluded).subtracting([systemCode].compactMap { $0 })
-            .compactMap { name(of: $0, locale: locale) }
-            .sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
-        return ([system].compactMap { $0 } + names).joined(separator: ", ")
+        return ([system].compactMap { $0 } + named(excluded, systemCode: systemCode, locale: locale).map(\.name))
+            .joined(separator: ", ")
     }
 }

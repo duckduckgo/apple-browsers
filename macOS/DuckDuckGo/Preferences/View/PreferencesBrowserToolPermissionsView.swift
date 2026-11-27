@@ -341,13 +341,24 @@ struct TranslatePagesRow: View {
 
     @ObservedObject var model: BrowserToolPermissionsPreferences
 
+    // shortcut: a character count stands in for measuring the text (ViewThatFits needs macOS 13), tuned to the
+    // 544-point Settings column; move to ViewThatFits when the deployment target allows.
+    private static let inlineSummaryLimit = 20
+
+    private var detailPrefix: some View {
+        Text(UserText.translatePagesSettingsDetailPrefix)
+            .font(.system(size: 11))
+            .foregroundColor(Color(designSystemColor: .textSecondary))
+            .fixedSize()
+    }
+
     private var systemCode: String? { TranslatePagesLanguages.systemCode() }
 
     private var summary: String {
         TranslatePagesLanguages.summary(excluded: model.translateExcludedLanguages, systemCode: systemCode)
     }
 
-    private var languageMenu: some View {
+    private func languageMenu(wraps: Bool) -> some View {
         Menu {
             if let systemCode, let name = TranslatePagesLanguages.name(of: systemCode) {
                 Toggle(isOn: .constant(true)) {
@@ -369,11 +380,13 @@ struct TranslatePagesRow: View {
         } label: {
             Text(summary)
                 .font(.system(size: 11))
+                .underline()
                 .foregroundColor(Color(designSystemColor: .accentTextPrimary))
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: !wraps, vertical: true)
         }
         .menuStyle(.borderlessButton)
         .menuIndicator(.visible)
-        .fixedSize()
         .accessibilityIdentifier("Preferences.AIChat.translatePages.languages")
     }
 
@@ -389,11 +402,16 @@ struct TranslatePagesRow: View {
                 Text(UserText.translatePagesSettingsTitle)
                     .font(.system(size: 13))
                     .foregroundColor(Color(designSystemColor: .textPrimary))
-                HStack(spacing: 3) {
-                    Text(UserText.translatePagesSettingsDetailPrefix)
-                        .font(.system(size: 11))
-                        .foregroundColor(Color(designSystemColor: .textSecondary))
-                    languageMenu
+                if summary.count > Self.inlineSummaryLimit {
+                    VStack(alignment: .leading, spacing: 2) {
+                        detailPrefix
+                        languageMenu(wraps: true)
+                    }
+                } else {
+                    HStack(spacing: 3) {
+                        detailPrefix
+                        languageMenu(wraps: false)
+                    }
                 }
             }
 

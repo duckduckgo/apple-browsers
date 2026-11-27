@@ -298,6 +298,12 @@
 /* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
 "aichat.attachment.image.turn.limit" = "Du kan bare legge ved %d bilder av gangen.";
 
+/* Attachment menu option to add one or more files to a Duck.ai message */
+"aichat.attachment.option.add.files" = "Legg til filer";
+
+/* Attachment menu option to add one or more images to a Duck.ai message */
+"aichat.attachment.option.add.images" = "Legg til bilder";
+
 /* attachment-menu option that opens the Choose Tabs picker */
 "aichat.attachment.option.add.tabs" = "Legg til faner";
 
@@ -597,6 +603,9 @@
 
 /* Link inside the Duck.ai Terms of Service disclaimer that opens the Duck.ai Privacy Policy and Terms of Service page */
 "aichat.termsOfService.disclaimer.link" = "Personvernerklæring og vilkår for bruk";
+
+/* Accessibility label for the circled-plus button that opens the attach and tools menu in the Duck.ai native input toolbar */
+"aichat.toolbar.add.button.accessibility.label" = "Legg til";
 
 /* Accessibility label for the attachment button in the Duck.ai native input toolbar */
 "aichat.toolbar.attach.button.accessibility.label" = "Legg ved";
@@ -1569,6 +1578,66 @@
 
 /* No comment provided by engineer. */
 "Brokers" = "Mellomtjenere";
+
+/* Title of the prompt asking to let Duck.ai switch tabs */
+"browser-tool.permission.title.switch-to-tab" = "Vil du tillate Duck.ai å bytte til en annen fane?";
+
+/* Heading for Duck.ai browser tools that perform actions */
+"browser-tool.settings.can-do" = "Dette kan Duck.ai gjøre";
+
+/* Heading for read-only Duck.ai browser tools */
+"browser-tool.settings.can-see" = "Dette kan Duck.ai se";
+
+/* Explains the scope of Duck.ai browser tool permissions in Settings */
+"browser-tool.settings.caption" = "Velg hvilke handlinger Duck.ai kan utføre i nettleseren, og hvorvidt den kan handle uten å spørre om tillatelse hver gang. Disse innstillingene gjelder for alle nettsteder og chatter.";
+
+/* Description of Duck.ai's Find in Page browser tool */
+"browser-tool.settings.find-in-page.detail" = "Finn tekst på en side og se korte utdrag rundt hvert treff.";
+
+/* Description of Duck.ai's List Open Tabs browser tool */
+"browser-tool.settings.list-open-tabs.detail" = "Se tittelen og adressen til hver åpne fane.";
+
+/* Name of Duck.ai's browser tool for listing open tabs */
+"browser-tool.settings.list-open-tabs.title" = "Vis åpne faner";
+
+/* Description of Duck.ai's Read Tab Content browser tool */
+"browser-tool.settings.read-tab-content.detail" = "Les tittelen, adressen og teksten i en fane.";
+
+/* Name of Duck.ai's browser tool for reading a tab */
+"browser-tool.settings.read-tab-content.title" = "Les innholdet i fanen";
+
+/* Message of the confirmation alert for resetting all Duck.ai browser tool permissions */
+"browser-tool.settings.reset-alert.message" = "Dette gjenoppretter standardtillatelsen for alle nettleserverktøy.";
+
+/* Title of the confirmation alert for resetting all Duck.ai browser tool permissions */
+"browser-tool.settings.reset-alert.title" = "Vil du tilbakestille nettlesertilgangen?";
+
+/* Button that restores the default permission for every Duck.ai browser tool */
+"browser-tool.settings.reset-all" = "Tilbakestill alt";
+
+/* Description of Duck.ai's Search Browsing History browser tool */
+"browser-tool.settings.search-history.detail" = "Søk på nettstedene du har besøkt, også før denne chatten.";
+
+/* Name of Duck.ai's browser tool for searching browsing history */
+"browser-tool.settings.search-history.title" = "Søk i nettleserhistorikken";
+
+/* Browser tool permission option that lets Duck.ai act without asking */
+"browser-tool.settings.state.allow" = "Tillat alltid";
+
+/* Browser tool permission option that asks the user before acting */
+"browser-tool.settings.state.ask" = "Spør alltid";
+
+/* Browser tool permission option that denies access */
+"browser-tool.settings.state.deny" = "Tillat aldri";
+
+/* Description of Duck.ai's Switch to Tab browser tool */
+"browser-tool.settings.switch-to-tab.detail" = "Bytt til en av de åpne fanene.";
+
+/* Name of Duck.ai's browser tool for bringing an open tab forward */
+"browser-tool.settings.switch-to-tab.title" = "Bytt til fane";
+
+/* Settings screen and navigation row for Duck.ai browser tool permissions */
+"browser-tool.settings.title" = "Nettlesertilgang";
 
 /* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "Du kan ikke avbryte mer enn én gang";
@@ -3262,6 +3331,9 @@
 /* Placeholder text for the duck.ai input field when a chat is already active */
 "input.field.placeholder.duckai.followup" = "Svar ...";
 
+/* Placeholder text for the duck.ai input field when the image generation tool is selected */
+"input.field.placeholder.duckai.imageGeneration" = "Lag bilder privat";
+
 /* No comment provided by engineer. */
 "Install Extension" = "Installer utvidelse";
 
@@ -3876,6 +3948,12 @@
 
 /* Name of the New Tab Page section showing messages, in the customization sheet */
 "new-tab-page.customization.messages" = "Meldinger";
+
+/* Accessibility label of the blue illustrated theme option in the New Tab Page customization sheet */
+"new-tab-page.customization.theme-blue" = "Blå";
+
+/* Accessibility label of the plain theme option, without an illustration, in the New Tab Page customization sheet */
+"new-tab-page.customization.theme-plain" = "Enkelt";
 
 /* Title of the sheet for customizing the New Tab Page */
 "new-tab-page.customization.title" = "Tilpass startsiden";
@@ -5749,8 +5827,11 @@
 /* Duck.ai item in the list of features that stop working after withdrawing from the subscription contract, e.g. VPN, Personal Information Removal and advanced Duck.ai models */
 "subscription.withdraw.confirm.feature.advanced.duckai" = "avanserte Duck.ai-modeller";
 
-/* Second paragraph of the alert confirming withdrawal from the subscription contract. Parameter is a localized list of features, e.g. VPN, Personal Information Removal and advanced Duck.ai models. */
-"subscription.withdraw.confirm.features.message" = "%@ slutter å fungere når du har bekreftet.";
+/* VPN item in the list of features the user loses access to after withdrawing from the subscription contract, e.g. the VPN, Identity Theft Restoration and advanced Duck.ai models */
+"subscription.withdraw.confirm.feature.vpn" = "VPN-en";
+
+/* Second paragraph of the alert confirming withdrawal from the subscription contract. Parameter is a localized list of features, e.g. the VPN, Identity Theft Restoration and advanced Duck.ai models. */
+"subscription.withdraw.confirm.lose.access.message" = "Når du har bekreftet, mister du tilgangen til %@.";
 
 /* Message of the alert confirming withdrawal from the subscription contract. Parameters are the tier name (e.g. Plus) and the refund amount with currency. */
 "subscription.withdraw.confirm.message" = "%1$@-abonnementet ditt avsluttes umiddelbart, og du får refundert %2$@ til den opprinnelige betalingsmåten din innen 14 dager.";
@@ -6042,6 +6123,15 @@
 
 /* No comment provided by engineer. */
 "Total stored: %@" = "Total stored: %@";
+
+/* Subtitle of the translation banner naming the languages, e.g. Spanish to English. %1$@ is the page's language, %2$@ is the language it will be translated to */
+"translation.banner.subtitle" = "%1$@ til %2$@";
+
+/* Title of the banner offering to translate a web page that is in another language */
+"translation.banner.title" = "Vil du ha oversatt denne siden?";
+
+/* Button in the translation banner that translates the current web page */
+"translation.banner.translate" = "Oversett";
 
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";

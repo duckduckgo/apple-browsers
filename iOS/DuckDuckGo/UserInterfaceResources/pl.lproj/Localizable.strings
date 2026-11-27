@@ -298,6 +298,12 @@
 /* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
 "aichat.attachment.image.turn.limit" = "Możesz dołączyć maksymalnie %d obrazów na raz.";
 
+/* Attachment menu option to add one or more files to a Duck.ai message */
+"aichat.attachment.option.add.files" = "Dodaj pliki";
+
+/* Attachment menu option to add one or more images to a Duck.ai message */
+"aichat.attachment.option.add.images" = "Dodaj obrazy";
+
 /* attachment-menu option that opens the Choose Tabs picker */
 "aichat.attachment.option.add.tabs" = "Dodaj karty";
 
@@ -597,6 +603,9 @@
 
 /* Link inside the Duck.ai Terms of Service disclaimer that opens the Duck.ai Privacy Policy and Terms of Service page */
 "aichat.termsOfService.disclaimer.link" = "Polityka prywatności i warunki korzystania z usługi";
+
+/* Accessibility label for the circled-plus button that opens the attach and tools menu in the Duck.ai native input toolbar */
+"aichat.toolbar.add.button.accessibility.label" = "Dodaj";
 
 /* Accessibility label for the attachment button in the Duck.ai native input toolbar */
 "aichat.toolbar.attach.button.accessibility.label" = "Załącz";
@@ -1569,6 +1578,66 @@
 
 /* No comment provided by engineer. */
 "Brokers" = "Brokerzy";
+
+/* Title of the prompt asking to let Duck.ai switch tabs */
+"browser-tool.permission.title.switch-to-tab" = "Zezwolić Duck.ai na przełączanie się na inną kartę?";
+
+/* Heading for Duck.ai browser tools that perform actions */
+"browser-tool.settings.can-do" = "Co potrafi Duck.ai";
+
+/* Heading for read-only Duck.ai browser tools */
+"browser-tool.settings.can-see" = "Co widzi Duck.ai";
+
+/* Explains the scope of Duck.ai browser tool permissions in Settings */
+"browser-tool.settings.caption" = "Wybierz, jakie działania Duck.ai może wykonywać w przeglądarce i czy może to robić bez każdorazowego pytania o zgodę. Te ustawienia dotyczą każdej witryny i każdego czatu.";
+
+/* Description of Duck.ai's Find in Page browser tool */
+"browser-tool.settings.find-in-page.detail" = "Wyszukiwanie tekstu na stronie i wyświetlanie krótkich fragmentów wokół każdego dopasowania.";
+
+/* Description of Duck.ai's List Open Tabs browser tool */
+"browser-tool.settings.list-open-tabs.detail" = "Wyświetlanie tytułu i adresu każdej otwartej karty.";
+
+/* Name of Duck.ai's browser tool for listing open tabs */
+"browser-tool.settings.list-open-tabs.title" = "Wyświetl otwarte karty";
+
+/* Description of Duck.ai's Read Tab Content browser tool */
+"browser-tool.settings.read-tab-content.detail" = "Odczytywanie tytułu, adresu i tekstu karty.";
+
+/* Name of Duck.ai's browser tool for reading a tab */
+"browser-tool.settings.read-tab-content.title" = "Odczytaj zawartość karty";
+
+/* Message of the confirmation alert for resetting all Duck.ai browser tool permissions */
+"browser-tool.settings.reset-alert.message" = "Spowoduje to przywrócenie domyślnych uprawnień dla wszystkich narzędzi przeglądarki.";
+
+/* Title of the confirmation alert for resetting all Duck.ai browser tool permissions */
+"browser-tool.settings.reset-alert.title" = "Zresetować dostęp do przeglądarki?";
+
+/* Button that restores the default permission for every Duck.ai browser tool */
+"browser-tool.settings.reset-all" = "Zresetuj wszystkie";
+
+/* Description of Duck.ai's Search Browsing History browser tool */
+"browser-tool.settings.search-history.detail" = "Przeszukiwanie odwiedzonych przez Ciebie witryn, także sprzed rozpoczęcia tego czatu.";
+
+/* Name of Duck.ai's browser tool for searching browsing history */
+"browser-tool.settings.search-history.title" = "Przeszukaj historię przeglądania";
+
+/* Browser tool permission option that lets Duck.ai act without asking */
+"browser-tool.settings.state.allow" = "Zawsze zezwalaj";
+
+/* Browser tool permission option that asks the user before acting */
+"browser-tool.settings.state.ask" = "Zawsze pytaj";
+
+/* Browser tool permission option that denies access */
+"browser-tool.settings.state.deny" = "Nigdy nie zezwalaj";
+
+/* Description of Duck.ai's Switch to Tab browser tool */
+"browser-tool.settings.switch-to-tab.detail" = "Przenoszenie jednej z otwartych kart na pierwszy plan.";
+
+/* Name of Duck.ai's browser tool for bringing an open tab forward */
+"browser-tool.settings.switch-to-tab.title" = "Przełącz na kartę";
+
+/* Settings screen and navigation row for Duck.ai browser tool permissions */
+"browser-tool.settings.title" = "Dostęp do przeglądarki";
 
 /* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "Anulowanie nie jest dozwolone więcej niż jeden raz";
@@ -3262,6 +3331,9 @@
 /* Placeholder text for the duck.ai input field when a chat is already active */
 "input.field.placeholder.duckai.followup" = "Odpowiedź...";
 
+/* Placeholder text for the duck.ai input field when the image generation tool is selected */
+"input.field.placeholder.duckai.imageGeneration" = "Twórz obrazy z zachowaniem prywatności";
+
 /* No comment provided by engineer. */
 "Install Extension" = "Zainstaluj rozszerzenie";
 
@@ -3876,6 +3948,12 @@
 
 /* Name of the New Tab Page section showing messages, in the customization sheet */
 "new-tab-page.customization.messages" = "Wiadomości";
+
+/* Accessibility label of the blue illustrated theme option in the New Tab Page customization sheet */
+"new-tab-page.customization.theme-blue" = "Niebieski";
+
+/* Accessibility label of the plain theme option, without an illustration, in the New Tab Page customization sheet */
+"new-tab-page.customization.theme-plain" = "Prosty";
 
 /* Title of the sheet for customizing the New Tab Page */
 "new-tab-page.customization.title" = "Dostosuj stronę startową";
@@ -5749,8 +5827,11 @@
 /* Duck.ai item in the list of features that stop working after withdrawing from the subscription contract, e.g. VPN, Personal Information Removal and advanced Duck.ai models */
 "subscription.withdraw.confirm.feature.advanced.duckai" = "zaawansowane modele Duck.ai";
 
-/* Second paragraph of the alert confirming withdrawal from the subscription contract. Parameter is a localized list of features, e.g. VPN, Personal Information Removal and advanced Duck.ai models. */
-"subscription.withdraw.confirm.features.message" = "Po potwierdzeniu funkcje %@ przestaną działać.";
+/* VPN item in the list of features the user loses access to after withdrawing from the subscription contract, e.g. the VPN, Identity Theft Restoration and advanced Duck.ai models */
+"subscription.withdraw.confirm.feature.vpn" = "VPN";
+
+/* Second paragraph of the alert confirming withdrawal from the subscription contract. Parameter is a localized list of features, e.g. the VPN, Identity Theft Restoration and advanced Duck.ai models. */
+"subscription.withdraw.confirm.lose.access.message" = "Gdy potwierdzisz, utracisz dostęp do funkcji %@.";
 
 /* Message of the alert confirming withdrawal from the subscription contract. Parameters are the tier name (e.g. Plus) and the refund amount with currency. */
 "subscription.withdraw.confirm.message" = "Twoja subskrypcja %1$@ zakończy się od razu, a kwota %2$@ zostanie zwrócona na pierwotną metodę płatności w ciągu 14 dni.";
@@ -6042,6 +6123,15 @@
 
 /* No comment provided by engineer. */
 "Total stored: %@" = "Total stored: %@";
+
+/* Subtitle of the translation banner naming the languages, e.g. Spanish to English. %1$@ is the page's language, %2$@ is the language it will be translated to */
+"translation.banner.subtitle" = "%1$@ na %2$@";
+
+/* Title of the banner offering to translate a web page that is in another language */
+"translation.banner.title" = "Przetłumaczyć tę stronę?";
+
+/* Button in the translation banner that translates the current web page */
+"translation.banner.translate" = "Przetłumacz";
 
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";

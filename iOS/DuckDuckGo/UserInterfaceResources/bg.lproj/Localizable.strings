@@ -298,6 +298,12 @@
 /* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
 "aichat.attachment.image.turn.limit" = "Можете да прикачите само %d изображения едновременно.";
 
+/* Attachment menu option to add one or more files to a Duck.ai message */
+"aichat.attachment.option.add.files" = "Добавяне на файлове";
+
+/* Attachment menu option to add one or more images to a Duck.ai message */
+"aichat.attachment.option.add.images" = "Добавяне на изображения";
+
 /* attachment-menu option that opens the Choose Tabs picker */
 "aichat.attachment.option.add.tabs" = "Добавяне на раздели";
 
@@ -597,6 +603,9 @@
 
 /* Link inside the Duck.ai Terms of Service disclaimer that opens the Duck.ai Privacy Policy and Terms of Service page */
 "aichat.termsOfService.disclaimer.link" = "Политика за поверителност и Условия на услугата";
+
+/* Accessibility label for the circled-plus button that opens the attach and tools menu in the Duck.ai native input toolbar */
+"aichat.toolbar.add.button.accessibility.label" = "Добавяне";
 
 /* Accessibility label for the attachment button in the Duck.ai native input toolbar */
 "aichat.toolbar.attach.button.accessibility.label" = "Прикачване";
@@ -1569,6 +1578,66 @@
 
 /* No comment provided by engineer. */
 "Brokers" = "Брокери";
+
+/* Title of the prompt asking to let Duck.ai switch tabs */
+"browser-tool.permission.title.switch-to-tab" = "Разрешаване на Duck.ai да превключи към друг раздел?";
+
+/* Heading for Duck.ai browser tools that perform actions */
+"browser-tool.settings.can-do" = "Какво може да прави Duck.ai";
+
+/* Heading for read-only Duck.ai browser tools */
+"browser-tool.settings.can-see" = "Какво може да вижда Duck.ai";
+
+/* Explains the scope of Duck.ai browser tool permissions in Settings */
+"browser-tool.settings.caption" = "Изберете какви действия може да извършва Duck.ai в браузъра и дали може да действа без да иска разрешение всеки път. Тези настройки важат за всеки сайт и чат.";
+
+/* Description of Duck.ai's Find in Page browser tool */
+"browser-tool.settings.find-in-page.detail" = "Намерете текст на страница и вижте кратки откъси около всяко съвпадение.";
+
+/* Description of Duck.ai's List Open Tabs browser tool */
+"browser-tool.settings.list-open-tabs.detail" = "Вижте заглавието и адреса на всеки отворен раздел.";
+
+/* Name of Duck.ai's browser tool for listing open tabs */
+"browser-tool.settings.list-open-tabs.title" = "Списък с отворени раздели";
+
+/* Description of Duck.ai's Read Tab Content browser tool */
+"browser-tool.settings.read-tab-content.detail" = "Прочетете заглавието, адреса и текста на раздел.";
+
+/* Name of Duck.ai's browser tool for reading a tab */
+"browser-tool.settings.read-tab-content.title" = "Четене на съдържанието на раздела";
+
+/* Message of the confirmation alert for resetting all Duck.ai browser tool permissions */
+"browser-tool.settings.reset-alert.message" = "Това възстановява разрешението по подразбиране за всеки инструмент на браузъра.";
+
+/* Title of the confirmation alert for resetting all Duck.ai browser tool permissions */
+"browser-tool.settings.reset-alert.title" = "Нулиране на достъпа до браузъра?";
+
+/* Button that restores the default permission for every Duck.ai browser tool */
+"browser-tool.settings.reset-all" = "Нулиране на всички";
+
+/* Description of Duck.ai's Search Browsing History browser tool */
+"browser-tool.settings.search-history.detail" = "Търсете в сайтовете, които сте посетили, включително преди този чат.";
+
+/* Name of Duck.ai's browser tool for searching browsing history */
+"browser-tool.settings.search-history.title" = "Търсене в историята на сърфирането";
+
+/* Browser tool permission option that lets Duck.ai act without asking */
+"browser-tool.settings.state.allow" = "Винаги разрешено";
+
+/* Browser tool permission option that asks the user before acting */
+"browser-tool.settings.state.ask" = "Винаги питай";
+
+/* Browser tool permission option that denies access */
+"browser-tool.settings.state.deny" = "Никога не е разрешено";
+
+/* Description of Duck.ai's Switch to Tab browser tool */
+"browser-tool.settings.switch-to-tab.detail" = "Изведете един от отворените раздели на преден план.";
+
+/* Name of Duck.ai's browser tool for bringing an open tab forward */
+"browser-tool.settings.switch-to-tab.title" = "Превключване към раздел";
+
+/* Settings screen and navigation row for Duck.ai browser tool permissions */
+"browser-tool.settings.title" = "Достъп до браузъра";
 
 /* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "Отменянето не е позволено повече от веднъж";
@@ -3262,6 +3331,9 @@
 /* Placeholder text for the duck.ai input field when a chat is already active */
 "input.field.placeholder.duckai.followup" = "Отговор...";
 
+/* Placeholder text for the duck.ai input field when the image generation tool is selected */
+"input.field.placeholder.duckai.imageGeneration" = "Създавай изображения поверително";
+
 /* No comment provided by engineer. */
 "Install Extension" = "Инсталирай разширение";
 
@@ -3876,6 +3948,12 @@
 
 /* Name of the New Tab Page section showing messages, in the customization sheet */
 "new-tab-page.customization.messages" = "Съобщения";
+
+/* Accessibility label of the blue illustrated theme option in the New Tab Page customization sheet */
+"new-tab-page.customization.theme-blue" = "Синьо";
+
+/* Accessibility label of the plain theme option, without an illustration, in the New Tab Page customization sheet */
+"new-tab-page.customization.theme-plain" = "Изчистена";
 
 /* Title of the sheet for customizing the New Tab Page */
 "new-tab-page.customization.title" = "Персонализирайте началната страница";
@@ -5749,8 +5827,11 @@
 /* Duck.ai item in the list of features that stop working after withdrawing from the subscription contract, e.g. VPN, Personal Information Removal and advanced Duck.ai models */
 "subscription.withdraw.confirm.feature.advanced.duckai" = "усъвършенствани Duck.ai модели";
 
-/* Second paragraph of the alert confirming withdrawal from the subscription contract. Parameter is a localized list of features, e.g. VPN, Personal Information Removal and advanced Duck.ai models. */
-"subscription.withdraw.confirm.features.message" = "%@ ще спрат да работят, след като потвърдите.";
+/* VPN item in the list of features the user loses access to after withdrawing from the subscription contract, e.g. the VPN, Identity Theft Restoration and advanced Duck.ai models */
+"subscription.withdraw.confirm.feature.vpn" = "VPN";
+
+/* Second paragraph of the alert confirming withdrawal from the subscription contract. Parameter is a localized list of features, e.g. the VPN, Identity Theft Restoration and advanced Duck.ai models. */
+"subscription.withdraw.confirm.lose.access.message" = "След като потвърдите, ще загубите достъп до %@.";
 
 /* Message of the alert confirming withdrawal from the subscription contract. Parameters are the tier name (e.g. Plus) and the refund amount with currency. */
 "subscription.withdraw.confirm.message" = "Абонаментът Ви за %1$@ ще бъде прекратен веднага и сумата %2$@ ще бъде възстановена по първоначалния начин на плащане в рамките на 14 дни.";
@@ -6042,6 +6123,15 @@
 
 /* No comment provided by engineer. */
 "Total stored: %@" = "Total stored: %@";
+
+/* Subtitle of the translation banner naming the languages, e.g. Spanish to English. %1$@ is the page's language, %2$@ is the language it will be translated to */
+"translation.banner.subtitle" = "от %1$@ на %2$@";
+
+/* Title of the banner offering to translate a web page that is in another language */
+"translation.banner.title" = "Да се преведе ли тази страница?";
+
+/* Button in the translation banner that translates the current web page */
+"translation.banner.translate" = "Превод";
 
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";

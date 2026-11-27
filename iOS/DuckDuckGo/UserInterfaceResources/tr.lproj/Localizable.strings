@@ -298,6 +298,12 @@
 /* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
 "aichat.attachment.image.turn.limit" = "Bir defada yalnızca %d görsel ekleyebilirsiniz.";
 
+/* Attachment menu option to add one or more files to a Duck.ai message */
+"aichat.attachment.option.add.files" = "Dosya Ekle";
+
+/* Attachment menu option to add one or more images to a Duck.ai message */
+"aichat.attachment.option.add.images" = "Görsel Ekle";
+
 /* attachment-menu option that opens the Choose Tabs picker */
 "aichat.attachment.option.add.tabs" = "Sekme Ekle";
 
@@ -597,6 +603,9 @@
 
 /* Link inside the Duck.ai Terms of Service disclaimer that opens the Duck.ai Privacy Policy and Terms of Service page */
 "aichat.termsOfService.disclaimer.link" = "Gizlilik Politikası ve Hizmet Koşulları";
+
+/* Accessibility label for the circled-plus button that opens the attach and tools menu in the Duck.ai native input toolbar */
+"aichat.toolbar.add.button.accessibility.label" = "Ekle";
 
 /* Accessibility label for the attachment button in the Duck.ai native input toolbar */
 "aichat.toolbar.attach.button.accessibility.label" = "Ekle";
@@ -1569,6 +1578,66 @@
 
 /* No comment provided by engineer. */
 "Brokers" = "Brokerlar";
+
+/* Title of the prompt asking to let Duck.ai switch tabs */
+"browser-tool.permission.title.switch-to-tab" = "Duck.ai'ın başka bir sekmeye geçmesine izin verilsin mi?";
+
+/* Heading for Duck.ai browser tools that perform actions */
+"browser-tool.settings.can-do" = "Duck.ai Neler Yapabilir?";
+
+/* Heading for read-only Duck.ai browser tools */
+"browser-tool.settings.can-see" = "Duck.ai Neleri Görebilir?";
+
+/* Explains the scope of Duck.ai browser tool permissions in Settings */
+"browser-tool.settings.caption" = "Duck.ai'ın tarayıcıda hangi işlemleri yapabileceğini ve her seferinde izin istemeden işlem yapıp yapamayacağını seç. Bu ayarlar tüm siteler ve sohbetler için geçerlidir.";
+
+/* Description of Duck.ai's Find in Page browser tool */
+"browser-tool.settings.find-in-page.detail" = "Bir sayfadaki metni bulur ve her eşleşmenin çevresindeki kısa parçacıkları gösterir.";
+
+/* Description of Duck.ai's List Open Tabs browser tool */
+"browser-tool.settings.list-open-tabs.detail" = "Her açık sekmenin başlığını ve adresini gösterir.";
+
+/* Name of Duck.ai's browser tool for listing open tabs */
+"browser-tool.settings.list-open-tabs.title" = "Açık Sekmeleri Listele";
+
+/* Description of Duck.ai's Read Tab Content browser tool */
+"browser-tool.settings.read-tab-content.detail" = "Bir sekmenin başlığını, adresini ve metnini okur.";
+
+/* Name of Duck.ai's browser tool for reading a tab */
+"browser-tool.settings.read-tab-content.title" = "Sekme İçeriğini Oku";
+
+/* Message of the confirmation alert for resetting all Duck.ai browser tool permissions */
+"browser-tool.settings.reset-alert.message" = "Bu, her tarayıcı aracının varsayılan iznini geri yükler.";
+
+/* Title of the confirmation alert for resetting all Duck.ai browser tool permissions */
+"browser-tool.settings.reset-alert.title" = "Tarayıcı Erişimi Sıfırlansın mı?";
+
+/* Button that restores the default permission for every Duck.ai browser tool */
+"browser-tool.settings.reset-all" = "Tümünü Sıfırla";
+
+/* Description of Duck.ai's Search Browsing History browser tool */
+"browser-tool.settings.search-history.detail" = "Bu sohbetten öncekiler de dahil olmak üzere ziyaret ettiğin sitelerde arama yapar.";
+
+/* Name of Duck.ai's browser tool for searching browsing history */
+"browser-tool.settings.search-history.title" = "Tarama Geçmişinde Ara";
+
+/* Browser tool permission option that lets Duck.ai act without asking */
+"browser-tool.settings.state.allow" = "Her Zaman İzin Ver";
+
+/* Browser tool permission option that asks the user before acting */
+"browser-tool.settings.state.ask" = "Her Zaman Sor";
+
+/* Browser tool permission option that denies access */
+"browser-tool.settings.state.deny" = "Hiçbir Zaman İzin Verme";
+
+/* Description of Duck.ai's Switch to Tab browser tool */
+"browser-tool.settings.switch-to-tab.detail" = "Açık sekmelerinden birini öne getirir.";
+
+/* Name of Duck.ai's browser tool for bringing an open tab forward */
+"browser-tool.settings.switch-to-tab.title" = "Sekmeye Geç";
+
+/* Settings screen and navigation row for Duck.ai browser tool permissions */
+"browser-tool.settings.title" = "Tarayıcı Erişimi";
 
 /* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "Bir kereden fazla iptal uygulanamaz";
@@ -3262,6 +3331,9 @@
 /* Placeholder text for the duck.ai input field when a chat is already active */
 "input.field.placeholder.duckai.followup" = "Yanıtla...";
 
+/* Placeholder text for the duck.ai input field when the image generation tool is selected */
+"input.field.placeholder.duckai.imageGeneration" = "Görselleri gizli bir şekilde oluştur";
+
 /* No comment provided by engineer. */
 "Install Extension" = "Uzantıyı Yükle";
 
@@ -3876,6 +3948,12 @@
 
 /* Name of the New Tab Page section showing messages, in the customization sheet */
 "new-tab-page.customization.messages" = "Mesajlar";
+
+/* Accessibility label of the blue illustrated theme option in the New Tab Page customization sheet */
+"new-tab-page.customization.theme-blue" = "Mavi";
+
+/* Accessibility label of the plain theme option, without an illustration, in the New Tab Page customization sheet */
+"new-tab-page.customization.theme-plain" = "Düz";
 
 /* Title of the sheet for customizing the New Tab Page */
 "new-tab-page.customization.title" = "Başlangıç Sayfanı Özelleştir";
@@ -5749,8 +5827,11 @@
 /* Duck.ai item in the list of features that stop working after withdrawing from the subscription contract, e.g. VPN, Personal Information Removal and advanced Duck.ai models */
 "subscription.withdraw.confirm.feature.advanced.duckai" = "gelişmiş Duck.ai modelleri";
 
-/* Second paragraph of the alert confirming withdrawal from the subscription contract. Parameter is a localized list of features, e.g. VPN, Personal Information Removal and advanced Duck.ai models. */
-"subscription.withdraw.confirm.features.message" = "Onayladığında %@ çalışmayı durdurur.";
+/* VPN item in the list of features the user loses access to after withdrawing from the subscription contract, e.g. the VPN, Identity Theft Restoration and advanced Duck.ai models */
+"subscription.withdraw.confirm.feature.vpn" = "VPN";
+
+/* Second paragraph of the alert confirming withdrawal from the subscription contract. Parameter is a localized list of features, e.g. the VPN, Identity Theft Restoration and advanced Duck.ai models. */
+"subscription.withdraw.confirm.lose.access.message" = "Onayladığında %@ erişimini kaybedeceksin.";
 
 /* Message of the alert confirming withdrawal from the subscription contract. Parameters are the tier name (e.g. Plus) and the refund amount with currency. */
 "subscription.withdraw.confirm.message" = "%1$@ aboneliğiniz hemen sona erecek ve %2$@ tutarındaki ödemeniz 14 gün içinde ilk kullandığınız ödeme yöntemine iade edilecek.";
@@ -6042,6 +6123,15 @@
 
 /* No comment provided by engineer. */
 "Total stored: %@" = "Total stored: %@";
+
+/* Subtitle of the translation banner naming the languages, e.g. Spanish to English. %1$@ is the page's language, %2$@ is the language it will be translated to */
+"translation.banner.subtitle" = "%1$@ - %2$@";
+
+/* Title of the banner offering to translate a web page that is in another language */
+"translation.banner.title" = "Bu sayfa çevrilsin mi?";
+
+/* Button in the translation banner that translates the current web page */
+"translation.banner.translate" = "Çevir";
 
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";

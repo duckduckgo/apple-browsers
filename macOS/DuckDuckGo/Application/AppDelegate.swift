@@ -1321,14 +1321,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             clearDuckAIChats: { [aiChatHistoryCleaner] in _ = await aiChatHistoryCleaner?.cleanAIChatHistory() },
             aiChatURL: { AIChatRemoteSettings().aiChatURL }
         )
-        onboardingContextualDialogsManager = contextualDialogsManager
-        onboardingDuckAIPathWindowRestorer = OnboardingDuckAIPathWindowRestorer(
-            windowDidOpen: windowControllersManager.didRegisterWindowController.map { $0 as DuckAIOnboardingWindow }.eraseToAnyPublisher(),
-            onboarding: contextualDialogsManager,
-            isDuckAIAvailable: { [aiChatMenuConfiguration] in aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature },
-            clearDuckAIChats: { [aiChatHistoryCleaner] in _ = await aiChatHistoryCleaner?.cleanAIChatHistory() },
-            aiChatURL: { AIChatRemoteSettings().aiChatURL }
-        )
 
         let onboardingManager = onboardingContextualDialogsManager
         let notificationPresenter = DefaultBrowserAndDockPromptNotificationPresenter(reportABrowserProblemPresenter: Self.openReportABrowserProblem)

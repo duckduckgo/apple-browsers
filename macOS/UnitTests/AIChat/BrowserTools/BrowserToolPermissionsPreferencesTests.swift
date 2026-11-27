@@ -18,7 +18,7 @@
 
 import AIChat
 import FeatureFlags_macOS
-import Persistence
+@_spi(Testing) import Persistence
 import PrivacyConfig
 @_spi(Testing) import PixelKit
 import XCTest

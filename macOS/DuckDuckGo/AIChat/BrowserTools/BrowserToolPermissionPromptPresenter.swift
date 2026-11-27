@@ -259,18 +259,18 @@ final class BrowserToolPermissionPromptPresenter {
         // Resized after showing, a popover drifts off its anchor.
         popover.contentSize = content.view.fittingSize
         let requestID = request.id
-        // Unasked for, the offer leaves focus on the page.
-        let takesFocus = request.translateOfferLanguageCode == nil
+        // Unasked for, the offer never answers keys typed in the browser window: a page's own ⌘↵ would translate it.
+        let ownerWindow = request.translateOfferLanguageCode == nil ? tabBar.view.window : nil
         let open: (NSView) -> Void = { [weak self, weak popover] anchor in
             guard let popover, !popover.isShown,
                   self?.shown.values.contains(where: { $0.requestID == requestID }) == true else { return }
             popover.show(positionedBelow: anchor.bounds.insetFromLineOfDeath(flipped: anchor.isFlipped), in: anchor)
             // Key, so its shortcuts only answer it and never a key press meant for the page or address bar.
-            if takesFocus { popover.contentViewController?.view.window?.makeKey() }
+            popover.contentViewController?.view.window?.makeKey()
         }
         // Before the button: it may call `open` right away.
         shown[key] = Shown(requestID: requestID, popover: popover, tabBar: tabBar,
-                           keyMonitor: keyMonitor(dismiss: dismiss, primary: primary, popover: popover, ownerWindow: tabBar.view.window))
+                           keyMonitor: keyMonitor(dismiss: dismiss, primary: primary, popover: popover, ownerWindow: ownerWindow))
         tabBar.showBrowserToolPermissionButton(icon: icon, title: title, action: { _ in dismiss() }, shown: open)
     }
 

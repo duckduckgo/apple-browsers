@@ -141,22 +141,22 @@ struct SubscriptionWithdrawalModelTests {
                                                                .identityTheftRestoration, .dataBrokerProtection, .unknown])
         let listFormatter = ListFormatter()
         listFormatter.locale = Locale(identifier: "en_US")
-        let features = listFormatter.string(from: [UserText.settingsPProVPNTitle,
+        let features = listFormatter.string(from: [UserText.subscriptionWithdrawConfirmFeatureVPN,
                                                    UserText.settingsPProDBPTitle,
                                                    UserText.settingsPProITRTitle,
                                                    UserText.subscriptionWithdrawConfirmFeatureAdvancedDuckAI])!
 
         #expect(model.confirmationMessage(for: offer) == UserText.subscriptionWithdrawConfirmMessage(tierName: "Plus", refundAmount: "£9.99")
-                + "\n\n" + UserText.subscriptionWithdrawConfirmFeaturesMessage(features: features))
+                + "\n\n" + UserText.subscriptionWithdrawConfirmLoseAccessMessage(features: features))
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("When Duck.ai is the only feature, the feature paragraph starts with a capital letter", .timeLimit(.minutes(1)))
-    func confirmationMessageCapitalizesLeadingDuckAI() {
+    @Test("When Duck.ai is the only feature, the feature paragraph lists only advanced Duck.ai models", .timeLimit(.minutes(1)))
+    func confirmationMessageWithOnlyDuckAI() {
         let model = makeModel()
         let offer = SubscriptionWithdrawalOffer(eligibleUntil: nil, refundAmount: "£9.99", tierName: "Plus", entitlements: [.paidAIChat])
 
-        #expect(model.confirmationMessage(for: offer).hasSuffix("\n\nAdvanced Duck.ai models stop working once you confirm."))
+        #expect(model.confirmationMessage(for: offer).hasSuffix("\n\nOnce you confirm, you will lose access to advanced Duck.ai models."))
     }
 
     @available(iOS 16, macOS 13, *)

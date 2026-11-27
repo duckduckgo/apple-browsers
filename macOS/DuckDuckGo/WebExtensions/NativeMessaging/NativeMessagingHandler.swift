@@ -66,13 +66,15 @@ final class NativeMessagingHandler: WebExtensionNativeMessagingHandling {
     /// Where an extension came from, which gives the Chrome identifier of a Web Store install.
     private let installationStore: InstalledWebExtensionStoring?
 
-    /// - Parameter hostsDirectory: Our own host manifest directory, which the handler creates if it does not exist.
+    /// - Parameter hostsDirectories: Our own host manifest directories, which the handler creates if they do not exist.
     init(installationStore: InstalledWebExtensionStoring? = nil,
          singleMessageTimeout: TimeInterval = NativeMessagingHandler.defaultSingleMessageTimeout,
-         hostsDirectory: URL? = NativeMessagingHostManifestLocator.userHostsDirectory) {
+         hostsDirectories: [URL] = NativeMessagingHostManifestLocator.ownHostsDirectories) {
         self.installationStore = installationStore
         self.singleMessageTimeout = singleMessageTimeout
-        NativeMessagingHostManifestLocator.createHostsDirectoryIfNeeded(at: hostsDirectory)
+        for directory in hostsDirectories {
+            NativeMessagingHostManifestLocator.createHostsDirectoryIfNeeded(at: directory)
+        }
     }
 
     /// Sessions of open ports, keyed by the port that owns each one.

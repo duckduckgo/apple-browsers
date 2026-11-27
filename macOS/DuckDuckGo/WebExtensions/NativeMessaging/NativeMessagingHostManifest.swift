@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
 import Foundation
 import os.log
 import WebExtensions
@@ -67,8 +68,9 @@ enum NativeMessagingHostManifestLocator {
 
     /// Directories that hold host manifests, in search order.
     ///
-    /// Our own directory comes first. The other Chromium browsers' directories follow, because
-    /// a companion app writes one file per browser it knows and may not write one for us.
+    /// Our own directories come first: the one in the user's Library, then the one in our container.
+    /// The other Chromium browsers' directories follow, because a companion app writes one file
+    /// per browser it knows and may not write one for us.
     ///
     /// A companion app may also install its manifest for all users, under `/Library` rather than
     /// the user's own Library. macOS does this for iCloud Passwords, whose manifest lives in the
@@ -79,11 +81,10 @@ enum NativeMessagingHostManifestLocator {
     ///
     /// The browser fallbacks, at either level, go away once companion apps write a DuckDuckGo file.
     static var searchDirectories: [URL] {
-        var directories: [URL] = []
+        var directories = ownHostsDirectories
 
         if let userLibrary = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first {
             let userRelativePaths = [
-                ownRelativePath,
                 "Application Support/Google/Chrome",
                 "Application Support/Chromium",
                 "Application Support/Microsoft Edge",
@@ -114,6 +115,19 @@ enum NativeMessagingHostManifestLocator {
         FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first.map {
             hostDirectory(in: $0, relativePath: ownRelativePath)
         }
+    }
+
+    /// Our own directory in our container's Application Support, which is the second directory searched.
+    ///
+    /// The path is `~/Library/Containers/<bundle ID>/Data/Library/Application Support/NativeMessagingHosts`
+    /// also in builds that are not sandboxed.
+    static var containerHostsDirectory: URL {
+        URL.sandboxApplicationSupportURL.appendingPathComponent("NativeMessagingHosts")
+    }
+
+    /// Our own directories in the user's Library and in our container, in search order.
+    static var ownHostsDirectories: [URL] {
+        [userHostsDirectory, containerHostsDirectory].compactMap { $0 }
     }
 
     /// Creates our own host directory if it does not exist, so that a companion app has a place for its manifest.

@@ -50,8 +50,8 @@ public enum SingleUseColor {
     /// Flat fill for the address field embedded in the bottom floating chrome (no glass highlights).
     case floatingEmbeddedAddressBarBackground
 
-    /// Color used for what's New background
-    case whatsNewBackground
+    /// Fill behind section badges such as DuckDuckTip on What’s New.
+    case whatsNewSectionBadgeBackground
 
     /// Duck.ai contextual background color
     case duckAIContextualSheetBackground

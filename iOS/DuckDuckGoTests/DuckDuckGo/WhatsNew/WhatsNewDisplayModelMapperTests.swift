@@ -85,6 +85,50 @@ final class WhatsNewDisplayModelMapperTests {
         #expect(displayModel == nil)
     }
 
+    @available(iOS 16, *)
+    @Test("Check DDG Announcement Header Uses The What's New Artwork", .timeLimit(.minutes(1)))
+    func whenHeaderPlaceholderIsDDGAnnouncementThenWhatsNewArtworkIsUsed() throws {
+        // GIVEN
+        let message = RemoteMessageModel.makeCardsListMessage(placeholder: .ddgAnnounce)
+
+        // WHEN
+        let displayModel = try #require(
+            sut.makeDisplayModel(
+                from: message,
+                onMessageAppear: { },
+                onItemAppear: { _ in },
+                onItemAction: { _, _ in },
+                onPrimaryAction: { _ in }
+            )
+        )
+
+        // THEN
+        let icon = try #require(displayModel.icon)
+        #expect(icon == "WhatsNewDDGAnnouncement")
+        #expect(UIImage(named: icon) != nil)
+    }
+
+    @available(iOS 16, *)
+    @Test("Check Other Header Placeholders Use The Shared RMF Artwork", .timeLimit(.minutes(1)))
+    func whenHeaderPlaceholderIsNotDDGAnnouncementThenSharedArtworkIsUsed() throws {
+        // GIVEN
+        let message = RemoteMessageModel.makeCardsListMessage(placeholder: .announce)
+
+        // WHEN
+        let displayModel = try #require(
+            sut.makeDisplayModel(
+                from: message,
+                onMessageAppear: { },
+                onItemAppear: { _ in },
+                onItemAction: { _, _ in },
+                onPrimaryAction: { _ in }
+            )
+        )
+
+        // THEN
+        #expect(displayModel.icon == "RemoteMessageAnnouncement")
+    }
+
     // MARK: - Item Mapping Tests
 
     @Test("Check Mapper Correctly Maps Item Properties")

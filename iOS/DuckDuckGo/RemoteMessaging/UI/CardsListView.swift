@@ -144,24 +144,27 @@ extension RemoteMessagingUI {
 
         var body: some View {
             VStack(spacing: Metrics.CardsList.componentsVerticalSpacing) {
-                VStack(spacing: Metrics.CardsList.contentInset) {
-                    Header(icon: displayModel.icon,
-                           preloadedHeaderImage: displayModel.preloadedHeaderImage,
-                           headerImageUrl: displayModel.headerImageUrl,
-                           loadHeaderImage: displayModel.loadHeaderImage,
-                           onImageLoadSuccess: displayModel.onHeaderImageLoadSuccess,
-                           onImageLoadFailed: displayModel.onHeaderImageLoadFailed,
-                           title: displayModel.screenTitle)
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: Metrics.CardsList.contentInset) {
+                        Header(icon: displayModel.icon,
+                               preloadedHeaderImage: displayModel.preloadedHeaderImage,
+                               headerImageUrl: displayModel.headerImageUrl,
+                               loadHeaderImage: displayModel.loadHeaderImage,
+                               onImageLoadSuccess: displayModel.onHeaderImageLoadSuccess,
+                               onImageLoadFailed: displayModel.onHeaderImageLoadFailed,
+                               title: displayModel.screenTitle)
+                        .padding(.horizontal, Metrics.CardsList.contentHorizontalPadding)
 
-                    Content(items: displayModel.items)
+                        Content(items: displayModel.items)
+                    }
                 }
 
                 if let primaryAction = displayModel.primaryAction {
                     Footer(title: primaryAction.title, action: primaryAction.action)
+                        .padding(.horizontal, Metrics.CardsList.contentHorizontalPadding)
                 }
             }
-            .padding(.horizontal, Metrics.CardsList.contentHorizontalPadding)
-            .background(Color(singleUseColor: .whatsNewBackground))
+            .background(Color(designSystemColor: .surfaceTertiary))
             .onAppear(perform: displayModel.onAppear)
         }
     }
@@ -176,11 +179,27 @@ extension RemoteMessagingUI {
         let title: String
 
         var body: some View {
-            Text(title)
-                .font(.system(size: Metrics.Section.titleSize, weight: .semibold))
-                .foregroundStyle(Color.primary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.leading, Metrics.Section.sectionLeadingPadding)
+            HStack(spacing: 0) {
+                Text(verbatim: title)
+                    .bold()
+                    .textCase(.uppercase)
+                    .daxCaption1()
+                    .foregroundStyle(Color(designSystemColor: .textPrimary))
+                    .padding(.horizontal, Metrics.Section.badgeHorizontalPadding)
+                    .frame(minHeight: Metrics.Section.badgeHeight)
+                    .background(Capsule().fill(Color(singleUseColor: .whatsNewSectionBadgeBackground)))
+                    .layoutPriority(1)
+
+                Separator()
+            }
+        }
+    }
+
+    struct Separator: View {
+        var body: some View {
+            Rectangle()
+                .fill(Color(designSystemColor: .decorationPrimary))
+                .frame(height: Metrics.CardGroup.separatorHeight)
         }
     }
 
@@ -189,48 +208,58 @@ extension RemoteMessagingUI {
 
         var body: some View {
             HStack(alignment: .top, spacing: Metrics.Card.TwoLines.contentHorizontalSpacing) {
-                VStack(alignment: .leading) {
-                    CardIcon(
-                        placeholderIcon: displayModel.icon,
-                        cachedImage: displayModel.cachedImage,
-                        imageUrl: displayModel.imageUrl,
-                        loadImage: displayModel.loadImage,
-                        onImageLoadSuccess: displayModel.onImageLoadSuccess,
-                        onImageLoadFailed: displayModel.onImageLoadFailed,
-                        size: Metrics.Card.TwoLines.iconSize
-                    )
-                }
+                CardIcon(
+                    placeholderIcon: displayModel.icon,
+                    cachedImage: displayModel.cachedImage,
+                    imageUrl: displayModel.imageUrl,
+                    loadImage: displayModel.loadImage,
+                    onImageLoadSuccess: displayModel.onImageLoadSuccess,
+                    onImageLoadFailed: displayModel.onImageLoadFailed,
+                    size: Metrics.Card.TwoLines.iconSize
+                )
 
                 VStack(alignment: .leading, spacing: Metrics.Card.TwoLines.copyVerticalSpacing) {
                     Text(verbatim: displayModel.title)
-                        .font(.system(size: Metrics.Card.TwoLines.titleSize, weight: .semibold))
-                        .foregroundStyle(Color.primary)
+                        .daxSubheadSemibold()
+                        .foregroundStyle(Color(designSystemColor: .textPrimary))
+                        .padding(.vertical, UIFont.daxSubheadSemibold().leading / 2)
 
                     Text(verbatim: displayModel.description)
-                        .font(.system(size: Metrics.Card.TwoLines.descriptionSize))
-                        .foregroundStyle(Color.secondary)
+                        .daxFootnoteRegular()
+                        .foregroundStyle(Color(designSystemColor: .textSecondary))
+                        .padding(.vertical, UIFont.daxFootnoteRegular().leading / 2)
                 }
+                .padding(.top, Metrics.Card.TwoLines.copyTopPadding)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
                 if let disclosureIcon = displayModel.disclosureIcon {
-                    VStack(alignment: .leading) {
-                        disclosureIcon
-                    }
+                    disclosureIcon
+                        .foregroundStyle(Color(designSystemColor: .iconsTertiary))
+                        .frame(width: Metrics.Card.TwoLines.disclosureIconWidth)
+                        .padding(.top, Metrics.Card.TwoLines.disclosureIconTopPadding)
                 }
             }
-            .padding(.vertical, Metrics.Card.TwoLines.contentVerticalPadding)
-            .padding(.horizontal, Metrics.Card.TwoLines.contentHorizontalPadding)
-            .background(Color(designSystemColor: .surface))
-            .cornerRadius(Metrics.Card.contentCornerRadius)
-            .overlay {
-                RoundedRectangle(cornerRadius: Metrics.Card.contentCornerRadius)
-                    .strokeBorder(.black.opacity(Metrics.Card.borderOpacity), lineWidth: Metrics.Card.borderWidth)
-            }
+            .contentShape(Rectangle())
             .onTapGesture {
                 displayModel.onTapAction?()
             }
             .onFirstAppear {
                 displayModel.onAppear?()
+            }
+        }
+    }
+
+    struct TwoLinesCardGroupView: View {
+        let cards: [CardsListDisplayModel.Item.TwoLinesCard]
+
+        var body: some View {
+            VStack(spacing: Metrics.CardGroup.rowSpacing) {
+                ForEach(cards.indices, id: \.self) { index in
+                    if index > 0 {
+                        Separator()
+                    }
+                    TwoLinesCardView(displayModel: cards[index])
+                }
             }
         }
     }
@@ -367,14 +396,13 @@ private extension RemoteMessagingUI.CardsListView {
         @State private var loadedImage: UIImage?
 
         var body: some View {
-            VStack(alignment: .center, spacing: 24.0) {
+            VStack(alignment: .center, spacing: 0) {
                 logoImage
 
                 Text(title)
-                    .font(.system(size: Metrics.CardsList.titleFontSize, weight: .bold))
-                    .kerning(Metrics.CardsList.titleKerning)
+                    .daxTitle1()
                     .multilineTextAlignment(.center)
-                    .foregroundStyle(Color.primary)
+                    .foregroundStyle(Color(designSystemColor: .textPrimary))
             }
         }
 
@@ -412,24 +440,54 @@ private extension RemoteMessagingUI.CardsListView {
     struct Content: View {
         let items: [RemoteMessagingUI.CardsListDisplayModel.Item]
 
-        var body: some View {
-            ScrollView(showsIndicators: false) {
-                LazyVStack(spacing: Metrics.CardsList.cardsVerticalSpacing) {
-                    ForEach(items.indices, id: \.self) { index in
-                        switch items[index] {
-                        case let .section(title):
-                            RemoteMessagingUI.TitledListSection(title: title)
-                                .if(index > 0) { titledSection in
-                                    titledSection.padding(.top, Metrics.Section.sectionTopPadding - Metrics.CardsList.cardsVerticalSpacing)
-                                }
-                        case let .twoLinesCard(cardInfo):
-                            RemoteMessagingUI.TwoLinesCardView(displayModel: cardInfo)
-                        case let .featuredTwoLinesCard(cardInfo):
-                            RemoteMessagingUI.FeaturedTwoLinesCardView(displayModel: cardInfo)
-                        }
+        private enum Block {
+            case section(title: String)
+            case featuredCard(RemoteMessagingUI.CardsListDisplayModel.Item.FeaturedTwoLinesCard)
+            case cardGroup([RemoteMessagingUI.CardsListDisplayModel.Item.TwoLinesCard])
+        }
+
+        private var blocks: [Block] {
+            items.reduce(into: []) { blocks, item in
+                switch item {
+                case let .section(title):
+                    blocks.append(.section(title: title))
+                case let .featuredTwoLinesCard(cardInfo):
+                    blocks.append(.featuredCard(cardInfo))
+                case let .twoLinesCard(cardInfo):
+                    if case let .cardGroup(cards) = blocks.last {
+                        blocks[blocks.count - 1] = .cardGroup(cards + [cardInfo])
+                    } else {
+                        blocks.append(.cardGroup([cardInfo]))
                     }
                 }
             }
+        }
+
+        private func topSpacing(at index: Int, in blocks: [Block]) -> CGFloat {
+            guard index > 0 else { return 0 }
+            if case .section = blocks[index] { return Metrics.Section.sectionTopPadding }
+            if case .section = blocks[index - 1] { return Metrics.Section.sectionBottomPadding }
+            return Metrics.CardsList.cardsVerticalSpacing
+        }
+
+        var body: some View {
+            let blocks = blocks
+            LazyVStack(spacing: 0) {
+                ForEach(blocks.indices, id: \.self) { index in
+                    Group {
+                        switch blocks[index] {
+                        case let .section(title):
+                            RemoteMessagingUI.TitledListSection(title: title)
+                        case let .featuredCard(cardInfo):
+                            RemoteMessagingUI.FeaturedTwoLinesCardView(displayModel: cardInfo)
+                        case let .cardGroup(cards):
+                            RemoteMessagingUI.TwoLinesCardGroupView(cards: cards)
+                        }
+                    }
+                    .padding(.top, topSpacing(at: index, in: blocks))
+                }
+            }
+            .padding(.horizontal, Metrics.CardsList.contentHorizontalPadding)
         }
 
     }
@@ -540,19 +598,23 @@ private enum Metrics {
         static let contentHorizontalPadding: CGFloat = MetricBuilder<CGFloat>.init(iPhone: 24.0, iPad: 48.0).build()
         static let componentsVerticalSpacing: CGFloat = 24.0
         @MainActor
-        static let contentInset: CGFloat = MetricBuilder<CGFloat>.init(iPhone: 24.0, iPad: 48.0).build()
-        static let titleFontSize: CGFloat = 28.0
-        static let titleKerning: CGFloat = 0.38
+        static let contentInset: CGFloat = MetricBuilder<CGFloat>.init(iPhone: 32.0, iPad: 48.0).build()
         static let cardsVerticalSpacing: CGFloat = 12.0
         @MainActor
         static let buttonBottomPadding: CGFloat = MetricBuilder<CGFloat>.init(iPhone: 12.0, iPad: 24.0).build()
         static let headerImageMaxHeight: CGFloat = 48.0
     }
 
+    enum CardGroup {
+        static let rowSpacing: CGFloat = 16.0
+        static let separatorHeight: CGFloat = 1.0
+    }
+
     enum Section {
-        static let sectionTopPadding: CGFloat = 30.0
-        static let sectionLeadingPadding: CGFloat = 12.0
-        static let titleSize: CGFloat = 17.0
+        static let sectionTopPadding: CGFloat = 28.0
+        static let sectionBottomPadding: CGFloat = 6.0
+        static let badgeHeight: CGFloat = 20.0
+        static let badgeHorizontalPadding: CGFloat = 8.0
     }
 
     enum Card {
@@ -562,12 +624,11 @@ private enum Metrics {
 
         enum TwoLines {
             static let contentHorizontalSpacing: CGFloat = 12.0
-            static let contentVerticalPadding: CGFloat = 16.0
-            static let contentHorizontalPadding: CGFloat = 12.0
+            static let copyTopPadding: CGFloat = 6.0
+            static let copyVerticalSpacing: CGFloat = 2.0
             static let iconSize = CGSize(width: 48.0, height: 48.0)
-            static let copyVerticalSpacing: CGFloat = 4.0
-            static let titleSize: CGFloat = 15.0
-            static let descriptionSize: CGFloat = 13.0
+            static let disclosureIconWidth: CGFloat = 8.0
+            static let disclosureIconTopPadding: CGFloat = 3.0
         }
 
         enum FeaturedTwoLines {

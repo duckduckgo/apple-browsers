@@ -83,10 +83,9 @@ private extension WhatsNewViewController {
         onCloseButton()
     }
 
-    func resetNavigationBarColorToDefault() {
+    func configureTransparentNavigationBar() {
         let appearance = UINavigationBarAppearance()
-        appearance.shadowColor = .clear
-        appearance.backgroundColor = UIColor(singleUseColor: .whatsNewBackground)
+        appearance.configureWithTransparentBackground()
         navigationBar.standardAppearance = appearance
         navigationBar.scrollEdgeAppearance = appearance
         navigationBar.compactAppearance = appearance
@@ -100,10 +99,8 @@ private extension WhatsNewViewController {
 extension WhatsNewViewController: UINavigationControllerDelegate {
 
     func navigationController(_ navigationController: UINavigationController, willShow viewController: UIViewController, animated: Bool) {
-        // If we're presenting the root view controller we want to set the navigation bar to the same colour of the background.
-        // In the other cases we set the background colour and tint colour of items to the default theme.
         if viewController is UIHostingController<RemoteMessagingUI.CardsListView> {
-            resetNavigationBarColorToDefault()
+            configureTransparentNavigationBar()
         } else {
             decorateNavigationBar(navigationBar)
         }

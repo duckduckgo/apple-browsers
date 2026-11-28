@@ -96,6 +96,7 @@ struct WhatsNewDebugView: View {
             WhatsNewExamplePrompt {
                 isShowingExamplePrompt = false
             }
+            .ignoresSafeArea()
         }
     }
 }
@@ -104,19 +105,19 @@ private struct WhatsNewExamplePrompt: UIViewControllerRepresentable {
     let onClose: () -> Void
 
     func makeUIViewController(context: Context) -> WhatsNewViewController {
-        WhatsNewViewController(displayModel: .example, onCloseButton: onClose)
+        WhatsNewViewController(displayModel: .example(onDismiss: onClose), onCloseButton: onClose)
     }
 
     func updateUIViewController(_ uiViewController: WhatsNewViewController, context: Context) {}
 }
 
 private extension RemoteMessagingUI.CardsListDisplayModel {
-    static var example: Self {
+    static func example(onDismiss: @escaping () -> Void) -> Self {
         let chevron = Image(uiImage: DesignSystemImages.Glyphs.Size24.chevronRightSmall)
 
         return .init(
             screenTitle: "What’s New",
-            icon: RemotePlaceholder.ddgAnnounce.rawValue,
+            icon: RemotePlaceholder.ddgAnnounce.whatsNewHeaderIcon,
             preloadedHeaderImage: nil,
             headerImageUrl: nil,
             loadHeaderImage: nil,
@@ -141,10 +142,17 @@ private extension RemoteMessagingUI.CardsListDisplayModel {
                     title: "Explore More Subscription Options",
                     description: "Pick from two plans: Plus (for all four protections) or Pro (for more powerful AI functionality).",
                     disclosureIcon: chevron
+                )),
+                .section(title: "DuckDuckTip"),
+                .twoLinesCard(.init(
+                    icon: RemotePlaceholder.announce.rawValue,
+                    title: "Revisit What’s New",
+                    description: "See the latest any time in Settings > What’s New.",
+                    disclosureIcon: chevron
                 ))
             ],
             onAppear: nil,
-            primaryAction: nil
+            primaryAction: (title: "Got It", action: onDismiss)
         )
     }
 }

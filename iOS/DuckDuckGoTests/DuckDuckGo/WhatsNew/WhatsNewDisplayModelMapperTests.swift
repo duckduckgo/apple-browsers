@@ -98,8 +98,7 @@ final class WhatsNewDisplayModelMapperTests {
                 onMessageAppear: { },
                 onItemAppear: { _ in },
                 onItemAction: { _, _ in },
-                onPrimaryAction: { _ in },
-                onDismiss: { }
+                onPrimaryAction: { _ in }
             )
         )
 
@@ -122,8 +121,7 @@ final class WhatsNewDisplayModelMapperTests {
                 onMessageAppear: { },
                 onItemAppear: { _ in },
                 onItemAction: { _, _ in },
-                onPrimaryAction: { _ in },
-                onDismiss: { }
+                onPrimaryAction: { _ in }
             )
         )
 

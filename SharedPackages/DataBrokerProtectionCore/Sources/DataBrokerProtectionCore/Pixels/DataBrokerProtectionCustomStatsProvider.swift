@@ -79,7 +79,7 @@ public struct DefaultDataBrokerProtectionCustomOptOutStatsProvider: DataBrokerPr
             totalGlobalOptOuts += optOutJobsCount
 
             // Get opt-out request count since start date
-            let requestsCountSinceStartDate = optOutSuccessfulRequestCountSince(startDate: startDate, for: optOutJobs)
+            let requestsCountSinceStartDate = automatedOptOutRequestCountSince(startDate: startDate, for: optOutJobs)
 
             totalGlobalRequests += requestsCountSinceStartDate
 
@@ -116,13 +116,12 @@ private extension DefaultDataBrokerProtectionCustomOptOutStatsProvider {
         }
     }
 
-    func optOutSuccessfulRequestCountSince(startDate: Date?,
-                                           for optOutJobData: [OptOutJobData]) -> Int {
+    func automatedOptOutRequestCountSince(startDate: Date?,
+                                          for optOutJobData: [OptOutJobData]) -> Int {
 
         return optOutJobData.reduce(0) { result, optOutJobData in
             let optOutRequested = optOutJobData.historyEvents.contains { historyEvent in
                 let matchDatePlus24 = Calendar.current.date(byAdding: .hour, value: 24, to: optOutJobData.createdDate) ?? Date()
-                // Measures our automated submissions, so user-sent emails (.optOutByUserEmail) are deliberately left out.
                 return historyEvent.type == .optOutRequested && (historyEvent.date < matchDatePlus24 && historyEvent.date > optOutJobData.createdDate)
             }
             return result + (optOutRequested ? 1 : 0)

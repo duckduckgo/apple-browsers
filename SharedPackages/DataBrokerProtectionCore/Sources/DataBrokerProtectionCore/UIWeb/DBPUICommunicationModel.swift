@@ -364,7 +364,7 @@ extension DBPUIDataBrokerProfileMatch {
 
     private static func formSubmittedDate(from optOutJobData: OptOutJobData) -> Date? {
         optOutJobData.historyEvents
-            .filter { $0.isFormSubmittedEvent() }
+            .filter { $0.isRemovalRequestSentEvent() }
             .min(by: { $0.date < $1.date })?
             .date
     }

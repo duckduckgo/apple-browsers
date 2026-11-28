@@ -34,6 +34,10 @@ public struct HistoryEvent: Identifiable, Sendable {
         case scanStarted
         case reAppearence
         case matchRemovedByUser
+
+        var canEndEmailConfirmationWait: Bool {
+            self != .optOutByUserEmail
+        }
     }
 
     public let extractedProfileId: Int64?
@@ -85,11 +89,9 @@ public struct HistoryEvent: Identifiable, Sendable {
         }
     }
 
-    /// Whether this event signals that a removal request reached the broker: our form submission completed,
-    /// or the user sent their own removal email.
     /// For legacy email-confirming records that only carry `.optOutRequested` (broker acknowledgement,
     /// not form submission), this is the best signal available.
-    func isFormSubmittedEvent() -> Bool {
+    func isRemovalRequestSentEvent() -> Bool {
         switch type {
         case .optOutRequested, .optOutByUserEmail, .optOutSubmittedAndAwaitingEmailConfirmation:
             return true

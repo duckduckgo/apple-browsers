@@ -317,9 +317,8 @@ private extension Array where Element == BrokerJobData {
 
     func excludingOptOutsWithEmailConfirmationBeingHalted() -> [BrokerJobData] {
         filter { jobData in
-            // A user-sent email doesn't end the wait for our own opt-out's confirmation email.
             jobData.historyEvents
-                .filter { $0.type != .optOutByUserEmail }
+                .filter { $0.type.canEndEmailConfirmationWait }
                 .max(by: { $0.date < $1.date })?.type != .optOutSubmittedAndAwaitingEmailConfirmation
         }
     }

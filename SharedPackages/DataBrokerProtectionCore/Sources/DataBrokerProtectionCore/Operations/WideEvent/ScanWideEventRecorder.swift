@@ -143,7 +143,7 @@ extension ScanWideEventRecorder.Metadata {
     ///   falling back to 1.
     ///
     /// attemptType mirrors the confirmOptOutScan branch of OperationPreferredDateCalculator.dateForScanOperation:
-    /// - confirmOptOutScan if any opt-out job's most recent event is .optOutRequested or .optOutByUserEmail.
+    /// - confirmOptOutScan if any opt-out job's most recent event is an opt-out request (`isOptOutRequestEvent()`).
     /// - maintenanceScan if there has been a prior scan success.
     /// - newScan otherwise.
     /// - Parameters:

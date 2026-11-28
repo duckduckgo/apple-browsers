@@ -444,7 +444,6 @@ extension DataBrokerProtectionSharedPixels: PixelKit.Event {
                 params[Consts.pattern] = pattern
             }
             if emailSent {
-                // A user-sent email has no submission run to time or count.
                 params[Consts.durationParamKey] = nil
                 params[Consts.awakeDurationParamKey] = nil
                 params[Consts.triesKey] = nil

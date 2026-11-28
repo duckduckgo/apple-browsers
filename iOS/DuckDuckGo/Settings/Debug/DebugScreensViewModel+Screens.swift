@@ -175,6 +175,9 @@ extension DebugScreensViewModel {
             .view(title: "Alert Playground", { _ in
                 AlertPlaygroundView()
             }),
+            .view(title: "RMF Sheet Playground", accessibilityIdentifier: "Debug.Screen.RMFSheet", { _ in
+                RMFSheetPlaygroundView()
+            }),
             .view(title: "Confetti Playground", { _ in
                 ConfettiPlaygroundView()
             }),

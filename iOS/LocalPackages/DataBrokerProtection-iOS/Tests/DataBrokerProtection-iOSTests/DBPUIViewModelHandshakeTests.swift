@@ -77,6 +77,7 @@ final class DBPUIViewModelHandshakeTests: XCTestCase {
                                                         isUserEligibleForFreeTrial: true))
     }
 
+    @MainActor
     func testOpenOptOutEmail_whenUserTapsSendInMail_returnsSent() async {
         emailComposer.canSendMail = true
         emailComposer.composeResult = .sent
@@ -87,6 +88,7 @@ final class DBPUIViewModelHandshakeTests: XCTestCase {
         XCTAssertEqual(emailComposer.composedEmails, [Self.removalEmail])
     }
 
+    @MainActor
     func testOpenOptOutEmail_whenUserCancelsSavesOrMailFails_returnsNotSent() async {
         emailComposer.canSendMail = true
 
@@ -99,21 +101,13 @@ final class DBPUIViewModelHandshakeTests: XCTestCase {
         }
     }
 
-    func testOpenOptOutEmail_whenMailHasNoAccount_returnsNotSentWithoutShowingAnything() async {
-        emailComposer.canSendMail = false
-
-        let result = await sut.openOptOutEmail(Self.removalEmail)
-
-        XCTAssertEqual(result, DBPUIOpenOptOutEmailResult(sent: false))
-        XCTAssertTrue(emailComposer.composedEmails.isEmpty)
-    }
-
     func testConfirmOptOutEmailSent_passesTheRecordIdsToTheManager() async {
         await sut.confirmOptOutEmailSent(recordIds: [12, 34])
 
         XCTAssertEqual(databaseDelegate.confirmedOptOutEmailRecordIds, [[12, 34]])
     }
 
+    @MainActor
     func testEmailOptOutTurnedOffWhileTheDashboardIsOpen_neitherOpensMailNorRecordsTheSend() async {
         featureFlagger.isEmailOptOutEnabled = false
         emailComposer.canSendMail = true

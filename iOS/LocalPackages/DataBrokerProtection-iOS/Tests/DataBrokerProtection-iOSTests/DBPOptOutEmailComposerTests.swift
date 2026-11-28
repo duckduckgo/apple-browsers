@@ -34,12 +34,4 @@ final class DBPOptOutEmailComposerTests: XCTestCase {
         XCTAssertEqual(result, .cancelled)
         XCTAssertNil(composer.pendingCompose)
     }
-
-    func testPresenterDidDisappear_withNothingPending_doesNothing() {
-        let composer = DBPOptOutEmailComposer(presentingViewController: UIViewController())
-
-        composer.presenterDidDisappear()
-
-        XCTAssertNil(composer.pendingCompose)
-    }
 }

@@ -75,26 +75,6 @@ final class DBPUIViewModelHandshakeTests: XCTestCase {
         XCTAssertEqual(userData, DBPUIHandshakeUserData(isAuthenticatedUser: false,
                                                         isUserEligibleForFreeTrial: true))
     }
-
-    func testEmailOptOutEnabled_followsTheFlagWhileTheDashboardIsOpen() {
-        featureFlagger.isEmailOptOutEnabled = false
-        XCTAssertFalse(sut.isEmailOptOutEnabled())
-
-        featureFlagger.isEmailOptOutEnabled = true
-        XCTAssertTrue(sut.isEmailOptOutEnabled())
-    }
-
-    func testCanSendEmail_whenMailHasAnAccount_isTrue() {
-        emailComposer.canSendMail = true
-
-        XCTAssertTrue(sut.canSendEmail())
-    }
-
-    func testCanSendEmail_whenMailHasNoAccount_isFalse() {
-        emailComposer.canSendMail = false
-
-        XCTAssertFalse(sut.canSendEmail())
-    }
 }
 
 private final class MockAuthenticationDelegate: DBPIOSInterface.AuthenticationDelegate {

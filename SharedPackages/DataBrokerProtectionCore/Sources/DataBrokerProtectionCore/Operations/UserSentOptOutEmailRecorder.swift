@@ -62,7 +62,8 @@ public struct UserSentOptOutEmailRecorder {
     /// Records every record it can and throws the first failure afterwards, so one bad id doesn't drop the others.
     public func record(recordIds: [Int64], now: Date = Date()) throws {
         var firstError: Error?
-        for recordId in recordIds {
+        var seenRecordIds = Set<Int64>()
+        for recordId in recordIds where seenRecordIds.insert(recordId).inserted {
             do {
                 try record(recordId: recordId, now: now)
             } catch {

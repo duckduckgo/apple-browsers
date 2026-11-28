@@ -25,6 +25,7 @@ public typealias DBPFeatureFlagging = ForegroundRunningFeatureFlagging
     & ExtractedProfileRefreshFeatureFlagging
     & ChallengeSolverFeatureFlagging
     & UserAssistanceFeatureFlagging
+    & EmailOptOutFeatureFlagging
 
 public protocol ForegroundRunningFeatureFlagging {
     var isForegroundRunningOnAppActiveFeatureOn: Bool { get }

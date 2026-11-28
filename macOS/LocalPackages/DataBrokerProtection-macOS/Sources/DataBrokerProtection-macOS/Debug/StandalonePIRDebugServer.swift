@@ -67,5 +67,6 @@ private struct StandaloneFeatureFlagger: DBPFeatureFlagging {
     var isOptOutRetryErrorFrequencyExperimentOn: Bool { fallback.isOptOutRetryErrorFrequencyExperimentOn }
     var isChallengeSolverOn: Bool { fallback.isChallengeSolverOn }
     var isUserAssistanceOn: Bool { fallback.isUserAssistanceOn }
+    var isEmailOptOutEnabled: Bool { false }
 }
 #endif

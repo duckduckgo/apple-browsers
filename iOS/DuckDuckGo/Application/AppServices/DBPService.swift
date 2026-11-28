@@ -240,7 +240,7 @@ enum DataBrokerProtectionSubscriptionFlowParameter {
     static let redirectURLComponents = "redirectURLComponents"
 }
 
-final class DBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeatureFlagging, EmailOptOutFeatureFlagging {
+final class DBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeatureFlagging {
     
     private let appDependencies: DependencyProvider
     private let freemiumPIRDebugSettings: FreemiumPIRDebugSettings

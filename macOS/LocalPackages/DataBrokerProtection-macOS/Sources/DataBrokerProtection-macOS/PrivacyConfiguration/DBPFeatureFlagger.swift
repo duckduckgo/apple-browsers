@@ -55,6 +55,11 @@ public final class DBPFeatureFlagger: DBPMacOSFeatureFlagging {
         featureFlagger.isFeatureOn(.dbpChallengeSolver)
     }
 
+    public var isEmailOptOutEnabled: Bool {
+        // Email opt-out is iOS-only.
+        false
+    }
+
     public var isSchedulerDeferralHandlingEnabled: Bool {
         featureFlagger.isFeatureOn(.dbpSchedulerDeferralHandling)
     }

@@ -249,4 +249,88 @@ final class AppStateChangePublisherTests: XCTestCase {
         waitForExpectations(timeout: 0.3, handler: nil)
     }
 
+    // MARK: - Persistent state
+
+    /// WindowServer can move a new window shortly after it opens, which changes its frame.
+    /// XCTest waits process AppKit events, so this lets that move event arrive.
+    @MainActor
+    private func waitForWindowToSettle() {
+        let settled = expectation(description: "Window settled")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            settled.fulfill()
+        }
+        wait(for: [settled], timeout: 1)
+    }
+
+    @MainActor
+    func testWhenTabURLChangedThenPersistentStateChangePublished() {
+        WindowsManager.openNewWindow(with: Tab(content: .none))
+
+        var e: XCTestExpectation? = expectation(description: "URL change fires persistent state change")
+        Application.appDelegate.windowControllersManager.persistentStateChanged
+            .sink { _ in
+                e?.fulfill()
+                e = nil
+            }.store(in: &cancellables)
+
+        Application.appDelegate.windowControllersManager.mainWindowControllers[0].mainViewController.tabCollectionViewModel
+            .tabViewModel(at: 0)!.tab.setContent(.url(URL(string: "https://duckduckgo.com")!, source: .link))
+
+        waitForExpectations(timeout: 0.3, handler: nil)
+    }
+
+    @MainActor
+    func testWhenWindowIsResizedThenPersistentStateChangePublished() {
+        let window = WindowsManager.openNewWindow(with: Tab(content: .none))
+
+        let e = expectation(description: "Window setContentSize fires persistent state change")
+        Application.appDelegate.windowControllersManager.persistentStateChanged
+            .sink { _ in
+                e.fulfill()
+            }.store(in: &cancellables)
+
+        window?.setContentSize(.init(width: .random(in: 100...1000), height: .random(in: 100...1000)))
+
+        waitForExpectations(timeout: 0.3, handler: nil)
+    }
+
+    @MainActor
+    func testWhenNewTabIsOpenedThenPersistentStateChangePublished() {
+        WindowsManager.openNewWindow(with: Tab(content: .none))
+        Application.appDelegate.windowControllersManager.mainWindowControllers[0].mainViewController.tabCollectionViewModel
+            .append(tab: Tab(content: .none))
+
+        // 2 events should be fired (one for tab appending, one for selectionIndex change)
+        let e = expect(description: "Append new tab fires persistent state changes", events: 2)
+        Application.appDelegate.windowControllersManager.persistentStateChanged
+            .sink { _ in
+                e.fulfill()
+            }.store(in: &cancellables)
+
+        Application.appDelegate.windowControllersManager.mainWindowControllers[0].mainViewController.tabCollectionViewModel
+            .append(tab: Tab(content: .none))
+
+        waitForExpectations(timeout: 0.3, handler: nil)
+    }
+
+    @MainActor
+    func testWhenTabTitleOrFaviconChangedThenPersistentStateChangeNotPublished() {
+        WindowsManager.openNewWindow(with: Tab(content: .none))
+        waitForWindowToSettle()
+
+        let e = expectation(description: "Title and favicon changes don't fire persistent state change")
+        e.isInverted = true
+        Application.appDelegate.windowControllersManager.persistentStateChanged
+            .sink { _ in
+                e.fulfill()
+            }.store(in: &cancellables)
+
+        let tab = Application.appDelegate.windowControllersManager.mainWindowControllers[0].mainViewController.tabCollectionViewModel
+            .tabViewModel(at: 0)!.tab
+        tab.favicon = NSImage()
+        tab.title = "Title"
+
+        waitForExpectations(timeout: 0.3, handler: nil)
+    }
+
 }

@@ -87,3 +87,26 @@ extension WindowControllersManager {
             .eraseToAnyPublisher()
     }
 }
+
+extension MainWindowController {
+    var persistentStateChanged: AnyPublisher<Void, Never> {
+        tabsChanged
+            .merge(with: window!.publisher(for: \.frame).asVoid())
+            .eraseToAnyPublisher()
+    }
+}
+
+extension WindowControllersManager {
+    /// Emits when state that needs to be persisted for session restoration changes.
+    ///
+    /// Unlike `stateChanged`, this ignores tab title and favicon changes. Some pages update
+    /// these every second or two, and each save archives and writes the whole session state.
+    var persistentStateChanged: AnyPublisher<Void, Never> {
+        $mainWindowControllers.nestedObjectChanges(\.persistentStateChanged)
+            .handleEvents(receiveOutput: { [unowned self] in
+                self.updateIsInInitialState()
+            })
+            .filter { [unowned self] in !self.isInInitialState }
+            .eraseToAnyPublisher()
+    }
+}

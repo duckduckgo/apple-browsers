@@ -503,6 +503,8 @@ public struct DBPUICommunicationLayer: Subfeature {
     }
 
     func openOptOutEmail(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard !isPaused else { return updateRequiredResponse }
+
         guard let data = try? JSONSerialization.data(withJSONObject: params),
               let request = try? JSONDecoder().decode(DBPUIOpenOptOutEmailRequest.self, from: data) else {
             Logger.dataBrokerProtection.error("Failed to parse openOptOutEmail message")
@@ -513,6 +515,8 @@ public struct DBPUICommunicationLayer: Subfeature {
     }
 
     func confirmOptOutEmailSent(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard !isPaused else { return nil }
+
         guard let data = try? JSONSerialization.data(withJSONObject: params),
               let request = try? JSONDecoder().decode(DBPUIConfirmOptOutEmailSentRequest.self, from: data) else {
             Logger.dataBrokerProtection.error("Failed to parse confirmOptOutEmailSent message")

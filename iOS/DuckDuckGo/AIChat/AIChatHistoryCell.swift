@@ -19,6 +19,7 @@
 
 import UIKit
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 final class AIChatHistoryCell: UITableViewCell {
 
@@ -42,6 +43,22 @@ final class AIChatHistoryCell: UITableViewCell {
         return label
     }()
 
+    /// Burns this row's chat. Shown on every row so single-chat Fire is one tap away, not only behind swipe or long-press.
+    let fireButton: UIButton = {
+        let button = UIButton(type: .system)
+        // Matches the Fire accessory on Duck.ai recent-chat suggestion rows as rendered: SuggestionRowView's `.tint` doesn't
+        // recolour its Image, so it draws in the primary foreground (label) colour, black in light mode and white in dark.
+        button.setImage(DesignSystemImages.Glyphs.Size16.fire, for: .normal)
+        button.tintColor = .label
+        button.accessibilityLabel = UserText.aiChatHistoryDeleteSwipeAccessibilityLabel
+        button.accessibilityIdentifier = "aiChatHistoryRowFireButton"
+        button.translatesAutoresizingMaskIntoConstraints = false
+        return button
+    }()
+
+    /// Receives the Fire Button so a confirmation popover can anchor to it on iPad.
+    var onFireTapped: ((UIView) -> Void)?
+
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         setupViews()
@@ -52,6 +69,10 @@ final class AIChatHistoryCell: UITableViewCell {
         fatalError("init(coder:) is not supported.")
     }
 
+    /// The title ends at the Fire Button normally, and at the row's edge while multi-selecting (the button is hidden then).
+    private lazy var titleTrailingToFireButton = titleLabel.trailingAnchor.constraint(equalTo: fireButton.leadingAnchor, constant: -4)
+    private lazy var titleTrailingToEdge = titleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16)
+
     /// Set only by the iPad sidebar, which draws rows on the column instead of grouped cards.
     private var sidebarRowIsCurrentChat: Bool?
 
@@ -59,6 +80,7 @@ final class AIChatHistoryCell: UITableViewCell {
         super.prepareForReuse()
         titleLabel.text = nil
         iconImageView.image = nil
+        onFireTapped = nil
     }
 
     func applySidebarAppearance(isCurrentChat: Bool) {
@@ -70,6 +92,12 @@ final class AIChatHistoryCell: UITableViewCell {
 
     override func updateConfiguration(using state: UICellConfigurationState) {
         super.updateConfiguration(using: state)
+        // Multi-select acts on the selection from the toolbar, so the per-row Fire Button steps aside.
+        fireButton.isHidden = state.isEditing
+        // Deactivate before activating so the two trailing constraints never conflict.
+        let (off, on) = state.isEditing ? (titleTrailingToFireButton, titleTrailingToEdge) : (titleTrailingToEdge, titleTrailingToFireButton)
+        off.isActive = false
+        on.isActive = true
         guard let isCurrentChat = sidebarRowIsCurrentChat else { return }
         let isMarked = isCurrentChat && !state.isEditing
         var background = UIBackgroundConfiguration.clear()
@@ -84,6 +112,7 @@ final class AIChatHistoryCell: UITableViewCell {
         let foreground = UIColor(designSystemColor: isMarked ? .accentContentPrimary : .textPrimary)
         titleLabel.textColor = foreground
         iconImageView.tintColor = isMarked ? foreground : UIColor(designSystemColor: .icons)
+        fireButton.tintColor = isMarked ? foreground : .label
     }
 
     private func setupViews() {
@@ -99,6 +128,8 @@ final class AIChatHistoryCell: UITableViewCell {
 
         contentView.addSubview(iconImageView)
         contentView.addSubview(titleLabel)
+        contentView.addSubview(fireButton)
+        fireButton.addTarget(self, action: #selector(fireButtonTapped), for: .touchUpInside)
 
         // Rows are 52pt tall (per design); `greaterThanOrEqual` lets them grow with
         // larger Dynamic Type sizes rather than clipping.
@@ -114,15 +145,25 @@ final class AIChatHistoryCell: UITableViewCell {
             iconImageView.heightAnchor.constraint(equalToConstant: 24),
 
             titleLabel.leadingAnchor.constraint(equalTo: iconImageView.trailingAnchor, constant: 8),
-            titleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            titleTrailingToFireButton,
             titleLabel.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
             titleLabel.topAnchor.constraint(greaterThanOrEqualTo: contentView.topAnchor, constant: 11.5),
-            titleLabel.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor, constant: -11.5)
+            titleLabel.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor, constant: -11.5),
+
+            // 44pt tap target; the 16pt glyph sits 16pt from the trailing edge, mirroring the leading icon's inset.
+            fireButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -2),
+            fireButton.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+            fireButton.widthAnchor.constraint(equalToConstant: 44),
+            fireButton.heightAnchor.constraint(equalToConstant: 44)
         ])
 
         titleLabel.textColor = UIColor(designSystemColor: .textPrimary)
 
         // Separator starts where the text starts (16 + 24 + 8).
         separatorInset = UIEdgeInsets(top: 0, left: 48, bottom: 0, right: 0)
+    }
+
+    @objc private func fireButtonTapped() {
+        onFireTapped?(fireButton)
     }
 }

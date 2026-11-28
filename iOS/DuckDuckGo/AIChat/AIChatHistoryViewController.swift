@@ -62,6 +62,8 @@ final class AIChatHistoryViewController: UIViewController {
     /// Set while a swipe-driven animation is in flight to suppress reactive reloads that
     /// would otherwise cancel the slide.
     private var isApplyingLocalUpdate = false
+    /// Chats whose single-chat delete has started; a repeat Fire or Delete on the same row is ignored.
+    private var pendingDeleteChatIds = Set<String>()
 
     private var isEditingChats = false
     private weak var fireBarButtonItem: UIBarButtonItem?
@@ -740,8 +742,13 @@ extension AIChatHistoryViewController: UITableViewDataSource {
         guard let chatCell = cell as? AIChatHistoryCell else { return cell }
         chatCell.titleLabel.text = viewModel.title(forRowAt: indexPath)
         chatCell.iconImageView.image = viewModel.icon(forRowAt: indexPath)
+        let chatId = viewModel.chatId(forRowAt: indexPath)
+        let chatTitle = viewModel.title(forRowAt: indexPath) ?? ""
+        chatCell.onFireTapped = { [weak self] fireButton in
+            guard let self, let chatId, !self.isEditingChats else { return }
+            self.confirmDelete(chatId: chatId, title: chatTitle, from: fireButton)
+        }
         if isSidebar {
-            let chatId = viewModel.chatId(forRowAt: indexPath)
             chatCell.applySidebarAppearance(isCurrentChat: chatId != nil && chatId == currentChatId)
         }
         return chatCell
@@ -827,6 +834,7 @@ extension AIChatHistoryViewController: UITableViewDelegate {
             let delete = UIAction(title: UserText.aiChatHistoryRowMenuDelete,
                                   image: DesignSystemImages.Glyphs.Size24.fire,
                                   attributes: .destructive) { [weak self] _ in
+                // No confirmation: reaching Delete through the menu is deliberate, unlike a tap on the always-visible Fire Button.
                 self?.performDelete(chatId: chatId)
             }
             // Select is disabled (not removed) while filtering: multi-selecting a filtered subset
@@ -873,8 +881,25 @@ extension AIChatHistoryViewController: UITableViewDelegate {
         })
     }
 
-    /// Deletes a single chat from the long-press menu, animating the row out like the swipe action.
+    /// Asks before deleting a single chat from the row's always-visible Fire Button, so a stray tap can't burn it.
+    /// Uses the same "Delete this chat?" confirmation as recent-chat suggestions; deletes once it dismisses.
+    private func confirmDelete(chatId: String, title: String, from source: UIView) {
+        FireConfirmationPresenter().presentFireConfirmation(
+            on: self,
+            attachPopoverTo: source,
+            tabViewModel: nil,
+            pixelSource: .browsing,
+            fireContext: FireConfirmationPresenter.deleteChatFireContext(chatTitle: title),
+            browsingMode: .normal,
+            onConfirm: { [weak self] _ in self?.performDelete(chatId: chatId) },
+            onCancel: {}
+        )
+    }
+
+    /// Deletes a single chat (confirmed Fire Button, or long-press Delete), animating the row out like the swipe action.
     private func performDelete(chatId: String) {
+        // The last visible row stays tappable until the async burn reloads the list; delete each chat once.
+        guard pendingDeleteChatIds.insert(chatId).inserted else { return }
         viewModel.deleteChat(chatId: chatId)
         // Animate only when a row remains afterwards. Removing the last visible chat flips the
         // table to the empty-state / no-search-results layout (different section+row structure),

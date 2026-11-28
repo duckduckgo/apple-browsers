@@ -24,7 +24,7 @@
         "parameters": ["appVersion"]
     },
     "aichat_history_chat_deleted": {
-        "description": "User deleted a single chat via the trailing swipe action on a chat row on the chat history screen",
+        "description": "User deleted a single chat on the chat history screen: via the trailing swipe action or long-press Delete, or by confirming the Delete this chat? prompt from the row's Fire Button",
         "owners": ["SabrinaTardio"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],

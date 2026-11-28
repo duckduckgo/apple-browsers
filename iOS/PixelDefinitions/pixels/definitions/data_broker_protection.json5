@@ -263,7 +263,7 @@
             },
             {
                 "key": "email_sent",
-                "description": "Present and true when the user sent the removal request by email from the dashboard instead of our automated submission",
+                "description": "Present and true when the user sent the removal request by email from the dashboard instead of our automated submission. Duration, awake duration and tries are omitted then",
                 "type": "boolean"
             }
         ]

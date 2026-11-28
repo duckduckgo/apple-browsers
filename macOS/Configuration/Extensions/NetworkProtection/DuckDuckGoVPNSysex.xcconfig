@@ -36,7 +36,10 @@ INFOPLIST_KEY_NSSystemExtensionUsageDescription = DuckDuckGo VPN
 
 FEATURE_FLAGS[arch=*][sdk=*] = NETP_SYSTEM_EXTENSION NETWORK_EXTENSION
 FEATURE_FLAGS[config=CI][arch=*][sdk=*] = NETP_SYSTEM_EXTENSION NETWORK_EXTENSION
-FEATURE_FLAGS[config=Debug][arch=*][sdk=*] = NETP_SYSTEM_EXTENSION NETWORK_EXTENSION
+// Enable the native engine for local Debug testing. Set this to empty to use Go.
+// Other configurations deliberately do not consume this setting.
+DUCK_WIREGUARD_DEBUG_FLAGS = DUCK_WIREGUARD_POC
+FEATURE_FLAGS[config=Debug][arch=*][sdk=*] = NETP_SYSTEM_EXTENSION NETWORK_EXTENSION $(DUCK_WIREGUARD_DEBUG_FLAGS)
 FEATURE_FLAGS[config=Review][arch=*][sdk=*] = NETP_SYSTEM_EXTENSION NETWORK_EXTENSION
 
 PRODUCT_BUNDLE_IDENTIFIER[sdk=*] = $(SYSEX_BUNDLE_ID)

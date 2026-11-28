@@ -106,6 +106,7 @@ protocol LaunchingHandling {
 protocol ConnectedHandling {
 
     associatedtype Dependencies
+    func willEnterForeground()
     func makeBackgroundState() -> any BackgroundHandling
     func makeForegroundState(actionToHandle: AppAction?) -> any ForegroundHandling
 
@@ -263,6 +264,7 @@ final class AppStateMachine {
     private func respond(to event: AppEvent, in connected: any ConnectedHandling) {
         switch event {
         case .didBecomeActive:
+            connected.willEnterForeground()
             let foreground = connected.makeForegroundState(actionToHandle: actionToHandle)
             foreground.onTransition()
             foreground.didReturn()
@@ -275,10 +277,8 @@ final class AppStateMachine {
             actionToHandle = nil
             currentState = .background(background)
         case .willEnterForeground:
-            // This has been fixed on Apple side for scenes and is always called after the scene connects.
-            // However, we only transition to Foreground after didBecomeActive, since both events occur in sequence.
-            // We may revisit this if any UI glitches appear, as some work could potentially happen earlier in willEnterForeground.
             launchBreadcrumb.mark(.enteringForeground)
+            connected.willEnterForeground()
         case .willConnectToWindow(let window):
             let windowChanged = lastConnectedWindowIdentifier != ObjectIdentifier(window)
             storeWindowIdentifier(window)

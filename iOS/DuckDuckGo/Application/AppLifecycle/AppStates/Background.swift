@@ -111,6 +111,7 @@ extension Background {
         ThemeManager.shared.updateUserInterfaceStyle()
         var background = self
         let mainCoordinator = appDependencies.mainCoordinator
+        mainCoordinator.start(drawsIdleReturnNewTabPage: false, applicationState: .inactive)
         if mainCoordinator.drawsNewTabPageForIdleReturnOnForeground(
             outcome: appDependencies.idleReturnEvaluator.evaluateReturn(),
             isFeatureOn: appDependencies.featureFlagger.isFeatureOn(.idleReturnNewTabPageOnForeground),

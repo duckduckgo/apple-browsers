@@ -73,10 +73,15 @@ final class MockConnected: ConnectedHandling {
 
     var actionToHandle: AppAction?
     var window: UIWindow
+    private(set) var willEnterForegroundCallCount = 0
 
     init(actionToHandle: AppAction?, window: UIWindow) {
         self.actionToHandle = actionToHandle
         self.window = window
+    }
+
+    func willEnterForeground() {
+        willEnterForegroundCallCount += 1
     }
 
     func makeBackgroundState() -> any BackgroundHandling {
@@ -282,6 +287,42 @@ final class LaunchingTests {
 final class ConnectedTests {
 
     let stateMachine = AppStateMachine(initialState: .connected(MockConnected(actionToHandle: nil, window: UIWindow())), launchBreadcrumb: .testing)
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Connected prepares the initial view before activation and preserves launch actions", .timeLimit(.minutes(1)))
+    func prepareInitialViewOnForeground() throws {
+        let connected = MockConnected(actionToHandle: nil, window: UIWindow())
+        let machine = AppStateMachine(initialState: .connected(connected), launchBreadcrumb: .testing)
+        let url = URL(string: "https://duckduckgo.com")!
+        machine.handle(.openURL(url))
+
+        #expect(connected.willEnterForegroundCallCount == 0)
+        machine.handle(.willEnterForeground)
+        #expect(connected.willEnterForegroundCallCount == 1)
+        #expect(machine.currentState.name == "connected")
+
+        machine.handle(.didBecomeActive)
+        guard case .foreground(let state) = machine.currentState else {
+            Issue.record("Missing foreground state")
+            return
+        }
+        let foreground = try #require(state as? MockForeground)
+        guard case .openURL(let handledURL) = foreground.actionToHandle else {
+            Issue.record("Missing launch URL")
+            return
+        }
+        #expect(handledURL == url)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Background scene connection does not prepare the initial view", .timeLimit(.minutes(1)))
+    func backgroundConnectionDoesNotPrepareInitialView() {
+        let connected = MockConnected(actionToHandle: nil, window: UIWindow())
+        let machine = AppStateMachine(initialState: .connected(connected), launchBreadcrumb: .testing)
+        machine.handle(.didEnterBackground)
+        #expect(connected.willEnterForegroundCallCount == 0)
+        #expect(machine.currentState.name == "background")
+    }
 
     @Test("didBecomeActive should transition from Connected to Foreground and call onTransition and didReturn")
     func transitionFromConnectedToForeground() {

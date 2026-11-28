@@ -2568,9 +2568,10 @@ class MainViewController: UIViewController {
     }
 
     /// Draws the first screen; a cold start after idle can land on the New Tab Page directly.
-    func loadInitialViewIfNeeded(drawsIdleReturnNewTabPage: Bool) {
+    func loadInitialViewIfNeeded(drawsIdleReturnNewTabPage: Bool,
+                                 applicationState: UIApplication.State = UIApplication.shared.applicationState) {
         loadViewIfNeeded()
-        guard !hasLoadedInitialView else { return }
+        guard applicationState != .background, !hasLoadedInitialView else { return }
         hasLoadedInitialView = true
         loadInitialView(drawsIdleReturnNewTabPage: drawsIdleReturnNewTabPage)
         hasCompletedInitialLoad = true

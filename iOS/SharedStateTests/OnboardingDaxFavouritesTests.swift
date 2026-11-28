@@ -55,6 +55,46 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
     let mockWebsiteDataManager = MockWebsiteDataManager()
     let keyValueStore: ThrowingKeyValueStoring = MockKeyValueFileStore()
 
+    func testInitialViewWaitsForForegroundAndLoadsOnlyOnce() throws {
+        sut.loadInitialViewIfNeeded(drawsIdleReturnNewTabPage: false, applicationState: .background)
+        XCTAssertTrue(sut.isViewLoaded)
+        XCTAssertNil(sut.newTabPageViewController)
+        XCTAssertNil(sut.currentTab)
+
+        sut.loadInitialViewIfNeeded(drawsIdleReturnNewTabPage: false, applicationState: .inactive)
+        let initialPage = try XCTUnwrap(sut.newTabPageViewController)
+        sut.loadInitialViewIfNeeded(drawsIdleReturnNewTabPage: false, applicationState: .active)
+        XCTAssertTrue(sut.newTabPageViewController === initialPage)
+    }
+
+    func testForegroundLaunchLoadsInitialViewImmediately() {
+        sut.loadInitialViewIfNeeded(drawsIdleReturnNewTabPage: false, applicationState: .inactive)
+        XCTAssertNotNil(sut.newTabPageViewController)
+    }
+
+    func testBackgroundLaunchRestoresTheSelectedTabAtForeground() throws {
+        let tab = Tab(link: Link(title: "Saved", url: URL(string: "https://example.com")!))
+        sut.tabManager.currentTabsModel.insert(tab: tab, placement: .atEnd, selectNewTab: true)
+
+        sut.loadInitialViewIfNeeded(drawsIdleReturnNewTabPage: false, applicationState: .background)
+        XCTAssertNil(sut.currentTab)
+        XCTAssertTrue(sut.tabManager.currentTabsModel.currentTab === tab)
+
+        sut.loadInitialViewIfNeeded(drawsIdleReturnNewTabPage: false, applicationState: .inactive)
+        XCTAssertTrue(try XCTUnwrap(sut.currentTab).tabModel === tab)
+    }
+
+    func testDeferredInitialViewUsesTheModelAfterTabsAreCleared() throws {
+        let tab = Tab(link: Link(title: "Saved", url: URL(string: "https://example.com")!))
+        sut.tabManager.currentTabsModel.insert(tab: tab, placement: .atEnd, selectNewTab: true)
+        sut.loadInitialViewIfNeeded(drawsIdleReturnNewTabPage: false, applicationState: .background)
+        sut.tabManager.currentTabsModel.remove(tab: tab)
+
+        sut.loadInitialViewIfNeeded(drawsIdleReturnNewTabPage: false, applicationState: .inactive)
+        XCTAssertNotNil(sut.newTabPageViewController)
+        XCTAssertFalse(sut.tabManager.currentTabsModel.tabs.contains { $0 === tab })
+    }
+
     override func setUpWithError() throws {
         try super.setUpWithError()
         let db = CoreDataDatabase.bookmarksMock

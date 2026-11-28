@@ -383,8 +383,8 @@ final class MainCoordinator {
 
     }
 
-    func start(drawsIdleReturnNewTabPage: Bool) {
-        controller.loadInitialViewIfNeeded(drawsIdleReturnNewTabPage: drawsIdleReturnNewTabPage)
+    func start(drawsIdleReturnNewTabPage: Bool, applicationState: UIApplication.State = UIApplication.shared.applicationState) {
+        controller.loadInitialViewIfNeeded(drawsIdleReturnNewTabPage: drawsIdleReturnNewTabPage, applicationState: applicationState)
     }
 
     /// Whether a warm return puts up the after-idle New Tab Page before its first frame, given the UI it's returning to.

@@ -77,7 +77,8 @@ struct Connected: ConnectedHandling {
         launchTaskManager.register(task: ClearInteractionStateTask(autoClearService: autoClearService,
                                                                    interactionStateSource: mainCoordinator.interactionStateSource,
                                                                    tabManager: mainCoordinator.tabManager))
-        drewIdleReturnNewTabPage = appDependencies.idleReturnEvaluator.evaluateReturn()
+        drewIdleReturnNewTabPage = UIApplication.shared.applicationState != .background
+            && appDependencies.idleReturnEvaluator.evaluateReturn()
             .drawsNewTabPageAtLaunch(isFeatureOn: appDependencies.featureFlagger.isFeatureOn(.idleReturnNewTabPageAtLaunch),
                                      hasLaunchAction: actionToHandle != nil,
                                      isAppLockEnabled: PrivacyUserDefaults().authenticationEnabled,
@@ -181,6 +182,10 @@ extension Connected {
               appDependencies: appDependencies,
               sceneDependencies: sceneDependencies,
               drewIdleReturnNewTabPage: drewIdleReturnNewTabPage)
+    }
+
+    func willEnterForeground() {
+        appDependencies.mainCoordinator.start(drawsIdleReturnNewTabPage: drewIdleReturnNewTabPage, applicationState: .inactive)
     }
 
     func makeBackgroundState() -> any BackgroundHandling {

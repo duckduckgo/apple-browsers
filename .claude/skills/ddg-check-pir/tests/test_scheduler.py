@@ -342,7 +342,8 @@ class SchedulerTests(unittest.TestCase):
             profile.write_text(json.dumps(dict(names=[dict(firstName='Test', lastName='Fixture')],
                                                addresses=[dict(city='Test City', state='CA')], phones=[], birthYear=1980)))
             args = pir.parser().parse_args(['scheduler', 'seed', '--platform', 'ios', '--device', 'ipad', '--keep',
-                                            '--profile-file', str(profile), '--evidence-dir', directory])
+                                            '--profile-file', str(profile), '--evidence-dir', directory,
+                                            '--launch-profile', '{"privacyConfigURL": "https://example.com/config.json"}'])
             installed = '/Simulator/Devices/UDID/DuckDuckGo.app/DuckDuckGo'
             native = FakeSeedRuntime(process=dict(IDENTITY, executable=installed))
             client = Client([[event('scanStarted', 0), event('noMatchFound', 0)]])
@@ -351,7 +352,9 @@ class SchedulerTests(unittest.TestCase):
                 result = pir.execute(args, runtime_factory=native.create)
             self.assertEqual(result['status'], 'pass', result)
             self.assertEqual(native.platform, 'ios')
-            self.assertEqual(native.options, dict(device='ipad', keep=True))
+            self.assertEqual(native.options, dict(device='ipad', keep=True, launch_profile=dict(privacyConfigURL="https://example.com/config.json")))
+            self.assertEqual(result['launch']['launchProfile']['source'], dict(inline=dict(privacyConfigURL="https://example.com/config.json")))
+            self.assertIn("--launch-profile '{\"privacyConfigURL\": \"https://example.com/config.json\"}'", result['rerun'])
             self.assertNotEqual(native.port, 8474)
             self.assertEqual(identity.call_args.args[:2], ('ios', native.port))
             self.assertEqual(make_client.call_args.args[1], native.port)

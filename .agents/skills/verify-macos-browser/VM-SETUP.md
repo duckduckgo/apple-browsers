@@ -74,48 +74,26 @@ ssh -t vm-1 'printf "PasswordAuthentication no\nKbdInteractiveAuthentication no\
 **Claude Code:** its sandbox blocks TCP to the local network (`No route to host`), so ssh to the VM runs outside the
 sandbox and asks for permission.
 
-## 4. Signing: register the VM as a device
+No device registration: the app is signed with Developer ID, whose profile has no device list (SKILL.md, Signing).
+Your Mac needs the signing assets once; `selftest` checks them. Re-signing ad hoc doesn't work: without a team ID
+the app gets no app group container and crashes in `FileManager.configurationDirectory()`.
 
-The Debug app has restricted entitlements (network extension, system extension, keychain groups). They're only
-valid on Macs listed in the development provisioning profile. Without that, the app doesn't launch in the VM:
-
-```
-AMFI: Code has restricted entitlements, but the validation of its code signature failed.
-```
-
-1. Get the VM's Provisioning UDID (inside the VM, or over ssh):
-   ```bash
-   system_profiler SPHardwareDataType | grep "Provisioning UDID"
-   ```
-2. Register it as a Mac device in the team at developer.apple.com (needs Admin, or ask one).
-3. On your Mac, move the cached profile aside and build once with `-allowProvisioningUpdates`, so Xcode downloads
-   a profile that includes the VM. The build runner doesn't pass that flag, so a normal build keeps the old
-   profile.
-4. Check that the profile in the built app lists the VM:
-   ```bash
-   security cms -D -i "<app>/Contents/embedded.provisionprofile" | grep -c <VM UDID>
-   ```
-
-Re-signing ad hoc doesn't work: without a team ID the app gets no app group container and crashes in
-`FileManager.configurationDirectory()`.
-
-## 5. If a keychain dialog appears
+## 4. If a keychain dialog appears
 
 If a run stops with `NOT READY: no window after 60 s; <app> is in front: answer its prompt`, a dialog waits in the
 VM: open the VM window and answer it. For a keychain dialog, click **Always Allow**. The agent can't answer it. Left
 unanswered, the app shows no window; cancelled, it quits.
 
-## 6. Save `vm-default`
+## 5. Save `vm-default`
 
-Once steps 1–4 pass, keep a copy of the configured VM so you never redo them:
+Once steps 1–3 pass, keep a copy of the configured VM so you never redo them:
 
 1. Shut the VM down.
 2. In Finder, duplicate its `.vbvm` bundle (VirtualBuddy library → right-click the VM → Show in Finder) and name the
    copy `vm-default`. Never run `vm-default` itself: run copies of it (`vm-1`, `vm-2`).
 
 To run two verifications at once, make two copies and start both. VirtualBuddy notices they share a MAC address and
-offers to change it on the second one: accept. That copy then gets its own IP and **its own Provisioning UDID**, so
-register that UDID too (step 4) and add a `Host` entry for it:
+offers to change it on the second one: accept. That copy then gets its own IP: add a `Host` entry for it:
 
 ```
 Host vm-2
@@ -125,13 +103,13 @@ Host vm-2
   IdentitiesOnly yes
 ```
 
-Keep `vm-1` and `vm-2` once they work. A new copy of `vm-default` may get yet another UDID to register.
+Keep `vm-1` and `vm-2` once they work.
 
 `--target vm-1` and `--target vm-2` use these `Host` names. `--target vm` takes the first free VM in `VERIFY_VMS`
 (default `vm-1 vm-2`). Keep both on the same macOS version: with `--target vm`, `--base` can run the base and the
 change on different VMs, and different versions make the pair INCONCLUSIVE. `--target vm-N` pins one.
 
-## 7. Check the VM
+## 6. Check the VM
 
 From your Mac, each line must pass:
 
@@ -160,8 +138,6 @@ that fails and points back into this file. Run it for `vm-2` too.
 
 ## Not verified yet
 
-- Whether the UDID changes because of the MAC change or because of the copy. Seen once: the copy that kept the
-  original MAC kept the UDID; the one whose MAC changed got a new UDID (same Hardware UUID and serial).
 - Whether the keychain dialog appears in a fresh VM at all. Seen once, after an ad-hoc signed copy had run in the
   same VM.
 - Whether "Always Allow" holds for a build signed by another engineer's certificate.

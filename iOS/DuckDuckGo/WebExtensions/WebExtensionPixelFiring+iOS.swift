@@ -43,39 +43,39 @@ private struct WebExtensionReloadErrorPixel: PixelKit.Event {
 @available(iOS 18.4, *)
 private extension DuckDuckGoWebExtensionType {
 
-    var installedPixel: Pixel.Event {
+    var installedPixel: Pixel.Event? {
         switch self {
         case .embedded: return .webExtensionEmbeddedInstalled
         case .darkReader: return .webExtensionDarkReaderInstalled
         case .adBlockingExtension: return .webExtensionAdBlockingInstalled
-        case .searchToken: return .webExtensionSearchTokenInstalled
+        case .searchToken: return nil
         }
     }
 
-    var upgradedPixel: Pixel.Event {
+    var upgradedPixel: Pixel.Event? {
         switch self {
         case .embedded: return .webExtensionEmbeddedUpgraded
         case .darkReader: return .webExtensionDarkReaderUpgraded
         case .adBlockingExtension: return .webExtensionAdBlockingUpgraded
-        case .searchToken: return .webExtensionSearchTokenUpgraded
+        case .searchToken: return nil
         }
     }
 
-    var installErrorPixel: Pixel.Event {
+    var installErrorPixel: Pixel.Event? {
         switch self {
         case .embedded: return .webExtensionEmbeddedInstallError
         case .darkReader: return .webExtensionDarkReaderInstallError
         case .adBlockingExtension: return .webExtensionAdBlockingInstallError
-        case .searchToken: return .webExtensionSearchTokenInstallError
+        case .searchToken: return nil
         }
     }
 
-    var notLoadedPixel: Pixel.Event {
+    var notLoadedPixel: Pixel.Event? {
         switch self {
         case .embedded: return .webExtensionEmbeddedNotLoaded
         case .darkReader: return .webExtensionDarkReaderNotLoaded
         case .adBlockingExtension: return .webExtensionAdBlockingNotLoaded
-        case .searchToken: return .webExtensionSearchTokenNotLoaded
+        case .searchToken: return nil
         }
     }
 }
@@ -124,9 +124,11 @@ struct iOSWebExtensionPixelFiring: WebExtensionPixelFiring {
             )
             pixelFiring?.fire(WebExtensionReloadErrorPixel(metadata: metadata), frequency: .dailyAndCount)
         case .embeddedInstalled(let type):
-            pixelFiring?.fire(type.installedPixel,
+            guard let pixel = type.installedPixel else { return }
+            pixelFiring?.fire(pixel,
                           frequency: .dailyAndStandard)
         case .embeddedUpgraded(let type, let fromVersion, let toVersion):
+            guard let pixel = type.upgradedPixel else { return }
             var params: [String: String] = [:]
             if let fromVersion {
                 params["from_version"] = fromVersion
@@ -134,11 +136,12 @@ struct iOSWebExtensionPixelFiring: WebExtensionPixelFiring {
             if let toVersion {
                 params["to_version"] = toVersion
             }
-            pixelFiring?.fire(type.upgradedPixel,
+            pixelFiring?.fire(pixel,
                           frequency: .dailyAndStandard,
                           options: .parameters(params))
         case .embeddedInstallError(let type, let error):
-            pixelFiring?.fire(type.installErrorPixel.withError(error),
+            guard let pixel = type.installErrorPixel else { return }
+            pixelFiring?.fire(pixel.withError(error),
                           frequency: .dailyAndStandard)
         case .scriptletFetchSuccess(let type, let version, let count):
             pixelFiring?.fire(Pixel.Event.webExtensionScriptletFetchSuccess,
@@ -164,7 +167,8 @@ struct iOSWebExtensionPixelFiring: WebExtensionPixelFiring {
             pixelFiring?.fire(Pixel.Event.webExtensionStateChecked,
                           frequency: .dailyAndStandard)
         case .expectedExtensionNotLoaded(let type):
-            pixelFiring?.fire(type.notLoadedPixel,
+            guard let pixel = type.notLoadedPixel else { return }
+            pixelFiring?.fire(pixel,
                           frequency: .dailyAndStandard)
         case .adBlockingScriptletsNotFetched(let extensionLoaded):
             pixelFiring?.fire(Pixel.Event.webExtensionAdBlockingScriptletsNotFetched,

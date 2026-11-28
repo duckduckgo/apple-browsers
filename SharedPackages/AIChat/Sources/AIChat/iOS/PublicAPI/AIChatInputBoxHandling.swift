@@ -48,6 +48,9 @@ public protocol AIChatInputBoxHandling {
 
     /// The page's latest `voiceInChatAvailability` for the bound chat; `nil` until it says.
     var voiceInChatAvailability: AIChatVoiceInChatAvailability? { get set }
+    /// What the page last said about its promos (`aiChatPromoVisibility`): `nil` until it says anything, which
+    /// counts as a promo that may still appear.
+    var isAIChatPromoVisible: Bool? { get set }
 
     var attachmentUsagePublisher: Published<AIChatAttachmentUsage?>.Publisher { get }
     var attachmentUsage: AIChatAttachmentUsage? { get set }

@@ -191,7 +191,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                 bookmarkManager: NSApp.delegateTyped.bookmarkManager,
                 fireproofDomains: fireproofDomains,
                 privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
-                featureFlagger: featureFlagger ?? NSApp.delegateTyped.featureFlagger)
+                featureFlagger: featureFlagger ?? NSApp.delegateTyped.featureFlagger,
+                faviconRasterizer: NSApp.delegateTyped.faviconRasterizer)
         }
 
         self.init(id: id,

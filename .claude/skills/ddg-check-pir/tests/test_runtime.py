@@ -40,6 +40,7 @@ class FakeTools:
         self.child = None
         self.extra_pids = []
         self.products_override = None
+        self.launch_profile_log = "LAUNCH_PROFILE_APPLIED keys=internalUser\n"
 
     def materialize(self, mac):
         app = self.root / ("DerivedData/ddg-check-pir/macos/deployment/Applications/DEBUG/DuckDuckGo.app" if mac else
@@ -132,9 +133,11 @@ class FakeTools:
                     output, code = "launch failed", 1
                 else:
                     executable = self.root / f"SimulatorDevices/{OWNED_SIM}/data/Application/DuckDuckGo.app/DuckDuckGo"
-                    executable.parent.mkdir(parents=True)
+                    executable.parent.mkdir(parents=True, exist_ok=True)
                     shutil.copyfile(self.installed / "DuckDuckGo", executable)
                     self.processes[412] = str(executable)
+                    stderr = next(arg for arg in args if arg.startswith("--stderr="))
+                    Path(stderr.removeprefix("--stderr=")).write_text(self.launch_profile_log)
                     output = runtime.BUNDLES["ios"] + ": 412\n"
                     code = int(self.fail_launch_after_start)
                     if self.timeout_launch or self.timeout_launch_without_pid:
@@ -233,7 +236,10 @@ class LifecycleTests(unittest.TestCase):
         self.assertIn(OWNED_SIM, command)
         self.assertEqual(options["env"]["SIMCTL_CHILD_PIR_DEBUG_ENVIRONMENT"], "staging")
         self.assertEqual(options["env"]["SIMCTL_CHILD_PIR_DEBUG_INSTANCE_ID"], instance.instance)
-        self.assertIn("-ff.dbpCustomWebViewUserAgent", command)
+        self.assertEqual(command[command.index("-launchProfile") + 1:], [json.dumps(runtime.IOS_LAUNCH_PROFILE, separators=(",", ":"))])
+        self.assertNotIn("isRunningUITests", command)
+        self.assertEqual(launched["launchProfile"], {"merged": runtime.IOS_LAUNCH_PROFILE,
+                                                     "result": "LAUNCH_PROFILE_APPLIED keys=internalUser"})
         self.assertTrue(instance.stop()["stopped"])
         self.assertTrue(instance.stop()["alreadyStopped"])
         self.assertEqual([s["udid"] for s in self.tools.simulators], ["USER-SIM"])
@@ -271,7 +277,10 @@ class LifecycleTests(unittest.TestCase):
         instance.snapshots_enabled = True
         instance.build()
         instance.launch()
-        _, options = next((c, o) for c, o in self.tools.calls if c[0].endswith("Contents/MacOS/PIRAgent"))
+        command, options = next((c, o) for c, o in self.tools.calls if c[0].endswith("Contents/MacOS/PIRAgent"))
+        self.assertEqual(command[1:6], ["isRunningUITests", "-ff.dbpCustomWebViewUserAgent", "true",
+                                        "-ff.dbpExtractedProfileRefresh", "true"])
+        self.assertNotIn("-launchProfile", command)
         self.assertEqual(options["env"]["PIR_DEBUG_SNAPSHOTS"], "1")
         destination = Path(options["env"]["PIR_DEBUG_SNAPSHOT_DIRECTORY"])
         self.assertEqual(destination, instance.evidence / "snapshots")
@@ -418,6 +427,7 @@ class LifecycleTests(unittest.TestCase):
         self.assertIn("ddg-check-pir-ipad-", launched["simulator"]["name"])
         command, options = next((c, o) for c, o in self.tools.calls if c[:3] == ["xcrun", "simctl", "launch"])
         self.assertNotIn(fixture, command)
+        self.assertEqual(json.loads(command[command.index("-launchProfile") + 1]), runtime.IOS_LAUNCH_PROFILE)
         env = options["env"]
         self.assertEqual(env["SIMCTL_CHILD_PIR_PROFILE_JSON"], fixture)
         self.assertEqual(env["SIMCTL_CHILD_PIR_SCHEDULER_MODE"], "reseed")
@@ -766,12 +776,61 @@ class LifecycleTests(unittest.TestCase):
         self.assertTrue((instance.deployment / "Applications").is_symlink())
         self.assertFalse(any(c[0] == "xcodebuild" and c[-1] == "build" for c, _ in self.tools.calls))
 
+    def test_user_launch_profile_is_merged_over_the_base_profile(self):
+        instance = self.make_runtime(launch_profile={"privacyConfigURL": "https://example.com/config.json", "featureFlags": {"x": True},
+                                                     "featureFlags.y": False, "internalUser": True})
+        instance.build()
+        launched = instance.launch()
+        command = next(c for c, _ in self.tools.calls if c[:3] == ["xcrun", "simctl", "launch"])
+        expected = {**runtime.IOS_LAUNCH_PROFILE, "privacyConfigURL": "https://example.com/config.json", "featureFlags.x": True, "featureFlags.y": False}
+        self.assertEqual(json.loads(command[command.index("-launchProfile") + 1]), expected)
+        self.assertNotIn("isRunningUITests", command)
+        self.assertEqual(launched["launchProfile"]["merged"], expected)
+        instance.stop()
+
+    def test_rejected_or_missing_launch_profile_line_stops_before_the_runner_and_keeps_cleanup(self):
+        for log, message in (("LAUNCH_PROFILE_FAILED Unknown key \"featureFlags.x\".\n",
+                              'LAUNCH_PROFILE_FAILED Unknown key "featureFlags.x".'),
+                             ("", "no LAUNCH_PROFILE_ line")):
+            with self.subTest(message=message), patch.object(runtime, "LAUNCH_PROFILE_TIMEOUT", 0):
+                self.tools.launch_profile_log = log
+                instance = self.make_runtime()
+                instance.build()
+                with self.assertRaisesRegex(runtime.RuntimeError, message):
+                    instance.launch()
+                self.ready.assert_not_called()
+                self.assertEqual(instance.identity["pid"], 412)
+                self.assertTrue(instance.stop()["stopped"])
+                self.assertFalse(self.tools.processes)
+
     def test_no_new_launch_for_missing_build(self):
         instance = self.make_runtime()
         with self.assertRaisesRegex(runtime.RuntimeError, "No recorded PIR build"):
             instance.launch()
         instance.stop()
         self.assertEqual(len(self.tools.simulators), 1)
+
+
+class LaunchProfileTests(unittest.TestCase):
+    def test_base_profile_applies_without_a_user_profile(self):
+        self.assertEqual(runtime.ios_launch_profile(), runtime.IOS_LAUNCH_PROFILE)
+
+    def test_nested_and_dotted_user_keys_override_the_base(self):
+        merged = runtime.ios_launch_profile({"privacyConfigURL": "https://example.com/config.json", "featureFlags": {"a": True, "b": {}},
+                                             "settings.theme": "dark"})
+        self.assertEqual(merged, {**runtime.IOS_LAUNCH_PROFILE, "privacyConfigURL": "https://example.com/config.json", "featureFlags.a": True,
+                                  "featureFlags.b": {}, "settings.theme": "dark"})
+
+    def test_required_entries_and_tabs_are_rejected(self):
+        for profile, message in (([], "JSON object"),
+                                 ({"internalUser": False}, "internalUser true"),
+                                 ({"onboardingCompleted": False}, "onboardingCompleted true"),
+                                 ({"featureFlags": {"dbpCustomWebViewUserAgent": False}}, "dbpCustomWebViewUserAgent true"),
+                                 ({"featureFlags.dbpExtractedProfileRefresh": 1}, "dbpExtractedProfileRefresh true"),
+                                 ({"tabs": ["https://example.com"]}, "tabs"),
+                                 ({"tabs": {"x": 1}}, "tabs")):
+            with self.subTest(profile=profile), self.assertRaisesRegex(ValueError, message):
+                runtime.ios_launch_profile(profile)
 
 
 if __name__ == "__main__":

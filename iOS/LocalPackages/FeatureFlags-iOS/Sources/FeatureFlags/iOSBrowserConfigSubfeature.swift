@@ -105,6 +105,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220050958443794?focus=true
     case slideToDelete
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220715153853051
+    case fireSheetSettingsButton
+
     /// https://app.asana.com/1/137249556945/project/392891325557410/task/1212828713075939?focus=true
     case omniBarLongPressMenu
 
@@ -132,6 +135,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219073007936638?focus=true
     case floatingUIiOS27
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220969131024441
+    case floatingUIWebViewportInset
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220300732211487
     case duckAIAndInputLiquidGlass
 
@@ -144,10 +150,6 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Container transform when a new tab opens.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220324835587117
     case newTabTransition
-
-    /// NA experiment: search token to speed up SERP by combining Index/Deep responses.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216365830146824
-    case searchTokenExperimentV4
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217276406422603?focus=true
     case newTabPageSessionInstrumentation
@@ -185,6 +187,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220301490819843
     case idleReturnNewTabPageOnForeground
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220873927852212
+    case idleReturnLaunchWaitProtection
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220262683074513
     case launchBackgroundTask

@@ -194,6 +194,10 @@ public extension PrivacyConfigurationManagingMock {
 }
 
 public final class PrivacyConfigurationManagingMock: PrivacyConfigurationManaging {
+    public var userUnprotectedDomainsPublisher: AnyPublisher<Void, Never> {
+        Empty(completeImmediately: false).eraseToAnyPublisher()
+    }
+
     public var currentConfig: Data = Data()
 
     public var updatesPublisher: AnyPublisher<Void, Never> = .init(Just(()))
@@ -210,7 +214,9 @@ public final class PrivacyConfigurationManagingMock: PrivacyConfigurationManagin
 }
 
 public final class PrivacyConfigurationMock: PrivacyConfiguration {
+    public init() {}
 
+    public var subfeatureSettings: String?
     public var identifier: String = "mock"
     public var version: String? = "123456789"
 
@@ -268,7 +274,7 @@ public final class PrivacyConfigurationMock: PrivacyConfiguration {
     }
 
     public func settings(for subfeature: any PrivacySubfeature) -> PrivacyConfigurationData.PrivacyFeature.SubfeatureSettings? {
-        return nil
+        return subfeatureSettings
     }
 
     public func allSubfeatureSettings(for feature: PrivacyFeature) -> [SubfeatureID: PrivacyConfigurationData.PrivacyFeature.SubfeatureSettings] {
@@ -1285,7 +1291,12 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         return brokerProfileQueryDataToReturn.excludingIneligibleBrokers(isAuthenticatedUser: isAuthenticatedUser)
     }
 
+    public var scopedProfileFetchCount = 0
+    public var scopedProfileFetchHandler: ((Int64) throws -> [BrokerProfileQueryData])?
+
     public func fetchBrokerProfileQueryData(forBrokerId brokerId: Int64) throws -> [BrokerProfileQueryData] {
+        scopedProfileFetchCount += 1
+        if let scopedProfileFetchHandler { return try scopedProfileFetchHandler(brokerId) }
         if let fetchAllBrokerProfileQueryDataError {
             throw fetchAllBrokerProfileQueryDataError
         }
@@ -1300,6 +1311,10 @@ public final class MockDatabase: DataBrokerProtectionRepository {
 
     public func fetchBroker(with id: Int64) throws -> DataBroker? {
         brokerToReturn ?? dataBrokersToReturn.first { $0.id == id }
+    }
+
+    public func fetchBroker(withURL url: String) throws -> DataBroker? {
+        dataBrokersToReturn.first { $0.url == url }
     }
 
     public func fetchProfileQuery(with id: Int64) throws -> ProfileQuery? {
@@ -2239,6 +2254,7 @@ public final class MockDBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeature
     public let isOptOutRetryErrorFrequencyExperimentOn: Bool
     public let isFreemiumPIREnabled: Bool
     public let isExtractedProfileRefreshOn: Bool
+    public var isUserAssistanceOn: Bool
     public let isChallengeSolverOn: Bool
 
     public init(isForegroundRunningOnAppActiveFeatureOn: Bool = true,
@@ -2247,7 +2263,8 @@ public final class MockDBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeature
                 isOptOutRetryErrorFrequencyExperimentOn: Bool = false,
                 isFreemiumPIREnabled: Bool = false,
                 isExtractedProfileRefreshOn: Bool = true,
-                isChallengeSolverOn: Bool = false) {
+                isChallengeSolverOn: Bool = false,
+                isUserAssistanceOn: Bool = false) {
         self.isForegroundRunningOnAppActiveFeatureOn = isForegroundRunningOnAppActiveFeatureOn
         self.isContinuedProcessingFeatureOn = isContinuedProcessingFeatureOn
         self.isCustomWebViewUserAgentOn = isCustomWebViewUserAgentOn
@@ -2255,6 +2272,7 @@ public final class MockDBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeature
         self.isFreemiumPIREnabled = isFreemiumPIREnabled
         self.isExtractedProfileRefreshOn = isExtractedProfileRefreshOn
         self.isChallengeSolverOn = isChallengeSolverOn
+        self.isUserAssistanceOn = isUserAssistanceOn
     }
 }
 
@@ -2319,6 +2337,8 @@ public final class MockBrokerProfileJobDependencies: BrokerProfileJobDependencyP
     public var featureFlagger: DBPFeatureFlagging
     public var wideEvent: WideEventManaging?
     public var contentBlocking: DBPWebViewContentBlocking?
+    public var assistedRunnerObserver: OptOutAssistanceObserving?
+    public var mockAssistedOptOutRunner = MockOptOutSubJobWebRunner()
     public var isAuthenticatedUserProvider: () async -> Bool = { true }
 
     public var mockScanRunner = MockScanSubJobWebRunner()
@@ -2348,6 +2368,14 @@ public final class MockBrokerProfileJobDependencies: BrokerProfileJobDependencyP
                                    stageDurationCalculator: any StageDurationCalculator,
                                    shouldRunNextStep: @escaping () -> Bool) -> any BrokerProfileOptOutSubJobWebRunning {
         return mockOptOutRunner
+    }
+
+    public func createAssistedOptOutRunner(profileQuery: SubJobContextProviding,
+                                           stageDurationCalculator: StageDurationCalculator,
+                                           observer: OptOutAssistanceObserving,
+                                           shouldRunNextStep: @escaping () -> Bool) -> BrokerProfileOptOutSubJobWebRunning {
+        assistedRunnerObserver = observer
+        return mockAssistedOptOutRunner
     }
 
     public func isAuthenticatedUser() async -> Bool {

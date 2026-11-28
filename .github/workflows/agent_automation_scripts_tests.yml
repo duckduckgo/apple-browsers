@@ -1,0 +1,27 @@
+name: Shared - Agent Automation Scripts Tests
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - 'scripts/agent-pr-assign/**'
+      - 'scripts/feature-flag-cleanup/**'
+      - '.github/workflows/agent_automation_scripts_tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    name: Agent Automation Scripts Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Test agent-pr-assign
+        run: python3 -m unittest discover -s scripts/agent-pr-assign
+
+      - name: Test feature-flag-cleanup
+        run: python3 -m unittest discover -s scripts/feature-flag-cleanup

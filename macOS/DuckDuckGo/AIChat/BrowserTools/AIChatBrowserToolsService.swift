@@ -51,6 +51,7 @@ final class AIChatBrowserToolsService {
          historyCoordinator: HistoryCoordinating,
          bookmarkManager: BookmarkManager,
          permissionManager: PermissionManagerProtocol,
+         translatePages: TranslatePagesSetting = TranslatePagesSetting(),
          tools: [any BrowserTool]? = nil) {
         let tools = tools ?? Self.defaultTools(windowControllersManager: windowControllersManager,
                                                historyCoordinator: historyCoordinator,
@@ -67,13 +68,13 @@ final class AIChatBrowserToolsService {
         self.catalog = catalog
         self.permissions = permissions
         self.clientToolPermissions = clientToolPermissions
-        self.permissionPrompts = BrowserToolPermissionPromptPresenter(windowControllersManager: windowControllersManager) { prompt, decision, prompter in
+        self.permissionPrompts = BrowserToolPermissionPromptPresenter(windowControllersManager: windowControllersManager, translatePages: translatePages) { prompt, decision, prompter in
             clientToolPermissions.respond(to: prompt, decision: decision, from: prompter)
         }
         let invoker = BrowserToolInvoker(catalog: catalog, clientToolPermissions: clientToolPermissions)
         invoker.instrumentation = instrumentation
         self.invoker = invoker
-        self.lastClientToolsConfiguration = Self.clientToolsConfiguration(for: catalog)
+        self.lastClientToolsConfiguration = catalog.clientToolsConfiguration
         self.featureFlagChanges = featureFlagger.updatesPublisher.sink { [weak self] in
             Task { @MainActor in
                 self?.pushClientToolsChangedIfNeeded()
@@ -111,15 +112,7 @@ final class AIChatBrowserToolsService {
 
     /// Advertised to Duck.ai in `getAIChatNativeConfigValues`. Nil when no tool is enabled.
     var clientToolsConfiguration: ClientToolsConfiguration? {
-        Self.clientToolsConfiguration(for: catalog)
-    }
-
-    private static func clientToolsConfiguration(for catalog: BrowserToolCatalog) -> ClientToolsConfiguration? {
-        let capabilities = catalog.enabledClientToolCapabilities
-        guard !capabilities.isEmpty,
-              let configuration = try? ClientToolsConfiguration(capabilities: capabilities),
-              ClientToolPayloadLimits.fits(configuration, within: ClientToolPayloadLimits.configBytes) else { return nil }
-        return configuration
+        catalog.clientToolsConfiguration
     }
 
     // MARK: - Pushes

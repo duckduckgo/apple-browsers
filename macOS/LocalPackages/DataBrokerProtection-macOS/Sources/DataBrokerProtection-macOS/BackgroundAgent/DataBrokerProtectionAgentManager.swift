@@ -211,6 +211,12 @@ public final class DataBrokerProtectionAgentManager {
     private lazy var browserWindowManager = BrowserWindowManager()
 
     private var debugServer: DataBrokerProtectionDebugHTTPServer?
+    /// Runs the user's assisted opt-out attempts one at a time. Created on first use once the user is signed in.
+    @MainActor private var assistedOptOutQueue: AssistedOptOutQueue?
+    private let injectedAssistedOptOutPresenter: AssistedOptOutPresenting?
+    @MainActor private lazy var assistedOptOutPresenter: AssistedOptOutPresenting =
+        injectedAssistedOptOutPresenter ?? AssistedOptOutWindowPresenter()
+    private var assistedOptOutSubscriptions: Set<AnyCancellable> = []
 
     private var didStartActivityScheduler = false
     private var currentRunIsFreeScan: Bool?
@@ -243,8 +249,10 @@ public final class DataBrokerProtectionAgentManager {
          authenticationManager: DataBrokerProtectionAuthenticationManaging,
          freemiumDBPUserStateManager: FreemiumDBPUserStateManager,
          resourceMonitor: ResourceMonitoring? = nil,
-         wideEvent: WideEventManaging? = nil
+         wideEvent: WideEventManaging? = nil,
+         assistedOptOutPresenter: AssistedOptOutPresenting? = nil
     ) {
+        self.injectedAssistedOptOutPresenter = assistedOptOutPresenter
         self.eventsHandler = eventsHandler
         self.activityScheduler = activityScheduler
         self.ipcServer = ipcServer
@@ -347,6 +355,7 @@ private extension DataBrokerProtectionAgentManager {
                                                         completion: (() -> Void)?) {
         Task {
             let isAuthenticated = await refreshIsAuthenticatedState()
+            if !isAuthenticated { await cancelAssistedOptOuts() }
             if isAuthenticated {
                 queueManager.startScheduledAllOperationsIfPermitted(showWebView: showWebView,
                                                                     isAuthenticatedUser: true,
@@ -405,6 +414,7 @@ extension DataBrokerProtectionAgentManager: JobQueueManagerDelegate {
         Task {
             do {
                 try await brokerUpdater.checkForUpdates()
+                await invalidateAssistedOptOuts()
             }
         }
     }
@@ -418,6 +428,7 @@ extension DataBrokerProtectionAgentManager: JobQueueManagerDelegate {
     }
 
     public func queueManagerDidCompleteIndividualJob(_ queueManager: any DataBrokerProtectionCore.JobQueueManaging, identifier: CompletedJobIdentifier?) {
+        Task { await invalidateAssistedOptOuts() }
         // Figure out if we've just finished initial scans, and send the appropriate pixel if necessary
 
         let database = jobDependencies.database
@@ -442,6 +453,7 @@ extension DataBrokerProtectionAgentManager: JobQueueManagerDelegate {
 
 extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentAppEvents {
     public func profileSaved() async {
+        await cancelAssistedOptOuts()
         let database = jobDependencies.database
         let eventPixels = DataBrokerProtectionEventPixels(database: database, repository: eventPixelRepository, handler: sharedPixelsHandler)
         eventPixels.markInitialScansStarted()
@@ -658,6 +670,83 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentDebugComman
 
 extension DataBrokerProtectionAgentManager: DataBrokerProtectionAppToAgentInterface {
 
+}
+
+extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentAssistedOptOutCommands {
+    @MainActor
+    func setUpAssistedOptOuts() {
+        guard assistedOptOutQueue == nil else { return }
+        let queue = AssistedOptOutQueue(dependencies: jobDependencies, instrumentation: AssistedOptOutPixelInstrumentation())
+        queue.presenter = assistedOptOutPresenter
+        assistedOptOutQueue = queue
+        // A config update can turn the feature on or off, so recheck the list.
+        privacyConfigurationManager.updatesPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                Task { @MainActor [weak self] in
+                    self?.assistedOptOutQueue?.configurationDidChange()
+                }
+            }.store(in: &assistedOptOutSubscriptions)
+        Publishers.Merge(
+            jobDependencies.notificationCenter.publisher(for: DataBrokerProtectionNotifications.didFinishScan),
+            jobDependencies.notificationCenter.publisher(for: DataBrokerProtectionNotifications.didFinishOptOut)
+        ).sink { [weak self] _ in
+            Task { await self?.invalidateAssistedOptOuts() }
+        }.store(in: &assistedOptOutSubscriptions)
+    }
+
+    @MainActor
+    func invalidateAssistedOptOuts() {
+        assistedOptOutQueue?.invalidate()
+    }
+
+    @MainActor
+    func cancelAssistedOptOuts() {
+        assistedOptOutQueue?.cancelAll()
+    }
+
+    @MainActor
+    public func getAssistedOptOuts() async -> AssistedOptOutList? {
+        guard await authenticationManager.isUserAuthenticated else {
+            assistedOptOutQueue?.cancelAll()
+            return AssistedOptOutList(optOuts: [])
+        }
+        setUpAssistedOptOuts()
+        do {
+            return AssistedOptOutList(optOuts: try await assistedOptOutQueue?.assistedOptOuts() ?? [])
+        } catch {
+            Logger.dataBrokerProtection.error("Assisted opt-out list failed")
+            return nil
+        }
+    }
+
+    public func assistedOptOutDataDidChange() {
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            if (try? self.jobDependencies.database.fetchProfile()) == nil {
+                self.cancelAssistedOptOuts()
+            } else {
+                self.invalidateAssistedOptOuts()
+            }
+        }
+    }
+
+    public func startAssistedOptOut(id: String) {
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            guard await self.authenticationManager.isUserAuthenticated else {
+                self.assistedOptOutQueue?.cancelAll()
+                return
+            }
+            guard let id = AssistedOptOutID(id) else { return }
+            self.setUpAssistedOptOuts()
+            do {
+                try await self.assistedOptOutQueue?.start(id: id)
+            } catch {
+                Logger.dataBrokerProtection.error("Assisted opt-out start failed")
+            }
+        }
+    }
 }
 
 // MARK: - Debug HTTP server read access

@@ -138,6 +138,10 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
     /// Posted by the Customize Responses card placement when the user dismisses it.
     case customizeResponsesModalClosed
 
+    /// Posted (FE→native) with `{ visible: Bool }` once the page's promo pool settles and again on every change:
+    /// whether a promo card or the bonus offer modal is on screen. Never sent twice with the same value.
+    case aiChatPromoVisibility
+
     // MARK: - Open chat
 
     /// Pushed (native→FE) with `{ chatId }` to open that chat in place, as a click in the page's own chat list does.

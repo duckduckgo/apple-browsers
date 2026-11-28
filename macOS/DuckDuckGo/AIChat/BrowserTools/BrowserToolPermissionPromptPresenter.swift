@@ -23,18 +23,52 @@ import DesignResourcesKitIcons
 import SwiftUI
 import WebKit
 
+/// What took the Duck.ai button from a translate offer (R10).
+enum TranslateOfferSuppressor: String {
+    case browserTool = "browser_tool"
+    case localModel = "local_model"
+}
+
 @MainActor
 final class BrowserToolPermissionPromptPresenter {
 
     typealias Respond = @MainActor (ClientToolPermissionPrompt, ClientToolPermissionDecision, any ClientToolPermissionPrompting) -> Void
 
     private struct Request {
-        let prompt: ClientToolPermissionPrompt
+        enum Kind {
+            case toolPrompt(ToolPrompt)
+            case translateOffer(languageCode: String, choice: TranslateOfferChoice)
+        }
+
+        struct ToolPrompt {
+            let prompt: ClientToolPermissionPrompt
+            weak var prompter: (any ClientToolPermissionPrompting)?
+            // Kept for the prompt's life, so tools taken out stay out when its popover is rebuilt.
+            let selection: BrowserToolAccessSelection
+        }
+
+        let id: String
         let ownerTabID: TabIdentifier
         weak var collection: TabCollectionViewModel?
-        weak var prompter: (any ClientToolPermissionPrompting)?
-        // Kept for the prompt's life, so tools taken out stay out when its popover is rebuilt.
-        let selection: BrowserToolAccessSelection
+        let kind: Kind
+
+        @MainActor var isLive: Bool {
+            guard let collection else { return false }
+            switch kind {
+            case .toolPrompt(let tool): return tool.prompter != nil
+            case .translateOffer: return collection.indexInAllTabs(where: { $0.uuid == ownerTabID }) != nil
+            }
+        }
+
+        var translateOfferLanguageCode: String? {
+            guard case .translateOffer(let languageCode, _) = kind else { return nil }
+            return languageCode
+        }
+
+        var translateOfferChoice: TranslateOfferChoice? {
+            guard case .translateOffer(_, let choice) = kind else { return nil }
+            return choice
+        }
     }
 
     private struct Shown {
@@ -56,10 +90,23 @@ final class BrowserToolPermissionPromptPresenter {
     private var shown: [ObjectIdentifier: Shown] = [:]
     private var uses: [String: Use] = [:]
     private var selectionChanges: [ObjectIdentifier: AnyCancellable] = [:]
+    private var translateOfferDismissedTabIDs: Set<TabIdentifier> = []
+    /// Tabs whose current page lost its offer to another prompt; the next page may offer again.
+    private var translateOfferSuppressedTabIDs: Set<TabIdentifier> = []
+    private weak var localModelPromptWindow: NSWindow?
+    private let translatePages: TranslatePagesSetting
+    private var translatePagesChanges: AnyCancellable?
+    private let translateOfferSuppressed: (TranslateOfferSuppressor) -> Void
 
-    init(windowControllersManager: WindowControllersManagerProtocol, respond: @escaping Respond) {
+    init(windowControllersManager: WindowControllersManagerProtocol,
+         translatePages: TranslatePagesSetting = TranslatePagesSetting(),
+         translateOfferSuppressed: @escaping (TranslateOfferSuppressor) -> Void = { _ in },
+         respond: @escaping Respond) {
         self.windowControllersManager = windowControllersManager
+        self.translatePages = translatePages
+        self.translateOfferSuppressed = translateOfferSuppressed
         self.respond = respond
+        translatePagesChanges = translatePages.changes.sink { [weak self] in self?.refresh() }
     }
 
     func present(_ prompt: ClientToolPermissionPrompt, chatWebView: WKWebView?, prompter: any ClientToolPermissionPrompting) -> Bool {
@@ -68,8 +115,9 @@ final class BrowserToolPermissionPromptPresenter {
               !collection.isBurner,
               let windowController = windowController(for: collection) else { return false }
 
-        requests.append(Request(prompt: prompt, ownerTabID: ownerTabID, collection: collection, prompter: prompter,
-                                selection: BrowserToolAccessSelection()))
+        suppressTranslateOffers(in: collection, alsoOn: ownerTabID, by: .browserTool)
+        requests.append(Request(id: prompt.requestID, ownerTabID: ownerTabID, collection: collection,
+                                kind: .toolPrompt(.init(prompt: prompt, prompter: prompter, selection: BrowserToolAccessSelection()))))
         observeSelection(of: collection)
         if collection.selectedTabViewModel?.tab.uuid != ownerTabID,
            let index = collection.indexInAllTabs(where: { $0.uuid == ownerTabID }) {
@@ -105,28 +153,141 @@ final class BrowserToolPermissionPromptPresenter {
     }
 
     func withdraw(requestID: String) {
-        requests.removeAll { $0.prompt.requestID == requestID }
+        requests.removeAll { $0.id == requestID }
         refresh()
     }
 
     private func answer(_ requestID: String, with decision: ClientToolPermissionDecision) {
-        guard let index = requests.firstIndex(where: { $0.prompt.requestID == requestID }) else { return }
+        guard let index = requests.firstIndex(where: { $0.id == requestID }) else { return }
         let request = requests.remove(at: index)
         // Before refresh, so an allowed call's use has started when its prompt closes.
-        if let prompter = request.prompter {
-            respond(request.prompt, decision, prompter)
+        if case .toolPrompt(let tool) = request.kind, let prompter = tool.prompter {
+            respond(tool.prompt, decision, prompter)
         }
         refresh()
     }
 
+    // MARK: - Translate offer
+
+    /// Offers to translate the page `tabID` just loaded in `window`, replacing its earlier offer; nil withdraws it
+    /// and is sent for every new document.
+    func offerTranslation(languageCode: String?, tabID: TabIdentifier, window: NSWindow? = nil) {
+        if languageCode == nil { translateOfferSuppressedTabIDs.remove(tabID) }
+        guard translateOfferLanguageCode(for: tabID) != languageCode else { return }
+        requests.removeAll { $0.ownerTabID == tabID && $0.translateOfferLanguageCode != nil }
+        if let languageCode, !translateOfferDismissedTabIDs.contains(tabID), !translateOfferSuppressedTabIDs.contains(tabID),
+           isAllowedByTranslatePages(languageCode),
+           let collection = ownerCollection(ofTabID: tabID, shownIn: window),
+           !collection.isBurner,
+           windowController(for: collection)?.mainViewController.aiChatCoordinator.isSidebarOpen(for: tabID) != true {
+            if let suppressor = promptHoldingDuckAIButton(of: collection, for: tabID) {
+                suppressTranslateOffer(on: tabID, by: suppressor)
+            } else {
+                requests.append(Request(id: UUID().uuidString, ownerTabID: tabID, collection: collection,
+                                        kind: .translateOffer(languageCode: languageCode, choice: TranslateOfferChoice())))
+                observeSelection(of: collection)
+            }
+        }
+        refresh()
+    }
+
+    /// The local-model prompt opens at `window`'s Duck.ai button.
+    func localModelPromptWillShow(in window: NSWindow?) {
+        localModelPromptWindow = window
+        guard let collection = windowControllersManager.mainWindowControllers.first(where: { $0.window === window })?
+            .mainViewController.tabCollectionViewModel else { return }
+        suppressTranslateOffers(in: collection, by: .localModel)
+        refresh()
+    }
+
+    func localModelPromptDidClose() {
+        localModelPromptWindow = nil
+        refresh()
+    }
+
+    // A tool prompt waiting on the offer's own tab would show there first, so it holds that tab's button too.
+    private func promptHoldingDuckAIButton(of collection: TabCollectionViewModel, for tabID: TabIdentifier) -> TranslateOfferSuppressor? {
+        if showsLocalModelPrompt(collection) {
+            return .localModel
+        }
+        let shownID = shown[ObjectIdentifier(collection)]?.requestID
+        if requests.contains(where: { $0.translateOfferLanguageCode == nil && $0.isLive && ($0.id == shownID || $0.ownerTabID == tabID) }) {
+            return .browserTool
+        }
+        return nil
+    }
+
+    /// Closes the offer showing in `collection` and any on `tabID`; offers hidden on other tabs come back as usual (R8).
+    private func suppressTranslateOffers(in collection: TabCollectionViewModel, alsoOn tabID: TabIdentifier? = nil,
+                                         by suppressor: TranslateOfferSuppressor) {
+        let shownID = shown[ObjectIdentifier(collection)]?.requestID
+        let isSuppressed: (Request) -> Bool = { $0.translateOfferLanguageCode != nil && ($0.id == shownID || $0.ownerTabID == tabID) }
+        let tabIDs = requests.filter(isSuppressed).map(\.ownerTabID)
+        requests.removeAll(where: isSuppressed)
+        tabIDs.forEach { suppressTranslateOffer(on: $0, by: suppressor) }
+    }
+
+    private func suppressTranslateOffer(on tabID: TabIdentifier, by suppressor: TranslateOfferSuppressor) {
+        guard translateOfferSuppressedTabIDs.insert(tabID).inserted else { return }
+        translateOfferSuppressed(suppressor)
+    }
+
+    // A pinned tab is in every window's collection: its web view's window picks one, or, when it shows in none, the main window.
+    private func ownerCollection(ofTabID tabID: TabIdentifier, shownIn window: NSWindow?) -> TabCollectionViewModel? {
+        if let collection = (window?.windowController as? MainWindowController)?.mainViewController.tabCollectionViewModel
+            ?? AIChatTabPickerSource.collection(containingTabID: tabID, in: windowControllersManager) {
+            return collection
+        }
+        let owners = windowControllersManager.mainWindowControllers.filter {
+            $0.mainViewController.tabCollectionViewModel.indexInAllTabs(where: { $0.uuid == tabID }) != nil
+        }
+        return (owners.first { $0.window?.isMainWindow == true } ?? owners.first)?.mainViewController.tabCollectionViewModel
+    }
+
+    private func isAllowedByTranslatePages(_ languageCode: String) -> Bool {
+        translatePages.mode == .alwaysAsk && !translatePages.isExcluded(languageCode: languageCode)
+    }
+
+    /// The box's state lives with the offer, so a popover rebuilt on a tab switch keeps it.
+    func translateOfferChoice(for tabID: TabIdentifier) -> TranslateOfferChoice? {
+        requests.lazy.compactMap { $0.ownerTabID == tabID ? $0.translateOfferChoice : nil }.first
+    }
+
+    func translateOfferLanguageCode(for tabID: TabIdentifier) -> String? {
+        requests.lazy.compactMap { $0.ownerTabID == tabID ? $0.translateOfferLanguageCode : nil }.first
+    }
+
+    /// Anything but Translate keeps the tab from offering again (R6).
+    func answerTranslateOffer(for tabID: TabIdentifier, translate: Bool) {
+        guard let index = requests.firstIndex(where: { $0.ownerTabID == tabID && $0.translateOfferLanguageCode != nil }) else { return }
+        let request = requests.remove(at: index)
+        if request.translateOfferChoice?.dontAskAgain == true, let languageCode = request.translateOfferLanguageCode {
+            translatePages.exclude(languageCode: languageCode)
+        }
+        if translate {
+            // The owner tab is the selected one while its offer shows.
+            let translator = request.collection.flatMap(windowController(for:))?.mainViewController.aiChatTranslator
+            Task { await translator?.translateCurrentPage() }
+        } else {
+            translateOfferDismissedTabIDs.insert(tabID)
+        }
+        refresh()
+    }
+
+    private var isRefreshing = false
+
     private func refresh() {
-        requests.removeAll { $0.collection == nil || $0.prompter == nil }
+        // Showing an offer records its language, and that write notifies back here.
+        guard !isRefreshing else { return }
+        isRefreshing = true
+        defer { isRefreshing = false }
+        requests.removeAll { !$0.isLive || !($0.translateOfferLanguageCode.map(isAllowedByTranslatePages) ?? true) }
         let collections = Dictionary(requests.compactMap { request in request.collection.map { (ObjectIdentifier($0), $0) } },
                                      uniquingKeysWith: { first, _ in first })
 
         for (key, current) in shown {
             let next = collections[key].flatMap(oldestRequest(selectedIn:))
-            guard next?.prompt.requestID != current.requestID else { continue }
+            guard next?.id != current.requestID else { continue }
             shown[key] = nil
             current.popover.close()
             current.keyMonitor.map(NSEvent.removeMonitor)
@@ -146,61 +307,98 @@ final class BrowserToolPermissionPromptPresenter {
 
     private func oldestRequest(selectedIn collection: TabCollectionViewModel) -> Request? {
         guard let selectedTabID = collection.selectedTabViewModel?.tab.uuid else { return nil }
-        return requests.first { $0.collection === collection && $0.ownerTabID == selectedTabID }
+        // An offer on a tab switched to under the local-model prompt waits until that prompt closes.
+        let holdsOffers = showsLocalModelPrompt(collection)
+        return requests.first { $0.collection === collection && $0.ownerTabID == selectedTabID && !(holdsOffers && $0.translateOfferLanguageCode != nil) }
+    }
+
+    private func showsLocalModelPrompt(_ collection: TabCollectionViewModel) -> Bool {
+        localModelPromptWindow != nil && localModelPromptWindow === windowController(for: collection)?.window
     }
 
     private func show(_ request: Request, in collection: TabCollectionViewModel, key: ObjectIdentifier) {
         guard let tabBar = windowController(for: collection)?.mainViewController.tabBarViewController else { return }
-        let prompt = request.prompt
         let popover = NSPopover()
         popover.behavior = .applicationDefined
-        let selection = request.selection
-        let content = NSHostingController(rootView: BrowserToolPermissionPromptView(prompt: prompt, selection: selection) { [weak self] decision in
-            self?.answer(prompt.requestID, with: decision)
-        })
+        let content: NSViewController
+        let icon: NSImage
+        let title: String
+        let dismiss: () -> Void
+        let primary: () -> Void
+        switch request.kind {
+        case .toolPrompt(let tool):
+            let prompt = tool.prompt
+            let selection = tool.selection
+            let hosting = NSHostingController(rootView: BrowserToolPermissionPromptView(prompt: prompt, selection: selection) { [weak self] decision in
+                self?.answer(prompt.requestID, with: decision)
+            })
+            if #available(macOS 13.0, *), prompt.accessToolNames != nil {
+                // Taking a tool out or undoing it changes the height.
+                hosting.sizingOptions = .preferredContentSize
+            }
+            content = hosting
+            // A waiting prompt shows the AI icon; only tools that run without asking show their own.
+            icon = DesignSystemImages.Glyphs.Size16.aiGeneral
+            title = BrowserToolPermissionPromptText.title(toolName: prompt.toolName, targetsOtherTab: prompt.targetsOtherTab)
+            dismiss = { [weak self] in self?.answer(prompt.requestID, with: .dismiss) }
+            primary = { [weak self] in
+                let decision: ClientToolPermissionDecision
+                if prompt.accessToolNames != nil {
+                    decision = .allowAccess(excluding: Set(selection.removed))
+                } else {
+                    decision = prompt.offersAllowForChat ? .allowForChat : .allowOnce
+                }
+                self?.answer(prompt.requestID, with: decision)
+            }
+        case .translateOffer(let languageCode, let choice):
+            let tabID = request.ownerTabID
+            content = NSHostingController(rootView: TranslateOfferPromptView(
+                pageLanguageName: TranslateOfferLanguage.name(of: languageCode) ?? languageCode,
+                userLanguageName: TranslateOfferLanguage.name(of: Locale.preferredLanguages.first) ?? "",
+                choice: choice
+            ) { [weak self] translate in
+                self?.answerTranslateOffer(for: tabID, translate: translate)
+            })
+            icon = DesignSystemImages.Glyphs.Size16.translate
+            title = UserText.translateOfferTitle
+            dismiss = { [weak self] in self?.answerTranslateOffer(for: tabID, translate: false) }
+            primary = { [weak self] in self?.answerTranslateOffer(for: tabID, translate: true) }
+        }
         popover.contentViewController = content
         // Resized after showing, a popover drifts off its anchor.
         popover.contentSize = content.view.fittingSize
-        if #available(macOS 13.0, *), prompt.accessToolNames != nil {
-            // Taking a tool out or undoing it changes the height.
-            content.sizingOptions = .preferredContentSize
-        }
-        let primary: () -> ClientToolPermissionDecision = {
-            if prompt.accessToolNames != nil { return .allowAccess(excluding: Set(selection.removed)) }
-            return prompt.offersAllowForChat ? .allowForChat : .allowOnce
-        }
+        let requestID = request.id
         let open: (NSView) -> Void = { [weak self, weak popover] anchor in
             guard let popover, !popover.isShown,
-                  self?.shown.values.contains(where: { $0.requestID == prompt.requestID }) == true else { return }
+                  self?.shown.values.contains(where: { $0.requestID == requestID }) == true else { return }
             popover.show(positionedBelow: anchor.bounds.insetFromLineOfDeath(flipped: anchor.isFlipped), in: anchor)
             // Key, so its shortcuts only answer it and never a key press meant for the page or address bar.
             popover.contentViewController?.view.window?.makeKey()
+            // Only an offer the user could see counts, and the reveal can be cut short by a tab switch.
+            if let languageCode = request.translateOfferLanguageCode { self?.translatePages.recordOffered(languageCode: languageCode) }
         }
         // Before the button: it may call `open` right away.
-        shown[key] = Shown(requestID: prompt.requestID, popover: popover, tabBar: tabBar,
-                           keyMonitor: keyMonitor(answering: prompt.requestID, primary: primary, popover: popover, ownerWindow: tabBar.view.window))
-        // A waiting prompt shows the AI icon; only tools that run without asking show their own.
-        tabBar.showBrowserToolPermissionButton(icon: DesignSystemImages.Glyphs.Size16.aiGeneral,
-                                               title: BrowserToolPermissionPromptText.title(toolName: prompt.toolName,
-                                                                                            targetsOtherTab: prompt.targetsOtherTab),
-                                               action: { [weak self] _ in self?.answer(prompt.requestID, with: .dismiss) },
-                                               shown: open)
+        shown[key] = Shown(requestID: requestID, popover: popover, tabBar: tabBar,
+                           keyMonitor: keyMonitor(dismiss: dismiss, primary: primary, popover: popover, ownerWindow: tabBar.view.window,
+                                                   answersPageKeys: request.translateOfferLanguageCode == nil))
+        tabBar.showBrowserToolPermissionButton(icon: icon, title: title, action: { _ in dismiss() }, shown: open)
     }
 
     // The browser window takes focus back from the popover, so its key presses answer too,
-    // unless a text field such as the address bar has focus.
-    private func keyMonitor(answering requestID: String, primary: @escaping () -> ClientToolPermissionDecision, popover: NSPopover,
-                            ownerWindow: NSWindow?) -> Any? {
-        NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self, weak popover, weak ownerWindow] event in
-            guard let self, let popover, popover.isShown, let window = event.window,
-                  window === popover.contentViewController?.view.window || (window === ownerWindow && !(window.firstResponder is NSText))
-            else { return event }
+    // unless a text field such as the address bar has focus. An unrequested offer also leaves keys typed in the page to it.
+    private func keyMonitor(dismiss: @escaping () -> Void, primary: @escaping () -> Void, popover: NSPopover,
+                            ownerWindow: NSWindow?, answersPageKeys: Bool) -> Any? {
+        NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak popover, weak ownerWindow] event in
+            guard let popover, popover.isShown, let window = event.window else { return event }
+            let inOwnerWindow = window === ownerWindow && !(window.firstResponder is NSText)
+                && (answersPageKeys || !(window.firstResponder is WKWebView))
+            guard window === popover.contentViewController?.view.window || inOwnerWindow else { return event }
             let modifiers = event.modifierFlags.intersection([.command, .shift, .option, .control])
             switch (event.keyCode, modifiers) {
             case (53, []): // Esc
-                answer(requestID, with: .dismiss)
+                dismiss()
             case (36, .command), (76, .command): // ⌘Return, ⌘Enter
-                answer(requestID, with: primary())
+                primary()
             default:
                 return event
             }

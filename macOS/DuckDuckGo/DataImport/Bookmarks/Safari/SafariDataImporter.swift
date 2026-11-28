@@ -43,15 +43,20 @@ final class SafariDataImporter: DataImporter {
 
     private let bookmarkImporter: BookmarkImporter
     private let faviconManager: FaviconManagement
+    private let faviconRasterizer: FaviconRasterizer
     private let profile: DataImport.BrowserProfile
     private var source: DataImport.Source {
         profile.browser.importSource
     }
 
-    init(profile: DataImport.BrowserProfile, bookmarkImporter: BookmarkImporter, faviconManager: FaviconManagement = NSApp.delegateTyped.faviconManager) {
+    init(profile: DataImport.BrowserProfile,
+         bookmarkImporter: BookmarkImporter,
+         faviconManager: FaviconManagement = NSApp.delegateTyped.faviconManager,
+         faviconRasterizer: FaviconRasterizer = NSApp.delegateTyped.faviconRasterizer) {
         self.profile = profile
         self.bookmarkImporter = bookmarkImporter
         self.faviconManager = faviconManager
+        self.faviconRasterizer = faviconRasterizer
     }
 
     var importableTypes: [DataImport.DataType] {
@@ -113,18 +118,7 @@ final class SafariDataImporter: DataImporter {
 
         switch faviconsResult {
         case .success(let faviconsByURL):
-            let faviconsByDocument = faviconsByURL.reduce(into: [URL: [Favicon]]()) { result, pair in
-                guard let pageURL = URL(string: pair.key) else { return }
-                let favicons = pair.value.map {
-                    Favicon(identifier: UUID(),
-                            url: pageURL,
-                            image: $0.image,
-                            relation: .icon,
-                            documentUrl: pageURL,
-                            dateCreated: Date())
-                }
-                result[pageURL] = favicons
-            }
+            let faviconsByDocument = await faviconRasterizer.favicons(fromImported: faviconsByURL)
             await faviconManager.handleFaviconsByDocumentUrl(faviconsByDocument)
             PixelKit.fire(GeneralPixel.dataImportSucceeded(action: .favicons, source: source.pixelSourceParameterName, sourceVersion: sourceVersion), frequency: .dailyAndStandard)
 

@@ -284,6 +284,8 @@ struct SettingsRootView: View {
             SettingsGeneralView().environmentObject(viewModel)
         case .cookiePopupProtection:
             CookiePopUpProtectionView().environmentObject(viewModel)
+        case .dataClearing:
+            SettingsDataClearingView(viewModel: viewModel.dataClearingViewModel).environmentObject(viewModel)
         case .about:
             AboutView().environmentObject(viewModel)
         case .subscriptionSettings:

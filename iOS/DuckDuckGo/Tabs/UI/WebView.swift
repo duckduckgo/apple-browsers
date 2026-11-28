@@ -51,6 +51,67 @@ final class WebView: WKWebView {
 
     private var findInPageQueryObserver: NSObjectProtocol?
 
+    struct FloatingChromeInsets {
+        let minimum: UIEdgeInsets
+        let maximum: UIEdgeInsets
+        let current: UIEdgeInsets
+    }
+
+    private struct LayoutParameters: Equatable {
+        let layoutSize: CGSize
+        let minimumUnobscuredSize: CGSize
+        let maximumUnobscuredSize: CGSize
+    }
+
+    private enum LayoutParametersSelector {
+        static let override = NSSelectorFromString("_overrideLayoutParametersWithMinimumLayoutSize:minimumUnobscuredSizeOverride:maximumUnobscuredSizeOverride:")
+        static let clear = NSSelectorFromString("_clearOverrideLayoutParameters")
+        static let overrideTypeEncoding = "v@:{CGSize=dd}{CGSize=dd}{CGSize=dd}"
+    }
+
+    var floatingChromeInsets: FloatingChromeInsets? {
+        didSet { updateLayoutParametersOverride() }
+    }
+
+    private var appliedLayoutParameters: LayoutParameters?
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        updateLayoutParametersOverride()
+    }
+
+    /// WebKit sizes `vh` to the full bounds unless the layout parameters are overridden, and
+    /// `setMinimumViewportInset` only sizes `svh` and `lvh`. Once overridden, WebKit stops deriving the layout
+    /// size, so it must be supplied as the bounds minus the current obscured insets.
+    private func updateLayoutParametersOverride() {
+        guard let floatingChromeInsets, !bounds.isEmpty else {
+            clearLayoutParametersOverride()
+            return
+        }
+        let parameters = LayoutParameters(layoutSize: bounds.inset(by: floatingChromeInsets.current).size,
+                                          minimumUnobscuredSize: bounds.inset(by: floatingChromeInsets.maximum).size,
+                                          maximumUnobscuredSize: bounds.inset(by: floatingChromeInsets.minimum).size)
+        guard parameters != appliedLayoutParameters,
+              let method = class_getInstanceMethod(object_getClass(self), LayoutParametersSelector.override),
+              let typeEncoding = method_getTypeEncoding(method),
+              String(cString: typeEncoding).filter({ !$0.isNumber }) == LayoutParametersSelector.overrideTypeEncoding else { return }
+        typealias Override = @convention(c) (WKWebView, Selector, CGSize, CGSize, CGSize) -> Void
+        unsafeBitCast(method_getImplementation(method), to: Override.self)(self, LayoutParametersSelector.override,
+                                                                           parameters.layoutSize,
+                                                                           parameters.minimumUnobscuredSize,
+                                                                           parameters.maximumUnobscuredSize)
+        appliedLayoutParameters = parameters
+    }
+
+    private func clearLayoutParametersOverride() {
+        guard appliedLayoutParameters != nil else { return }
+        appliedLayoutParameters = nil
+        if responds(to: LayoutParametersSelector.clear) {
+            perform(LayoutParametersSelector.clear)
+        }
+        setNeedsLayout()
+    }
+
     /// Tracks the system find navigator's query so the last term is remembered per tab, even when dismissed via the
     /// system Done button (which bypasses our own dismissal path). The navigator's search field posts
     /// `textDidChangeNotification` as the user types, so we snapshot the query while the navigator is visible.

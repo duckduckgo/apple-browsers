@@ -118,6 +118,8 @@ public struct AIChatNativeConfigValues: Codable {
     /// `true` when native's chat input continues the open chat by voice: Duck.ai then sends
     /// `voiceInChatAvailability` and accepts `startVoiceSession` with `inCurrentChat`.
     public var supportsVoiceInChat = false
+    /// `true` when native applies the user's "Default AI Model" setting to new chats, so Duck.ai shows that setting.
+    public var supportsDefaultModelSetting = false
     public let supportsURLChatIDRestoration: Bool
     public let supportsFullChatRestoration: Bool
     public let supportsPageContext: Bool

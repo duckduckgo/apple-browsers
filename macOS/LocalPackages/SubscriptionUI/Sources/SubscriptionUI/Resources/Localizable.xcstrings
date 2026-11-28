@@ -2096,62 +2096,62 @@
         }
       }
     },
-    "subscription.dialog.withdraw.features.message" : {
-      "comment" : "Second paragraph of the dialog confirming withdrawal from the subscription contract. Parameter is a localized list of features, e.g. VPN, Personal Information Removal and advanced Duck.ai models.",
+    "subscription.dialog.withdraw.feature.vpn" : {
+      "comment" : "VPN item in the list of features the user loses access to after withdrawing from the subscription contract, e.g. the VPN, Identity Theft Restoration and advanced Duck.ai models",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ funktionieren nicht mehr, sobald du bestätigst."
+            "value" : "das VPN"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "%@ stop working once you confirm."
+            "value" : "the VPN"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ dejarán de funcionar una vez que confirmes."
+            "value" : "la VPN"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ cesse de fonctionner une fois que vous avez confirmé."
+            "value" : "le VPN"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dopo aver confermato, %@ smetteranno di funzionare."
+            "value" : "la VPN"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ werken niet meer zodra je bevestigt."
+            "value" : "de VPN"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Po potwierdzeniu funkcje %@ przestaną działać."
+            "value" : "VPN"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ deixarão de funcionar assim que confirmares."
+            "value" : "à VPN"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "После подтверждения вы потеряете доступ к таким функциям: %@."
+            "value" : "VPN"
           }
         }
       }
@@ -2212,6 +2212,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Оставить подписку"
+          }
+        }
+      }
+    },
+    "subscription.dialog.withdraw.lose.access.message" : {
+      "comment" : "Second paragraph of the dialog confirming withdrawal from the subscription contract. Parameter is a localized list of features, e.g. the VPN, Identity Theft Restoration and advanced Duck.ai models.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sobald du bestätigst, verlierst du den Zugriff auf %@."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Once you confirm, you will lose access to %@."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una vez que confirmes, perderás el acceso a %@."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une fois que vous aurez confirmé, vous n'aurez plus accès à cette fonctionnalité : %@."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una volta confermato, perderai l'accesso a %@."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zodra je bevestigt, verlies je toegang tot %@."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gdy potwierdzisz, utracisz dostęp do funkcji %@."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Assim que confirmares, perderás acesso %@."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "После подтверждения вы потеряете доступ к %@."
           }
         }
       }

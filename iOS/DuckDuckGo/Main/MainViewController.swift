@@ -664,6 +664,7 @@ class MainViewController: UIViewController {
         didSet { remoteMessageImpressionReporter.observeInputVisibility(unifiedToggleInputCoordinator) }
     }
     var browserTabMentionSuggestionsController: BrowserTabMentionSuggestionsController?
+    var newChatHintsPresenter: NewChatHintsPresenter?
     var unifiedInputStateStore: UnifiedInputStateStore?
     var isPaidAIChatEnabledForSwipe = false
     var unifiedToggleInputCancellables = Set<AnyCancellable>()
@@ -723,26 +724,6 @@ class MainViewController: UIViewController {
 
     let onboardingManager: OnboardingManaging
     
-    private var searchTokenExperiment: SearchTokenExperiment {
-        SearchTokenExperiment(featureFlagger: featureFlagger, statisticsStore: statisticsStore)
-    }
-
-    private lazy var searchTokenFetcher: SearchTokenFetcher = {
-        let settings = SearchTokenExperimentSettings(privacyConfigurationManager: privacyConfigurationManager)
-        return SearchTokenFetcher(requester: SearchTokenRequest(tokenURL: .searchToken),
-                                  ttlProvider: { settings.tokenTTL },
-                                  windowProvider: { settings.refreshWindow },
-                                  onFetchResult: { result in
-            PixelKit.fire(SearchTokenPixel.fetch(result: result.rawValue), frequency: .dailyAndCount)
-        }, onTokenRefreshed: { [weak self] in
-            // Fired from the fetcher's background context; the refresh is MainActor + iOS 18.4-only.
-            Task { @MainActor in
-                guard #available(iOS 18.4, *) else { return }
-                self?.webExtensionManager?.performSearchTokenRefresh()
-            }
-        })
-    }()
-
     /// Whether the ad-blocking rollout's Duck Player default (disable) should be applied at onboarding
     /// completion. It runs only when the rollout is active *and* the user didn't set Duck Player
     /// themselves during onboarding — the download-reason Block Ads flow includes a Duck
@@ -1093,7 +1074,8 @@ class MainViewController: UIViewController {
                                                               suggestionTrayDependencies: suggestionTrayDependencies,
                                                               appSettings: appSettings,
                                                               mobileCustomization: mobileCustomization,
-                                                              duckAiNativeStorageHandler: duckAiNativeStorageHandler)
+                                                              duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+                                                              duckAiFireModeStorageHandler: duckAiFireModeStorageHandler)
 
         viewCoordinator.navigationBarContainer.allowsOverflowHitTesting = true
         viewCoordinator.navigationBarCollectionView.allowsOverflowHitTesting = true
@@ -1308,7 +1290,8 @@ class MainViewController: UIViewController {
                                                       appSettings: appSettings,
                                                       daxEasterEggPresenter: daxEasterEggPresenter,
                                                       mobileCustomization: mobileCustomization,
-                                                      duckAiNativeStorageHandler: duckAiNativeStorageHandler)
+                                                      duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+                                                      duckAiFireModeStorageHandler: duckAiFireModeStorageHandler)
 
         swipeTabsCoordinator = SwipeTabsCoordinator(coordinator: viewCoordinator,
                                                     tabPreviewsSource: previewsSource,
@@ -3038,6 +3021,9 @@ class MainViewController: UIViewController {
                     if wasContextualFireOnboardingDialogVisible {
                         contextualOnboardingPixelReporter.measureFireButtonOnboardingDismissButtonTapped()
                     }
+                },
+                onOpenSettings: { [weak self] in
+                    self?.segueToSettingsDataClearing()
                 }
             )
         }
@@ -3123,7 +3109,6 @@ class MainViewController: UIViewController {
             tabs: tabManager.allTabsModel.tabs,
             browsingMode: tabManager.currentBrowsingMode.pixelParamValue)
         skipSERPFlow = true
-        warmSearchTokenIfEligible()
 
         /// Dismiss any keyboard restored by WKWebView when returning to foreground
         /// with the tab switcher visible. The tab switcher uses .overCurrentContext so
@@ -6303,16 +6288,24 @@ extension MainViewController: BrowserChromeDelegate {
 
     func floatingWebViewObscuredInsets(for barsVisibilityPercent: CGFloat) -> UIEdgeInsets {
         if let insets = delegateFindObscuredInsets { return insets }
-        let chromeInsets = UIEdgeInsets(top: floatingWebViewTopObscuredHeight(for: barsVisibilityPercent),
-                                       left: 0,
-                                       bottom: floatingWebViewBottomObscuredHeight(for: barsVisibilityPercent),
-                                       right: 0)
+        let chromeInsets = floatingBarsObscuredInsets(for: barsVisibilityPercent)
         guard isFloatingUIEnabled, !isKeyboardOwnedByOmnibar else { return chromeInsets }
         return BrowserKeyboardLayout.obscuredInsets(chromeInsets: chromeInsets,
                                                     keyboardFrame: viewCoordinator.isWebInputEditing
                                                         ? floatingWebInputKeyboardFrame
                                                         : view.convert(latestKeyboardFrame, from: nil),
                                                     viewBounds: view.bounds)
+    }
+
+    func floatingChromeObscuredInsets(for barsVisibilityPercent: CGFloat) -> UIEdgeInsets? {
+        viewCoordinator.isWebInputEditing ? nil : floatingBarsObscuredInsets(for: barsVisibilityPercent)
+    }
+
+    private func floatingBarsObscuredInsets(for barsVisibilityPercent: CGFloat) -> UIEdgeInsets {
+        UIEdgeInsets(top: floatingWebViewTopObscuredHeight(for: barsVisibilityPercent),
+                     left: 0,
+                     bottom: floatingWebViewBottomObscuredHeight(for: barsVisibilityPercent),
+                     right: 0)
     }
 
     private var delegateFindObscuredInsets: UIEdgeInsets? {
@@ -7573,21 +7566,6 @@ extension MainViewController: OmniBarDelegate {
         // Omnibar got focus. Lift minimal chrome bar above keyboard.
         dismissFloatingContextualInputIfPresented()
         refreshMinimalChromeBottomAnchor()
-        warmSearchTokenIfEligible()
-    }
-
-    /// Proactively warms the search token for enrolled treatment users when the search input begins editing.
-    /// Called from every "editing began" entry point. Safe to over-call:
-    /// the fetcher's refresh-ahead window coalesces redundant triggers.
-    func warmSearchTokenIfEligible() {
-        guard searchTokenExperiment.cohort == .treatment else { return }
-        // The token is UA-bound. Warm it with the UA the SERP navigation will use: the tab's desktop
-        // state resolved through the same `agent(forUrl:isDesktop:)` the WebView applies. With no current
-        // tab (e.g. an empty new tab) fall back to the same default a new tab uses (`Tab.init` sets
-        // `desktop = isLargeWidth`, Tab.swift:156) so iPad, which navigates desktop, requests a desktop token.
-        let isDesktop = currentTab?.tabModel.isDesktop ?? AppWidthObserver.shared.isLargeWidth
-        let userAgent = DefaultUserAgentManager.shared.userAgent(isDesktop: isDesktop, url: .ddg)
-        Task { await searchTokenFetcher.fetchIfNeeded(userAgent: userAgent) }
     }
 
     func onDidEndEditing() {
@@ -8191,16 +8169,6 @@ extension MainViewController: TabDelegate {
 
     /// Far longer than any real search, short enough to keep the URL well inside server limits.
     private static let maxSelectionSearchQueryLength = 500
-
-    func searchToken(for tab: TabViewController) -> String? {
-        if let token = searchTokenFetcher.retrieveToken() {
-            return token
-        } else {
-            // No live token for this SERP nav — warm now so a follow-up request finds one.
-            warmSearchTokenIfEligible()
-            return nil
-        }
-    }
 
     var isEmailProtectionSignedIn: Bool {
         emailManager.isSignedIn
@@ -8911,6 +8879,10 @@ extension MainViewController: TabDelegate {
         segueToSettingsSync()
     }
 
+    func tabDidRequestSettingsToDataClearing(_ tab: TabViewController) {
+        segueToSettingsDataClearing()
+    }
+
     func tabContentProcessDidTerminate(tab: TabViewController) {
         findInPageView?.done()
 
@@ -9366,6 +9338,12 @@ extension MainViewController: TabSwitcherDelegate {
         fireAIChatEntryPointPixel(source: .tabSwitcher, opensNewTab: true, hasPrompt: false)
         loadUrlInNewTab(aiChatSettings.aiChatURL.withChatID(chatID), inheritedAttribution: nil) {
             $0.duckAIEntrySource = .tabSwitcher
+        }
+    }
+
+    func tabSwitcherDidRequestDataClearingSettings(_ tabSwitcher: TabSwitcherViewController) {
+        tabSwitcher.dismissForDataClearingSettings {
+            self.segueToSettingsDataClearing()
         }
     }
 
@@ -10053,15 +10031,6 @@ extension MainViewController: OnboardingDelegate {
     func onboardingCompleted(controller: UIViewController) {
         markOnboardingSeen()
         daxDialogsManager.checkTimeLimit()
-
-        // Enrol new users into the Search Token experiment. Must run here (post-onboarding) so we only
-        // enrol new users; enrollIfEligible function additionally excludes returning users (reinstallers).
-        searchTokenExperiment.enrollIfEligible()
-        // The launch-time embedded-extension sync ran before enrollment (cohort was still nil), so
-        // resync now — otherwise a treatment user's first session never loads the search-token extension.
-        if #available(iOS 18.4, *) {
-            webExtensionLifecycleCoordinator?.sync()
-        }
 
         appSettings.applyAdBlockingRolloutDuckPlayerDefaultsIfNeeded(rolloutActive: shouldApplyAdBlockingRolloutDuckPlayerDefault)
 
@@ -10793,13 +10762,6 @@ extension MainViewController {
         guard let scope = currentDuckAIWideEventFlowScope else { return }
         duckAIWideEventInstrumentation.frontendSubmissionAcknowledged(scope: scope)
     }
-}
-
-// MARK: - SearchTokenProviding
-
-@available(iOS 18.4, *)
-extension MainViewController: SearchTokenProviding {
-    func currentToken() -> String? { searchTokenFetcher.retrieveToken() }
 }
 
 /// What `loadUrlInNewTab` was asked to show, kept together while it waits for a data clear or a transition.

@@ -60,6 +60,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     private let modeToggleTextModel: IPadModeToggleTextModeling = IPadModeToggleTextModel()
     private let featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery()
     private var modelPickerController: IPadOmnibarModelPickerController?
+    private var isFireMode = false
     private var reasoningPickerController: IPadOmnibarReasoningPickerController?
     private var toolPickerController: IPadOmnibarToolPickerController?
     private var attachmentController: IPadOmnibarAttachmentController?
@@ -162,6 +163,12 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     }
 
     // MARK: - Initialization
+
+    override func refreshFireMode(fireMode: Bool) {
+        super.refreshFireMode(fireMode: fireMode)
+        isFireMode = fireMode
+        modelPickerController?.refreshFireMode(fireMode)
+    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -725,21 +732,16 @@ extension DefaultOmniBarViewController {
 
 extension DefaultOmniBarViewController {
 
-    /// Over the usage limit, new chats start on the default web sends in the usage-limits snapshot.
-    private var overLimitNewChatDefaults: AnyPublisher<AIChatOverLimitNewChatDefault, Never>? {
-        dependencies.duckAiNativeStorageHandler.map {
-            DuckAiUsageLimitsStore(storageHandler: $0, featureFlagger: dependencies.featureFlagger)
-                .overLimitNewChatDefaultPublisher(receivingUpdatesOn: DispatchQueue.main)
-        }
-    }
-
     private func setUpModelPickerIfNeeded() {
         guard dependencies.aiChatAddressBarExperience.isIPadAIToggleExperienceEnabled else { return }
 
         let controller = IPadOmnibarModelPickerController(
             startsNewChatsOnDefault: dependencies.featureFlagger.isFeatureOn(.aiChatNewChatDefaultModel),
-            overLimitNewChatDefaults: overLimitNewChatDefaults
+            duckAiNativeStorageHandler: dependencies.duckAiNativeStorageHandler,
+            duckAiFireModeStorageHandler: dependencies.duckAiFireModeStorageHandler,
+            featureFlagger: dependencies.featureFlagger
         )
+        controller.refreshFireMode(isFireMode)
         modelPickerController = controller
 
         // The reasoning and tool pickers share the model picker's store so all chips reflect the

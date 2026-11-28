@@ -188,6 +188,10 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     var selectedDataBroker: DataBroker?
     var error: Error?
     var profileQueryLabels: [Int64: String] = [:]
+    /// Shows debug opt-outs for brokers that need the user in the same window the production feature uses.
+    @MainActor private var assistedOptOutPresenter: AssistedOptOutWindowPresenter?
+    /// Debug results often lack IDs and can be opted out more than once, so each session is numbered to keep its window apart.
+    @MainActor private var assistedOptOutCount: Int64 = 0
 
     let brokerResources: [BrokerResource]
     var brokers: [DataBroker] { brokerResources.map(\.broker) }
@@ -312,27 +316,24 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
             dataBroker = scanResult.dataBroker
         }
 
+        let optOutTimeout = usesConfiguredTimeouts ? brokerJobExecutionConfig.optOutJobTimeout : nil
+        if let steps = dataBroker.assistedOptOutSteps() {
+            presentAssistedOptOut(scanResult: scanResult, dataBroker: dataBroker, steps: steps, timeout: optOutTimeout)
+            return
+        }
+
         isProgressActive = true
         progressText = "Starting opt-out..."
         addOptOutStartedEvent(for: scanResult)
-        let optOutTimeout = usesConfiguredTimeouts ? brokerJobExecutionConfig.optOutJobTimeout : nil
         let showWebView = !hidesWebView
         Task {
             do {
-                let stageCalculator = FakeStageDurationCalculator { [weak self] kind, actionType, details in
-                    self?.addRunnerDebugEvent(
-                        kind: kind,
-                        actionType: actionType,
-                        details: details,
-                        stepType: .optOut,
-                        dataBroker: dataBroker,
-                        profileQuery: scanResult.profileQuery)
-                }
                 let requiresEmailConfirmation = try await self.runner.optOut(scanResult,
                                                                              dataBroker: dataBroker,
                                                                              showWebView: showWebView,
                                                                              timeout: optOutTimeout,
-                                                                             stageCalculator: stageCalculator)
+                                                                             stageCalculator: self.optOutStageCalculator(dataBroker: dataBroker,
+                                                                                                                         scanResult: scanResult))
 
                 if requiresEmailConfirmation {
                     addOptOutAwaitingEmailConfirmationEvent(for: scanResult)
@@ -367,6 +368,62 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                 showAlert(for: error)
             }
         }
+    }
+
+    private func optOutStageCalculator(dataBroker: DataBroker, scanResult: DebugScanResult) -> FakeStageDurationCalculator {
+        FakeStageDurationCalculator { [weak self] kind, actionType, details in
+            self?.addRunnerDebugEvent(
+                kind: kind,
+                actionType: actionType,
+                details: details,
+                stepType: .optOut,
+                dataBroker: dataBroker,
+                profileQuery: scanResult.profileQuery)
+        }
+    }
+
+    @MainActor
+    private func presentAssistedOptOut(scanResult: DebugScanResult, dataBroker: DataBroker, steps: AssistedOptOutSteps, timeout: TimeInterval?) {
+        let presenter = assistedOptOutPresenter ?? AssistedOptOutWindowPresenter()
+        assistedOptOutPresenter = presenter
+        assistedOptOutCount += 1
+        let session = AssistedOptOutSession(id: AssistedOptOutID(brokerId: dataBroker.id ?? 0,
+                                                                 profileQueryId: scanResult.profileQuery.id ?? 0,
+                                                                 extractedProfileId: assistedOptOutCount),
+                                            broker: .init(name: dataBroker.name, url: dataBroker.url),
+                                            steps: steps)
+        session.onUserTurnStarted = { presenter.userTurnStarted(in: $0) }
+        session.onCancelRequested = { presenter.dismiss($0) }
+        session.onBeginRequested = { [weak self] session in
+            guard let self else { return }
+            self.isProgressActive = true
+            self.progressText = "Assisted opt-out in progress"
+            self.addOptOutStartedEvent(for: scanResult)
+            Task { @MainActor in
+                do {
+                    let requiresEmailConfirmation = try await self.runner.optOut(scanResult,
+                                                                                 dataBroker: dataBroker,
+                                                                                 showWebView: false,
+                                                                                 timeout: timeout,
+                                                                                 stageCalculator: self.optOutStageCalculator(dataBroker: dataBroker,
+                                                                                                                             scanResult: scanResult),
+                                                                                 assistanceObserver: session,
+                                                                                 shouldRunNextStep: { [weak session] in session?.isCancelled == false })
+                    session.markSubmitted()
+                    if requiresEmailConfirmation {
+                        self.addOptOutAwaitingEmailConfirmationEvent(for: scanResult)
+                    } else {
+                        self.addOptOutConfirmedEvent(for: scanResult)
+                    }
+                } catch {
+                    if !session.isCancelled { self.addOptOutErrorEvent(for: scanResult, error: error) }
+                    presenter.dismiss(session)
+                }
+                self.isProgressActive = false
+                self.progressText = "Idle"
+            }
+        }
+        presenter.present(session)
     }
 
     private func createBrokerProfileQueryData(for broker: DataBroker) -> [BrokerProfileQueryData] {

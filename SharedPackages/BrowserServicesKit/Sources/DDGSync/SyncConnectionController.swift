@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import WideEvent
 
 @MainActor
 public protocol SyncConnectionControllerDelegate: AnyObject {
@@ -54,7 +55,8 @@ public protocol SyncConnectionControllerDelegate: AnyObject {
 
 public enum SyncConnectionError: Error, Equatable {
     case unableToRecognizeCode
-    case updateRequired
+    case unreadablePairingMessage
+    case updateRequired(detectedDuring: SyncSetupErrorStage)
     case unsupportedThirdPartyRecoveryCode
     case thirdPartyAccountAlreadyUpgraded
     case syncCancelledFromOtherDevice
@@ -92,6 +94,11 @@ public enum SyncConnectionError: Error, Equatable {
     case missingThirdPartyKey
     case localStorageFailed
     case invalidCredentials
+}
+
+public enum SyncSetupErrorStage: Equatable {
+    case codeRead
+    case pairingSession
 }
 
 public enum SyncSetupTimeoutStage: String, Equatable, Sendable {
@@ -155,7 +162,7 @@ public extension SyncConnectionError {
             return SyncSetupFailureReason.incompatibleCode
         case .thirdPartyAccountAlreadyUpgraded:
             return SyncSetupFailureReason.alreadyUpgraded
-        case .unableToRecognizeCode:
+        case .unableToRecognizeCode, .unreadablePairingMessage:
             return SyncSetupFailureReason.unrecognizedCode
         case .accountCreationFailed:
             return SyncSetupFailureReason.accountCreationFailed
@@ -193,6 +200,34 @@ public extension SyncConnectionError {
             return SyncSetupFailureReason.missingThirdPartyKey
         case .localStorageFailed:
             return SyncSetupFailureReason.localStorageFailed
+        }
+    }
+
+    var syncSetupWideEventOutcome: SyncSetupWideEventData.Outcome {
+        typealias Outcome = SyncSetupWideEventData.Outcome
+        typealias StatusReason = SyncSetupWideEventData.StatusReason
+        switch self {
+        case .unableToRecognizeCode,
+                .unsupportedThirdPartyRecoveryCode,
+                .updateRequired(detectedDuring: .codeRead):
+            return Outcome(status: .cancelled, statusReason: StatusReason.codeRejected)
+        case .thirdPartyAccountAlreadyUpgraded:
+            return Outcome(status: .cancelled, statusReason: StatusReason.alreadyUpgraded)
+        case .syncCancelledFromOtherDevice:
+            return Outcome(status: .cancelled, statusReason: StatusReason.peerLeft)
+        case .pairingV2SessionTimedOut(let stage):
+            switch stage {
+            case .waitingForJoinStatus:
+                return Outcome(status: .success)
+            case .waitingForPeerHello, .waitingForConfirmation:
+                return Outcome(status: .cancelled, statusReason: SyncSetupFailureReason.sessionTimeout, timeoutStage: stage?.rawValue)
+            case .waitingForPeerStatus, .waitingForRecoveryCode, .loggingIn, nil:
+                return Outcome(status: .failure,
+                               statusReason: SyncSetupFailureReason.sessionTimeout,
+                               timeoutStage: stage?.rawValue ?? SyncSetupWideEventData.unknownTimeoutStage)
+            }
+        default:
+            return Outcome(status: .failure, statusReason: syncSetupFailureReason)
         }
     }
 
@@ -494,7 +529,7 @@ public class SyncConnectionController: SyncConnectionControlling {
             return false
         }
 
-        await delegate?.controllerDidError(.updateRequired, underlyingError: PairingV2Error.unsupportedVersion(unsupportedVersion), setupRole: setupRole)
+        await delegate?.controllerDidError(.updateRequired(detectedDuring: .codeRead), underlyingError: PairingV2Error.unsupportedVersion(unsupportedVersion), setupRole: setupRole)
         return false
     }
 
@@ -563,8 +598,10 @@ public class SyncConnectionController: SyncConnectionControlling {
             }
         }
 
+        var errorStage = SyncSetupErrorStage.codeRead
         do {
             try await coordinator.startScanning(qrPayload: qrPayload)
+            errorStage = .pairingSession
             let completion = try await pollPairingV2UntilFinished(coordinator)
             await handlePairingV2Completion(completion, coordinator: coordinator, setupRole: setupRole)
             return true
@@ -574,7 +611,7 @@ public class SyncConnectionController: SyncConnectionControlling {
             do {
                 try await coordinator.completeAccountSwitch(didSucceed: didSwitchAccounts)
             } catch {
-                await handlePairingV2PollingError(error, coordinator: coordinator, setupRole: setupRole)
+                await handlePairingV2PollingError(error, detectedDuring: .pairingSession, coordinator: coordinator, setupRole: setupRole)
                 if shouldEndFlowAfterReporting {
                     await delegate?.controllerDidFinishReportingAccountSwitch(didSucceed: false)
                 }
@@ -585,7 +622,7 @@ public class SyncConnectionController: SyncConnectionControlling {
             }
             return didSwitchAccounts
         } catch {
-            await handlePairingV2PollingError(error, coordinator: coordinator, setupRole: setupRole)
+            await handlePairingV2PollingError(error, detectedDuring: errorStage, coordinator: coordinator, setupRole: setupRole)
             return false
         }
     }
@@ -610,7 +647,7 @@ public class SyncConnectionController: SyncConnectionControlling {
                 }
                 await handlePairingV2Completion(completion, coordinator: coordinator, setupRole: setupRole)
             } catch {
-                await handlePairingV2PollingError(error, coordinator: coordinator, setupRole: setupRole)
+                await handlePairingV2PollingError(error, detectedDuring: .pairingSession, coordinator: coordinator, setupRole: setupRole)
             }
         }
 
@@ -619,7 +656,10 @@ public class SyncConnectionController: SyncConnectionControlling {
         }
     }
 
-    private func handlePairingV2PollingError(_ error: Error, coordinator: PairingV2Coordinator, setupRole: SyncSetupRole) async {
+    private func handlePairingV2PollingError(_ error: Error,
+                                             detectedDuring stage: SyncSetupErrorStage,
+                                             coordinator: PairingV2Coordinator,
+                                             setupRole: SyncSetupRole) async {
         if let pairingV2Error = error as? PairingV2Error, pairingV2Error == .cancelled {
             return
         }
@@ -644,7 +684,7 @@ public class SyncConnectionController: SyncConnectionControlling {
         } else if let pairingV2Error = error as? PairingV2Error {
             await delegate?.controllerDidError(pairingV2ConnectionError(for: pairingV2Error), underlyingError: nil, setupRole: setupRole)
         } else if let cryptoError = error as? PairingV2MessageCryptoError {
-            await delegate?.controllerDidError(pairingV2CryptoConnectionError(for: cryptoError), underlyingError: cryptoError, setupRole: setupRole)
+            await delegate?.controllerDidError(pairingV2CryptoConnectionError(for: cryptoError, detectedDuring: stage), underlyingError: cryptoError, setupRole: setupRole)
         } else {
             await delegate?.controllerDidError(.unexpectedFailure, underlyingError: error, setupRole: setupRole)
         }
@@ -703,12 +743,13 @@ public class SyncConnectionController: SyncConnectionControlling {
         }
     }
 
-    private func pairingV2CryptoConnectionError(for error: PairingV2MessageCryptoError) -> SyncConnectionError {
+    private func pairingV2CryptoConnectionError(for error: PairingV2MessageCryptoError,
+                                                detectedDuring stage: SyncSetupErrorStage) -> SyncConnectionError {
         switch error {
         case .unsupportedVersion(let version):
-            return unsupportedVersionConnectionError(for: version, supportedMajor: PairingV2ProtocolVersion.supportedMajor)
+            return unsupportedVersionConnectionError(for: version, supportedMajor: PairingV2ProtocolVersion.supportedMajor, detectedDuring: stage)
         default:
-            return .unableToRecognizeCode
+            return stage == .codeRead ? .unableToRecognizeCode : .unreadablePairingMessage
         }
     }
 
@@ -997,7 +1038,7 @@ public class SyncConnectionController: SyncConnectionControlling {
         case .recoveryCodeUnavailable:
             return .peerRecoveryCodeUnavailable
         case .unsupportedVersion(let version):
-            return unsupportedVersionConnectionError(for: version, supportedMajor: PairingV2ProtocolVersion.supportedMajor)
+            return unsupportedVersionConnectionError(for: version, supportedMajor: PairingV2ProtocolVersion.supportedMajor, detectedDuring: .pairingSession)
         case .v2ScanningDisabled, .unknownCode, .unsupportedFlow:
             return .unableToRecognizeCode
         case .secondHello:
@@ -1035,15 +1076,17 @@ public class SyncConnectionController: SyncConnectionControlling {
         guard isPairingV2ScanningEnabled else {
             return .unableToRecognizeCode
         }
-        return unsupportedVersionConnectionError(for: version, supportedMajor: SyncCode.Recovery.supportedMajor)
+        return unsupportedVersionConnectionError(for: version, supportedMajor: SyncCode.Recovery.supportedMajor, detectedDuring: .codeRead)
     }
 
-    private func unsupportedVersionConnectionError(for version: String, supportedMajor: Int) -> SyncConnectionError {
+    private func unsupportedVersionConnectionError(for version: String,
+                                                   supportedMajor: Int,
+                                                   detectedDuring stage: SyncSetupErrorStage) -> SyncConnectionError {
         guard let major = SyncProtocolVersion.parseMajor(version),
               major > supportedMajor else {
-            return .unableToRecognizeCode
+            return stage == .codeRead ? .unableToRecognizeCode : .unreadablePairingMessage
         }
-        return .updateRequired
+        return .updateRequired(detectedDuring: stage)
     }
 }
 

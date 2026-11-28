@@ -637,6 +637,7 @@ struct UserText {
 
     // Fire Dialog – new concise segment labels and link row
     static let fireDialogTitle = NSLocalizedString("fire.dialog.title", value: "Delete Browsing Data", comment: "Title of the Fire dialog")
+    static let fireDialogDuckAIOnboardingTitle = NSLocalizedString("fire.dialog.duck-ai-onboarding.title", value: "Delete Chat Data", comment: "Title of the dialog that deletes browsing data, opened from the browser's Fire Button. New users see this version after their first chat in Duck.ai, DuckDuckGo's private AI chat, and it offers to delete only their Duck.ai chats. \"Duck.ai\" is not part of this text.")
     static let fireDialogSegmentTab = NSLocalizedString("fire.dialog.segment.tab", value: "Tab", comment: "Segment label for Tab scope")
     static let fireDialogSegmentWindow = NSLocalizedString("fire.dialog.segment.window", value: "Window", comment: "Segment label for Window scope")
     static let fireDialogSegmentEverything = NSLocalizedString("fire.dialog.segment.everything", value: "Everything", comment: "Segment label for Everything scope")
@@ -1737,6 +1738,17 @@ struct UserText {
     static let websitePermissionsDefaultAccessibilityLabel = NSLocalizedString("preferences.website-permissions.default.accessibility", value: "Default behavior for %@", comment: "Accessibility label for the default behavior radio group, %@ is the permission name")
     // MARK: - Duck.ai browser tool permission prompt
 
+    static let translateOfferTitle = NSLocalizedString("translate-offer.title", value: "Translate this page with Duck.ai?", comment: "Title of the pop-up that offers to translate a page in another language with Duck.ai")
+    static func translateOfferDetail(userLanguage: String) -> String {
+        let localized = NSLocalizedString("translate-offer.detail", value: "Get a summary of this page in %@ and continue the conversation.", comment: "Body of the pop-up that offers to translate a page with Duck.ai. Parameter is the user's language name, e.g. English")
+        return String(format: localized, userLanguage)
+    }
+    static func translateOfferDontAskAgain(pageLanguage: String) -> String {
+        let localized = NSLocalizedString("translate-offer.dont-ask-again", value: "Don't ask again for %@", comment: "Checkbox in the pop-up that offers to translate a page with Duck.ai. Parameter is the page's language name, e.g. Spanish")
+        return String(format: localized, pageLanguage)
+    }
+    static let translateOfferNoThanks = NSLocalizedString("translate-offer.no-thanks", value: "No Thanks", comment: "Button in the pop-up that offers to translate a page with Duck.ai. It closes the pop-up without translating")
+    static let translateOfferTranslate = NSLocalizedString("translate-offer.translate", value: "Translate", comment: "Button in the pop-up that offers to translate a page with Duck.ai. It opens Duck.ai to translate and summarize the page")
     static let browserToolInUse = NSLocalizedString("browser-tool.in-use", value: "Duck.ai is using a browser tool", comment: "Tooltip on the tab bar icon shown while Duck.ai runs a browser tool")
     static let browserToolPermissionAllowOnce = NSLocalizedString("browser-tool.permission.allow-once", value: "Allow once", comment: "Duck.ai browser tool permission prompt button that lets one tool call run")
     static let browserToolPermissionTitleListOpenTabs = NSLocalizedString("browser-tool.permission.title.list-open-tabs", value: "Allow Duck.ai to see your open tabs?", comment: "Duck.ai browser tool permission prompt title")
@@ -1784,6 +1796,14 @@ struct UserText {
         let localized = NSLocalizedString("browser-tool.settings.reset-tool", value: "Reset %@ to default", comment: "Accessibility label of the button that resets one browser tool permission to its default. Parameter is the tool name, e.g. Search Downloads")
         return String(format: localized, toolName)
     }
+    static let translatePagesSettingsTitle = NSLocalizedString("translate-pages.settings.title", value: "Translate Pages", comment: "Name of the Browser Access setting for offering to translate pages with Duck.ai")
+    /// What precedes the language menu link in the Translate Pages detail.
+    static let translatePagesSettingsDetailPrefix = NSLocalizedString("translate-pages.settings.detail", value: "Summarize pages that aren't in %@", comment: "Detail of the Translate Pages setting. The parameter is replaced by a menu link naming the user's language and the languages excluded from the offer, e.g. English, Spanish")
+        .replacingOccurrences(of: "%@", with: "")
+        .trimmingCharacters(in: .whitespaces)
+    static let translatePagesSettingsSystemLanguage = NSLocalizedString("translate-pages.settings.system-language", value: "System Language", comment: "Label next to the user's language in the Translate Pages language menu; it is always checked")
+    static let translatePagesSettingsAlwaysAsk = NSLocalizedString("translate-pages.settings.always-ask", value: "Always Ask", comment: "Translate Pages dropdown option to offer translation on pages in other languages")
+    static let translatePagesSettingsNeverAsk = NSLocalizedString("translate-pages.settings.never-ask", value: "Never Ask", comment: "Translate Pages dropdown option to never offer translation")
     static let browserToolPanelScope = NSLocalizedString("browser-tool.panel.scope", value: "These apply to every site and chat.", comment: "Note at the bottom of the Browser Permissions panel opened from the Duck.ai button menu")
     static let browserToolPanelAllDefault = NSLocalizedString("browser-tool.panel.all-default", value: "All browser permissions are back to their defaults.", comment: "Note at the bottom of the Browser Permissions panel once every browser tool permission is back to its default")
     static let browserToolPanelManageInSettings = NSLocalizedString("browser-tool.panel.manage-in-settings", value: "Manage in Settings", comment: "Link in the Browser Permissions panel that opens the Browser Permissions section in Settings")
@@ -2877,6 +2897,9 @@ struct UserText {
         static let onboardingTryFireButtonSkip = NSLocalizedString("contextual.onboarding.try-fire-button.skip", value: "Skip", comment: "Skip button on the Fire Button contextual onboarding dialog that dismisses without firing.")
         static let onboardingThatsDuckAITitle = NSLocalizedString("contextual.onboarding.thats-duck-ai.title", value: "That’s Duck.ai!", comment: "Title of a short tip shown to new users of the browser, right after they get their first answer in Duck.ai, DuckDuckGo's private AI chat. \"Duck.ai\" is a product name: keep it as is.")
         static let onboardingThatsDuckAIMessage = NSLocalizedString("contextual.onboarding.thats-duck-ai.message", value: "Private AI chats you can delete anytime with the *Fire Button*. Give it a try! 🔥", comment: "Message of a short tip shown to new users of the browser, right after they get their first answer in Duck.ai, DuckDuckGo's private AI chat. It invites them to delete that chat with the browser's Fire Button, which clears browsing data. Keep \"Fire Button\" as the app's name for it, and keep the * around it: they make it bold.")
+        static let onboardingTryDuckAITitle = NSLocalizedString("contextual.onboarding.try-duck-ai.title", value: "Chat privately with popular AIs in Duck.ai", comment: "Title of the last tip new users of the browser see after trying a search, when they kept Duck.ai, DuckDuckGo's private AI chat, in the address bar. \"Duck.ai\" is a product name: keep it as is.")
+        static let onboardingTryDuckAIMessage = NSLocalizedString("contextual.onboarding.try-duck-ai.message", value: "Chats are anonymized, no account required. And it’s free!", comment: "Message of the last tip new users of the browser see after trying a search. It describes Duck.ai, DuckDuckGo's private AI chat.")
+        static let onboardingTryDuckAIButton = NSLocalizedString("contextual.onboarding.try-duck-ai.button", value: "Try Duck.ai", comment: "Button on the last tip new users of the browser see after trying a search; it opens Duck.ai, DuckDuckGo's private AI chat. \"Duck.ai\" is a product name: keep it as is.")
         static let onboardingGotItButton = NSLocalizedString("contextual.onboarding.got-it.button", value: "Got it", comment: "During onboarding steps this button is shown and takes either to the next steps or closes the onboarding.")
         static let onboardingFirstSearchDoneTitle = NSLocalizedString("contextual.onboarding.first-search-done.title", value: "That’s DuckDuckGo Search!", comment: "After the user performs their first search using the browser, this dialog explains the advantages of using DuckDuckGo")
         static let onboardingFirstSearchDoneMessage = NSLocalizedString("contextual.onboarding.first-search-done.message", value: "Private. Fast. Fewer ads.", comment: "After the user performs their first search using the browser, this dialog explains the advantages of using DuckDuckGo")

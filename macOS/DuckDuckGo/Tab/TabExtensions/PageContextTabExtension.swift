@@ -43,6 +43,8 @@ final class PageContextTabExtension {
     private var sidebarCancellables = Set<AnyCancellable>()
     private let tabID: TabIdentifier
     private let browserTools: AIChatBrowserToolsService
+    /// Bumped on each main-frame commit, so a language read from an earlier document can't offer.
+    private var translateOfferDocument = 0
     private var content: Tab.TabContent = .none
     private let featureFlagger: FeatureFlagger
     private let privacyConfigurationManager: PrivacyConfigurationManaging
@@ -196,6 +198,7 @@ final class PageContextTabExtension {
                     return
                 }
                 session = aiChatSessionStore?.sessions[tabID]
+                Task { @MainActor [weak self] in self?.withdrawTranslateOfferIfIneligible() }
 
                 // Flush any selections attached while the sidebar was opening. Deferred so the
                 // chat VC exists after `showSidebar` finishes. Independent of page context below.
@@ -224,6 +227,11 @@ final class PageContextTabExtension {
             }
             .store(in: &cancellables)
 
+        aiChatMenuConfiguration.valuesChangedPublisher
+            .merge(with: featureFlagger.updatesPublisher)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in Task { @MainActor [weak self] in self?.withdrawTranslateOfferIfIneligible() } }
+            .store(in: &cancellables)
     }
 
     deinit {
@@ -311,6 +319,7 @@ final class PageContextTabExtension {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] chatViewController in
                 guard let self, chatViewController != nil else { return }
+                Task { @MainActor [weak self] in self?.withdrawTranslateOfferIfIneligible() }
                 self.deliverContextToCurrentSidebar()
             }
             .store(in: &sidebarCancellables)
@@ -705,6 +714,13 @@ final class PageContextTabExtension {
         if Self.shouldSuppressAutoPageContextOnSelectionAttach(isSidebarVisible: isSidebarVisibleForTab) {
             autoAttachSuppression.selectionActionOpenedSidebar()
         }
+    }
+
+    /// Whether the page at `url` may be sent to Duck.ai: one the tab picker would list, not prevented
+    /// by the page-context blocklist.
+    @MainActor
+    func isPageAttachable(at url: URL) -> Bool {
+        !AIChatTabMetadata.shouldExcludeFromTabPicker(url) && preventedAttachReason(for: url) == nil
     }
 
     /// Forces page-context collection into the sidebar regardless of the auto-send preference — the
@@ -1102,6 +1118,9 @@ protocol PageContextProtocol: AnyObject, NavigationResponder {
     /// auto-send preference (used by the tab-bar "Ask About Page" action).
     @MainActor func requestPageContextAttachment()
 
+    /// Whether the page at `url` may be sent to Duck.ai at all.
+    @MainActor func isPageAttachable(at url: URL) -> Bool
+
     @MainActor func attachLinkedPage(_ url: URL) -> Task<LinkedPageContextLoadResult?, Never>
 
     var linkedPageDomains: Set<String> { get set }
@@ -1113,6 +1132,10 @@ extension PageContextTabExtension: PageContextProtocol, TabExtension {
 
 extension PageContextTabExtension: NavigationResponder {
     func didCommit(_ navigation: Navigation) {
+        if !isLoadedInSidebar {
+            translateOfferDocument += 1
+            browserTools.permissionPrompts.offerTranslation(languageCode: nil, tabID: tabID)
+        }
         guard isLinkedPageInSlot else { return }
         let heldContentChange = contentBeforeLinkedPageHold
         cancelLinkedPage()
@@ -1128,9 +1151,52 @@ extension PageContextTabExtension: NavigationResponder {
     func navigationDidFinish(_ navigation: Navigation) {
         guard !isLoadedInSidebar else { return }
         reCollectForSettledNavigation(navigation)
-        if ["http", "https"].contains(navigation.url.scheme?.lowercased()) {
+        let isWebPage = navigation.url.isHttpOrHttps
+        if isWebPage {
             browserTools.notifyTabChanged(ownerTabID: tabID, url: navigation.url)
         }
+        offerTranslationIfForeign(navigation.url, isWebPage: isWebPage)
+    }
+
+    static func canOfferTranslation(isFeatureOn: Bool, isWebPage: Bool, showsTranslationMenuItem: Bool,
+                                    isPageAttachable: Bool, isSidebarOpen: Bool) -> Bool {
+        isFeatureOn && isWebPage && showsTranslationMenuItem && isPageAttachable && !isSidebarOpen
+    }
+
+    @MainActor
+    private func canOfferTranslation(at url: URL, isWebPage: Bool) -> Bool {
+        Self.canOfferTranslation(isFeatureOn: featureFlagger.isFeatureOn(.aiChatOfferTranslationAndSummarize),
+                                 isWebPage: isWebPage,
+                                 showsTranslationMenuItem: aiChatMenuConfiguration.shouldDisplayTranslationMenuItem,
+                                 // Without the page-context script, Translate has no page to send.
+                                 isPageAttachable: isWebPage && featureFlagger.isFeatureOn(.aiChatPageContext) && isPageAttachable(at: url),
+                                 isSidebarOpen: aiChatSessionStore.sessions[tabID]?.state.presentationMode == .sidebar)
+    }
+
+    @MainActor
+    private func offerTranslationIfForeign(_ url: URL, isWebPage: Bool) {
+        guard canOfferTranslation(at: url, isWebPage: isWebPage), let webView else {
+            browserTools.permissionPrompts.offerTranslation(languageCode: nil, tabID: tabID)
+            return
+        }
+        let document = translateOfferDocument
+        Task { @MainActor [weak self, weak webView] in
+            // An isolated world, so the page can't spoof the read.
+            let lang = try? await webView?.evaluateJavaScript("String(document.documentElement?.lang ?? '')", in: nil, contentWorld: .defaultClient) as? String
+            // The URL can change in the same document (replaceState); a commit means another document.
+            guard let self, let webView, document == translateOfferDocument, let url = webView.url else { return }
+            let languageCode = canOfferTranslation(at: url, isWebPage: url.isHttpOrHttps)
+                ? TranslateOfferLanguage.foreignLanguageCode(pageLanguage: lang, preferredLanguage: Locale.preferredLanguages.first)
+                : nil
+            browserTools.permissionPrompts.offerTranslation(languageCode: languageCode, tabID: tabID, window: webView.window)
+        }
+    }
+
+    @MainActor
+    private func withdrawTranslateOfferIfIneligible() {
+        guard browserTools.permissionPrompts.translateOfferLanguageCode(for: tabID) != nil else { return }
+        if let url = webView?.url, canOfferTranslation(at: url, isWebPage: url.isHttpOrHttps) { return }
+        browserTools.permissionPrompts.offerTranslation(languageCode: nil, tabID: tabID)
     }
 
     /// Back/forward cache restores can end in `didFail` (NSURLError -999) after committing — the page

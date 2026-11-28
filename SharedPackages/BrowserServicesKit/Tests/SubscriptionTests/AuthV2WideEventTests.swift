@@ -245,6 +245,29 @@ final class AuthV2WideEventTests: XCTestCase {
         XCTAssertEqual(notAttempted.pixelParameters()["feature.data.ext.recovery_outcome"], "not_attempted")
     }
 
+    func testPixelParameters_recoveryMethodAndBackupOutcome_emittedOnlyWhenSet() {
+        let noRecovery = AuthV2TokenRefreshWideEventData()
+        XCTAssertNil(noRecovery.pixelParameters()["feature.data.ext.recovery_method"])
+        XCTAssertNil(noRecovery.pixelParameters()["feature.data.ext.backup_outcome"])
+
+        let recovered = AuthV2TokenRefreshWideEventData()
+        recovered.recoveryMethod = .appStore
+        recovered.backupOutcome = .rejected
+        XCTAssertEqual(recovered.pixelParameters()["feature.data.ext.recovery_method"], "app_store")
+        XCTAssertEqual(recovered.pixelParameters()["feature.data.ext.backup_outcome"], "rejected")
+    }
+
+    func testCoding_roundTripsRecoveryMethodAndBackupOutcome() throws {
+        let eventData = AuthV2TokenRefreshWideEventData()
+        eventData.recoveryMethod = .backup
+        eventData.backupOutcome = .succeeded
+
+        let decoded = try JSONDecoder().decode(AuthV2TokenRefreshWideEventData.self, from: JSONEncoder().encode(eventData))
+
+        XCTAssertEqual(decoded.recoveryMethod, .backup)
+        XCTAssertEqual(decoded.backupOutcome, .succeeded)
+    }
+
     func testDecoding_withoutRecoveryOutcome_defaultsToNil() throws {
         let eventData = AuthV2TokenRefreshWideEventData(failingStep: .recoverInvalidToken)
         eventData.recoveryDuration = .startingNow()
@@ -534,7 +557,7 @@ final class AuthV2WideEventTests: XCTestCase {
         freshFlow.recoveryDuration = .startingNow()
         mock.startFlow(freshFlow)
 
-        instrumentation.completeInvalidTokenRecovery(outcome: .succeeded, error: nil, signedOut: false)
+        instrumentation.completeInvalidTokenRecovery(outcome: .succeeded, method: .backup, backupOutcome: .succeeded, error: nil, signedOut: false)
 
         XCTAssertEqual(mock.completions.count, 1)
         let (data, status) = try XCTUnwrap(mock.completions.first)
@@ -543,6 +566,8 @@ final class AuthV2WideEventTests: XCTestCase {
 
         let refreshData = try XCTUnwrap(data as? AuthV2TokenRefreshWideEventData)
         XCTAssertEqual(refreshData.recoveryOutcome, .succeeded)
+        XCTAssertEqual(refreshData.recoveryMethod, .backup)
+        XCTAssertEqual(refreshData.backupOutcome, .succeeded)
         XCTAssertNil(refreshData.errorData)
         XCTAssertNil(refreshData.failingStep)
         XCTAssertNotNil(refreshData.recoveryDuration?.end)
@@ -557,7 +582,7 @@ final class AuthV2WideEventTests: XCTestCase {
         pendingFlow.recoveryDuration = .startingNow()
         mock.startFlow(pendingFlow)
 
-        instrumentation.completeInvalidTokenRecovery(outcome: .failed, error: SubscriptionManagerError.noTokenAvailable, signedOut: true)
+        instrumentation.completeInvalidTokenRecovery(outcome: .failed, method: nil, backupOutcome: .failed, error: SubscriptionManagerError.noTokenAvailable, signedOut: true)
 
         XCTAssertEqual(mock.completions.count, 1)
         let (data, status) = try XCTUnwrap(mock.completions.first)
@@ -579,7 +604,7 @@ final class AuthV2WideEventTests: XCTestCase {
         pendingFlow.recoveryDuration = .startingNow()
         mock.startFlow(pendingFlow)
 
-        instrumentation.completeInvalidTokenRecovery(outcome: .failed, error: SubscriptionManagerError.noTokenAvailable, signedOut: true)
+        instrumentation.completeInvalidTokenRecovery(outcome: .failed, method: nil, backupOutcome: .failed, error: SubscriptionManagerError.noTokenAvailable, signedOut: true)
 
         XCTAssertTrue(mock.completions.isEmpty)
         XCTAssertEqual(mock.discarded.count, 1)
@@ -595,7 +620,7 @@ final class AuthV2WideEventTests: XCTestCase {
         pendingFlow.recoveryDuration = .startingNow()
         mock.startFlow(pendingFlow)
 
-        instrumentation.completeInvalidTokenRecovery(outcome: .notAttempted, error: nil, signedOut: true)
+        instrumentation.completeInvalidTokenRecovery(outcome: .notAttempted, method: nil, backupOutcome: .notAttempted, error: nil, signedOut: true)
 
         XCTAssertEqual(mock.completions.count, 1)
         let (data, status) = try XCTUnwrap(mock.completions.first)
@@ -619,7 +644,7 @@ final class AuthV2WideEventTests: XCTestCase {
         pendingFlow.recoveryDuration = .startingNow()
         mock.startFlow(pendingFlow)
 
-        instrumentation.completeInvalidTokenRecovery(outcome: .notAttempted, error: nil, signedOut: true)
+        instrumentation.completeInvalidTokenRecovery(outcome: .notAttempted, method: nil, backupOutcome: .notAttempted, error: nil, signedOut: true)
 
         XCTAssertTrue(mock.completions.isEmpty)
         XCTAssertEqual(mock.discarded.count, 1)

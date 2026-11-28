@@ -24,7 +24,6 @@ import Common
 import FoundationExtensions
 import BrowserServicesKit
 import DDGError
-import PrivacyConfig
 import PixelKit
 import Networking
 import Subscription
@@ -47,7 +46,7 @@ final class DBPService: NSObject {
             subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
             runTypeProvider: appDependencies.dbpSettings)
         let authManager = DataBrokerProtectionAuthenticationManager(subscriptionManager: dbpSubscriptionManager)
-        let featureFlagger = DBPFeatureFlagger(featureFlagger: appDependencies.featureFlagger,
+        let featureFlagger = DBPFeatureFlagger(appDependencies: appDependencies,
                                                freemiumPIRDebugSettings: freemiumPIRDebugSettings)
         let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(
             userDefaults: .dbp,
@@ -243,27 +242,27 @@ enum DataBrokerProtectionSubscriptionFlowParameter {
 
 final class DBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeatureFlagging, EmailOptOutFeatureFlagging {
     
-    private let featureFlagger: FeatureFlagger
+    private let appDependencies: DependencyProvider
     private let freemiumPIRDebugSettings: FreemiumPIRDebugSettings
 
     var isForegroundRunningOnAppActiveFeatureOn: Bool {
-        featureFlagger.isFeatureOn(.dbpForegroundRunningOnAppActive)
+        appDependencies.featureFlagger.isFeatureOn(.dbpForegroundRunningOnAppActive)
     }
 
     var isContinuedProcessingFeatureOn: Bool {
-        featureFlagger.isFeatureOn(.dbpContinuedProcessing)
+        appDependencies.featureFlagger.isFeatureOn(.dbpContinuedProcessing)
     }
 
     var isCustomWebViewUserAgentOn: Bool {
-        featureFlagger.isFeatureOn(.dbpCustomWebViewUserAgent)
+        appDependencies.featureFlagger.isFeatureOn(.dbpCustomWebViewUserAgent)
     }
 
     var isOptOutRetryErrorFrequencyExperimentOn: Bool {
-        featureFlagger.isFeatureOn(.dbpOptOutRetryError96Hours)
+        appDependencies.featureFlagger.isFeatureOn(.dbpOptOutRetryError96Hours)
     }
 
     var isExtractedProfileRefreshOn: Bool {
-        featureFlagger.isFeatureOn(.dbpExtractedProfileRefresh)
+        appDependencies.featureFlagger.isFeatureOn(.dbpExtractedProfileRefresh)
     }
 
     var isUserAssistanceOn: Bool { false }
@@ -275,16 +274,16 @@ final class DBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeatureFlagging, E
 
     var isFreemiumPIREnabled: Bool {
         freemiumPIRDebugSettings.isEligibilityForced
-            || featureFlagger.isFeatureOn(.dbpFreemiumPIR)
+            || appDependencies.featureFlagger.isFeatureOn(.dbpFreemiumPIR)
     }
 
     var isEmailOptOutEnabled: Bool {
-        featureFlagger.isFeatureOn(.dbpEmailOptOut)
+        appDependencies.featureFlagger.isFeatureOn(.dbpEmailOptOut)
     }
 
-    init(featureFlagger: FeatureFlagger,
+    init(appDependencies: DependencyProvider,
          freemiumPIRDebugSettings: FreemiumPIRDebugSettings) {
-        self.featureFlagger = featureFlagger
+        self.appDependencies = appDependencies
         self.freemiumPIRDebugSettings = freemiumPIRDebugSettings
     }
 }

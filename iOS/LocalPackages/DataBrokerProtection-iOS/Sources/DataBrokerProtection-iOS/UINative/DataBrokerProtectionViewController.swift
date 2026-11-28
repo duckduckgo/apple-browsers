@@ -192,9 +192,15 @@ final public class DataBrokerProtectionViewController: UIViewController {
         cancellables.removeAll()
         if hasLoadedDashboard {
             webUIViewModel.viewDidDisappear()
-            emailComposer.presenterDidDisappear()
+            if isLeavingScreen {
+                emailComposer.presenterDidDisappear()
+            }
         }
         super.viewDidDisappear(animated)
+    }
+
+    private var isLeavingScreen: Bool {
+        sequence(first: self as UIViewController, next: \.parent).contains { $0.isBeingDismissed || $0.isMovingFromParent }
     }
 
     private func loadDashboard() {

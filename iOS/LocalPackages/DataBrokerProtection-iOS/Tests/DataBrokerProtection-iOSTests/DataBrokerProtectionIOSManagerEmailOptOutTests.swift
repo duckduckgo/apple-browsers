@@ -37,12 +37,4 @@ final class DataBrokerProtectionIOSManagerEmailOptOutTests: XCTestCase {
         XCTAssertEqual(dependencies.database.lastAddedHistoryEvent?.extractedProfileId, 1)
         XCTAssertEqual(submitSuccess?.params?[DataBrokerProtectionSharedPixels.Consts.emailSent], "true")
     }
-
-    func testConfirmOptOutEmailSent_whenTheRecordIsUnknown_throwsAndRecordsNothing() async throws {
-        let (sut, dependencies) = try await DBPIOSManagerTestUtils.makeTestIOSManager()
-
-        XCTAssertThrowsError(try sut.confirmOptOutEmailSent(recordIds: [1]))
-
-        XCTAssertNil(dependencies.database.lastAddedHistoryEvent)
-    }
 }

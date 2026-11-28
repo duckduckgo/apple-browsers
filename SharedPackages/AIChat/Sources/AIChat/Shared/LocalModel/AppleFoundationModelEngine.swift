@@ -95,7 +95,7 @@ public final class AppleFoundationModelEngine: AIChatLocalModelEngine {
             throw AIChatLocalModelEngineError(code: .modelUnavailable)
         }
 
-        let taskPrompt = AIChatLocalModelPrompt.taskPrompt(for: request.task)
+        let taskPrompt = AIChatLocalModelPrompt.taskPrompt(for: request)
         let fitted = await fittedContent(for: request, taskPrompt: taskPrompt, model: model)
         let session = LanguageModelSession(model: model, instructions: taskPrompt.instructions)
         let options = GenerationOptions(temperature: 0.3, maximumResponseTokens: taskPrompt.maximumResponseTokens)

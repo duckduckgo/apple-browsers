@@ -74,12 +74,16 @@ public struct AIChatLocalRunRequest: Codable, Equatable, Sendable {
     public let task: AIChatLocalModelTask
     public let instruction: String
     public let content: String
+    /// The Duck.ai chip the run came from, such as `key-takeaways`. Duck.ai builds from before it
+    /// sent the chip leave it out.
+    public let action: String?
 
-    public init(requestId: String, task: AIChatLocalModelTask, instruction: String, content: String) {
+    public init(requestId: String, task: AIChatLocalModelTask, instruction: String, content: String, action: String? = nil) {
         self.requestId = requestId
         self.task = task
         self.instruction = instruction
         self.content = content
+        self.action = action
     }
 }
 

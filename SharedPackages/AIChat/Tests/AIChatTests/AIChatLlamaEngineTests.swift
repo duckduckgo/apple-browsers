@@ -99,6 +99,19 @@ struct AIChatLlamaEngineTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("A run from a summary chip uses that chip's prompt as the system turn", .timeLimit(.minutes(1)))
+    func chipRunUsesTheChipPrompt() async throws {
+        let request = AIChatLocalRunRequest(requestId: "r1", task: .summarize, instruction: "What are the key takeaways?",
+                                            content: "Mallards are ducks.", action: "key-takeaways")
+
+        _ = try await collect(makeEngine().run(request))
+
+        let messages = try #require(runtime.model.lastMessages)
+        #expect(messages[0].content == AIChatLocalModelPrompt.taskPrompt(for: .summarize, action: "key-takeaways").instructions)
+        #expect(messages[1].content.hasPrefix("What are the key takeaways?\n\n<page>\n"))
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("A long page is cut by tokens to leave room for the answer", .timeLimit(.minutes(1)))
     func longPageIsCutToFit() async throws {
         runtime.model.contextSize = 3_000

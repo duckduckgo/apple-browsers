@@ -152,7 +152,7 @@ public final class AIChatLlamaEngine: AIChatLocalModelEngine {
             let loadMs = Int((DispatchTime.now().uptimeNanoseconds - loadStart.uptimeNanoseconds) / 1_000_000)
             if stop.isSet { throw CancellationError() }
 
-            let taskPrompt = AIChatLocalModelPrompt.taskPrompt(for: request.task)
+            let taskPrompt = AIChatLocalModelPrompt.taskPrompt(for: request)
             let prompt = try Self.fittedPrompt(for: request, taskPrompt: taskPrompt, model: model)
             let outputTokens = try model.generate(prompt: prompt.tokens,
                                                   maxTokens: taskPrompt.maximumResponseTokens,

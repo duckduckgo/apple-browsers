@@ -19,10 +19,11 @@
 import AppKit
 import Foundation
 import PixelKit
+import QuartzCore
 
-/// Owns the per-address-bar performance recorder, paint hook, and per-stage flags.
+/// Owns the per-address-bar performance recorder, paint hook, and pending measurements.
 ///
-/// Callers signal events (keystroke, suggestions update, terminator) and the coordinator
+/// Callers signal events (keystroke, text change, draw, suggestions update, terminator) and the coordinator
 /// handles the rest: pairing keystrokes with paints, clamping outliers, snapshotting buffers
 /// at terminators, and scheduling the deferred pixel emission.
 ///
@@ -47,13 +48,17 @@ public final class AddressBarPerformanceCoordinator {
     static weak var currentActive: AddressBarPerformanceCoordinator?
 
     private let recorder: AddressBarPerformanceRecorder
+    private let clock: () -> TimeInterval
     private let deferredEmitDelay: TimeInterval
     private let hookStopDelay: TimeInterval
     private let pixelFiring: PixelFiring?
 
     private var paintHook: AddressBarPerformancePaintHook?
     private var pendingCharStartTime: TimeInterval?
-    private var charNeedsRender = false
+    private var nextCharacterID = 0
+    private var pendingCharacters: [(id: Int, startTime: TimeInterval)] = []
+    private var drawnCharacters: [(startTimes: [TimeInterval], drawnAt: TimeInterval)] = []
+    private var upcomingFrameTimes: [TimeInterval] = []
     private var suggestNeedsRender = false
     var pendingHookStopTask: Task<Void, Never>?
 
@@ -70,9 +75,11 @@ public final class AddressBarPerformanceCoordinator {
         recorder: AddressBarPerformanceRecorder,
         deferredEmitDelay: TimeInterval,
         hookStopDelay: TimeInterval,
-        pixelFiring: PixelFiring?
+        pixelFiring: PixelFiring?,
+        clock: @escaping () -> TimeInterval = CACurrentMediaTime
     ) {
         self.recorder = recorder
+        self.clock = clock
         self.deferredEmitDelay = deferredEmitDelay
         self.hookStopDelay = hookStopDelay
         self.pixelFiring = pixelFiring
@@ -114,7 +121,9 @@ public final class AddressBarPerformanceCoordinator {
         cancelPendingHookStop()
         recorder.reset()
         pendingCharStartTime = nil
-        charNeedsRender = false
+        pendingCharacters.removeAll()
+        drawnCharacters.removeAll()
+        upcomingFrameTimes.removeAll()
         suggestNeedsRender = false
         paintHook?.start()
     }
@@ -140,15 +149,34 @@ public final class AddressBarPerformanceCoordinator {
         pendingCharStartTime = recorder.markKeystrokeForSuggest(at: keystrokeTime)
     }
 
-    /// Confirms that the buffer actually changed for a previously-marked keystroke. Pushes its
-    /// t₀ into the char pending list and arms the next-paint flag. No-op when the buffer
-    /// changed without a preceding `markKeystroke()` (programmatic edits) or after a previous
-    /// suppressed keystroke whose slot was overwritten — those produce no char sample.
-    public func armCharRenderIfPending() {
-        guard let t = pendingCharStartTime else { return }
+    /// Queues a committed text change with the original keystroke timestamp. A display callback
+    /// cannot complete its character measurement until the editor has finished a draw pass.
+    public func markTextChanged() {
+        guard let startTime = pendingCharStartTime else { return }
         pendingCharStartTime = nil
-        recorder.appendCharStartTime(at: t)
-        charNeedsRender = true
+        nextCharacterID += 1
+        pendingCharacters.append((nextCharacterID, startTime))
+    }
+
+    /// Identifies the latest committed edit at the start of an editor draw pass.
+    /// The caller returns this token after drawing so edits committed during the pass wait for
+    /// their own draw. IDs remain unique across interaction resets.
+    public var pendingCharacterDrawID: Int? {
+        pendingCharacters.last?.id
+    }
+
+    /// Arms character measurements after the editor's draw pass completes. A frame target may
+    /// have been announced before drawing; its output time, not callback arrival, determines eligibility.
+    public func charactersDidDraw(through drawID: Int) {
+        let startTimes = pendingCharacters.prefix { $0.id <= drawID }.map(\.startTime)
+        guard !startTimes.isEmpty else { return }
+        let drawnAt = clock()
+        pendingCharacters.removeFirst(startTimes.count)
+        drawnCharacters.append((startTimes, drawnAt))
+        upcomingFrameTimes.removeAll { $0 < drawnAt }
+        if let outputTime = upcomingFrameTimes.first {
+            recordDrawnCharacters(at: outputTime)
+        }
     }
 
     /// Arms the suggest-render path. Call when the suggestions model emits an update.
@@ -163,7 +191,9 @@ public final class AddressBarPerformanceCoordinator {
     public func terminateInteraction() {
         let snapshot = recorder.takeAndClear()
         pendingCharStartTime = nil
-        charNeedsRender = false
+        pendingCharacters.removeAll()
+        drawnCharacters.removeAll()
+        upcomingFrameTimes.removeAll()
         suggestNeedsRender = false
         scheduleEmit(snapshot)
         scheduleHookStop()
@@ -173,14 +203,27 @@ public final class AddressBarPerformanceCoordinator {
 
     /// Called by the paint hook on each display refresh. Internal access for testing.
     func handlePaint(at outputTime: TimeInterval) {
-        if charNeedsRender {
-            recorder.onCharRendered(at: outputTime)
-            charNeedsRender = false
+        let now = clock()
+        upcomingFrameTimes.removeAll { $0 < now }
+        if outputTime >= now, !upcomingFrameTimes.contains(outputTime) {
+            upcomingFrameTimes.append(outputTime)
+            upcomingFrameTimes.sort()
         }
+        recordDrawnCharacters(at: outputTime)
         if suggestNeedsRender {
             recorder.onSuggestionsRendered(at: outputTime)
             suggestNeedsRender = false
         }
+    }
+
+    private func recordDrawnCharacters(at outputTime: TimeInterval) {
+        for draw in drawnCharacters where outputTime >= draw.drawnAt {
+            for startTime in draw.startTimes {
+                recorder.appendCharStartTime(at: startTime)
+            }
+            recorder.onCharRendered(at: outputTime)
+        }
+        drawnCharacters.removeAll { outputTime >= $0.drawnAt }
     }
 
     private func scheduleEmit(_ snapshot: (char: [Int], suggest: [Int])) {

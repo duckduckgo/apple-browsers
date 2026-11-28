@@ -56,7 +56,6 @@ public final class DBPFeatureFlagger: DBPMacOSFeatureFlagging {
     }
 
     public var isEmailOptOutEnabled: Bool {
-        // Email opt-out is iOS-only.
         false
     }
 

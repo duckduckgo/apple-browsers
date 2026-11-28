@@ -19,6 +19,12 @@
 //
 
 import PackageDescription
+import Foundation
+
+// SPM builds packages in release under the CI configuration, so `.when(configuration: .debug)` misses CI test builds;
+// SPM_FORCE_DEBUG covers them.
+let debugToolsSettings: [SwiftSetting] = [.define("DBP_DEBUG_TOOLS", .when(configuration: .debug))]
+    + (ProcessInfo.processInfo.environment["SPM_FORCE_DEBUG"] == "1" ? [.define("DBP_DEBUG_TOOLS")] : [])
 
 let package = Package(
     name: "DataBrokerProtection-iOS",
@@ -57,7 +63,7 @@ let package = Package(
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
-            ]
+            ] + debugToolsSettings
         ),
         .testTarget(
             name: "DataBrokerProtection-iOSTests",
@@ -69,7 +75,8 @@ let package = Package(
                 .product(name: "DataBrokerProtectionCoreTestsUtils", package: "DataBrokerProtectionCore"),
                 .product(name: "Persistence", package: "Persistence"),
                 .product(name: "SubscriptionTestingUtilities", package: "BrowserServicesKit"),
-            ]
+            ],
+            swiftSettings: debugToolsSettings
         )
     ]
 )

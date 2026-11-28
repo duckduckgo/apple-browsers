@@ -17,7 +17,6 @@
 //  limitations under the License.
 //
 
-#if DEBUG
 import Foundation
 
 public struct DBPEmailOptOutDebugSettings {
@@ -35,4 +34,3 @@ public struct DBPEmailOptOutDebugSettings {
         nonmutating set { userDefaults.set(newValue, forKey: Self.isCanSendEmailForcedKey) }
     }
 }
-#endif

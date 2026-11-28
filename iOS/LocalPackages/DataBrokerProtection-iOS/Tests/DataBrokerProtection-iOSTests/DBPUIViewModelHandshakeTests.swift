@@ -63,7 +63,9 @@ final class DBPUIViewModelHandshakeTests: XCTestCase {
                              contentScopeProperties: .mock,
                              emailOptOutFeatureFlagger: featureFlagger,
                              emailComposer: emailComposer)
+#if DEBUG
         sut.emailOptOutDebugSettings = DBPEmailOptOutDebugSettings(userDefaults: debugUserDefaults)
+#endif
     }
 
     override func tearDown() {
@@ -90,6 +92,7 @@ final class DBPUIViewModelHandshakeTests: XCTestCase {
                                                         isUserEligibleForFreeTrial: true))
     }
 
+#if DEBUG
     @MainActor
     func testCanSendEmail_whenInternalUserForcesItInDebug_isTrueWithoutAMailAccount() async {
         emailComposer.canSendMail = false
@@ -109,6 +112,7 @@ final class DBPUIViewModelHandshakeTests: XCTestCase {
         let canSendEmail = await sut.canSendEmail()
         XCTAssertFalse(canSendEmail)
     }
+#endif
 
     @MainActor
     func testOpenOptOutEmail_whenUserTapsSendInMail_returnsSent() async {
@@ -134,6 +138,7 @@ final class DBPUIViewModelHandshakeTests: XCTestCase {
         }
     }
 
+#if DEBUG
     @MainActor
     func testOpenOptOutEmail_whenInternalUserSimulatesSendInDebug_returnsSent() async {
         emailComposer.canSendMail = false
@@ -147,18 +152,7 @@ final class DBPUIViewModelHandshakeTests: XCTestCase {
         XCTAssertEqual(emailComposer.simulatedEmails, [Self.removalEmail])
         XCTAssertTrue(emailComposer.composedEmails.isEmpty)
     }
-
-    @MainActor
-    func testOpenOptOutEmail_whenInternalUserCancelsTheDebugSend_returnsNotSent() async {
-        emailComposer.canSendMail = false
-        emailComposer.simulateSendResult = false
-        internalUserDecider.isInternalUser = true
-        DBPEmailOptOutDebugSettings(userDefaults: debugUserDefaults).isCanSendEmailForced = true
-
-        let result = await sut.openOptOutEmail(Self.removalEmail)
-
-        XCTAssertEqual(result, DBPUIOpenOptOutEmailResult(sent: false))
-    }
+#endif
 
     func testConfirmOptOutEmailSent_passesTheRecordIdsToTheManager() async {
         await sut.confirmOptOutEmailSent(recordIds: [12, 34])

@@ -57,6 +57,52 @@ extension SwitchToTabBrowserTool {
     }
 }
 
+extension OpenTabBrowserTool {
+    convenience init(windowControllersManager: WindowControllersManagerProtocol) {
+        self.init { url, context in
+            guard let collection = Self.targetCollection(for: context, in: windowControllersManager) else { return nil }
+
+            let tab = Tab(content: .url(url, credential: nil, source: .link), shouldLoadInBackground: true, burnerMode: collection.burnerMode)
+            collection.insertOrAppend(tab: tab, selected: false)
+            guard collection.indexInAllTabs(of: tab) != nil else { return nil }
+            return tab.uuid
+        }
+    }
+
+    private static func targetCollection(for context: BrowserToolCallContext, in windowControllersManager: WindowControllersManagerProtocol) -> TabCollectionViewModel? {
+        if context.isDetached,
+           let collection = windowControllersManager.lastKeyMainWindowController(where: { !$0.mainViewController.isBurner })?
+            .mainViewController.tabCollectionViewModel {
+            return collection
+        }
+        guard let token = context.ownerWindowToken else { return nil }
+        return AIChatTabPickerSource.tabCollectionViewModel(forWindowToken: token, in: windowControllersManager)
+    }
+}
+
+extension CloseTabsBrowserTool {
+    convenience init(windowControllersManager: WindowControllersManagerProtocol) {
+        self.init(prepareBatch: { requestedIDs, context in
+            guard let token = context.ownerWindowToken,
+                  let collection = AIChatTabPickerSource.tabCollectionViewModel(forWindowToken: token, in: windowControllersManager) else {
+                return .failure(.unavailable)
+            }
+            guard let tabs = BrowserToolTargetTab.actionableTabs(withIDs: requestedIDs, ownerTabID: context.ownerTabID, in: collection) else {
+                return .failure(.notFound)
+            }
+            return .success(PreparedBatch(ids: tabs.map(\.uuid)) {
+                Set(tabs.compactMap { tab in
+                    let id = tab.uuid
+                    // Pinned tabs stay open.
+                    guard let index = collection.indexInAllTabs(where: { $0.uuid == id }), index.isUnpinnedTab else { return nil }
+                    collection.close(at: index)
+                    return collection.indexInAllTabs(where: { $0.uuid == id }) == nil ? id : nil
+                })
+            })
+        })
+    }
+}
+
 extension ReadTabContentBrowserTool {
     convenience init(windowControllersManager: WindowControllersManagerProtocol, reader: BrowserToolPageContentReading) {
         self.init(readPage: pageLoader(windowControllersManager: windowControllersManager, reader: reader))
@@ -85,6 +131,21 @@ private func pageLoader(windowControllersManager: WindowControllersManagerProtoc
                 return .failure(.unavailable)
             }
             return .success(page.withTabId(tabID))
+        }
+    }
+}
+
+extension SearchBookmarksBrowserTool {
+    convenience init(bookmarkManager: BookmarkManager) {
+        self.init { search, _ in
+            guard let list = bookmarkManager.list else { return nil }
+            return search.matches(in: list.topLevelEntities) { entity in
+                guard let folder = entity as? BookmarkFolder else { return nil }
+                return (folder.title, { folder.children })
+            } bookmark: { entity in
+                guard let bookmark = entity as? Bookmark, let url = bookmark.urlObject, url.isHttpOrHttps else { return nil }
+                return (bookmark.title, url)
+            }
         }
     }
 }

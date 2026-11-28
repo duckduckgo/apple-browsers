@@ -389,9 +389,13 @@ final class AIChatBrowserToolsServiceTests: XCTestCase {
             ([.aiChatBrowserTools], []),
             ([.aiChatBrowserToolListOpenTabs], []),
             ([.aiChatBrowserToolSwitchToTab], []),
+            ([.aiChatBrowserToolOpenTab], []),
+            ([.aiChatBrowserToolCloseTabs], []),
             ([.aiChatBrowserToolListOpenTabs, .aiChatBrowserToolSwitchToTab], []),
             ([.aiChatBrowserTools, .aiChatBrowserToolListOpenTabs], [.listOpenTabs]),
             ([.aiChatBrowserTools, .aiChatBrowserToolSwitchToTab], [.switchToTab]),
+            ([.aiChatBrowserTools, .aiChatBrowserToolOpenTab], [.openTab]),
+            ([.aiChatBrowserTools, .aiChatBrowserToolCloseTabs], [.closeTabs]),
             ([.aiChatBrowserTools, .aiChatBrowserToolListOpenTabs, .aiChatBrowserToolSwitchToTab], [.listOpenTabs, .switchToTab]),
             ([], [])
         ]
@@ -400,6 +404,8 @@ final class AIChatBrowserToolsServiceTests: XCTestCase {
             XCTAssertEqual(service.clientToolsConfiguration?.capabilities, capabilities.isEmpty ? nil : capabilities)
             XCTAssertEqual(service.catalog.tool(for: .listOpenTabs) != nil, capabilities.contains(.listOpenTabs))
             XCTAssertEqual(service.catalog.tool(for: .switchToTab) != nil, capabilities.contains(.switchToTab))
+            XCTAssertEqual(service.catalog.tool(for: .openTab) != nil, capabilities.contains(.openTab))
+            XCTAssertEqual(service.catalog.tool(for: .closeTabs) != nil, capabilities.contains(.closeTabs))
             XCTAssertTrue(service.catalog === catalog)
         }
     }

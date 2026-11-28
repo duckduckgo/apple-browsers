@@ -18,8 +18,11 @@
 //
 
 import AIChat
+import Bookmarks
 import Core
+import CoreData
 import Foundation
+import Persistence
 
 extension ListOpenTabsBrowserTool {
     convenience init(scopeProvider: @escaping BrowserToolScopeProvider) {
@@ -45,6 +48,27 @@ extension SwitchToTabBrowserTool {
             guard scope.contains(tab), scope.selectTab(tab) else { return .failure(.unavailable) }
             return .success((tab.link?.displayTitle ?? "", tab.link?.url.absoluteString ?? ""))
         }
+    }
+}
+
+extension OpenTabBrowserTool {
+    convenience init(scopeProvider: @escaping BrowserToolScopeProvider) {
+        self.init { url, context in
+            guard let scope = scopeProvider(context), scope.accepts(context) else { return nil }
+            return scope.openTab?(url)
+        }
+    }
+}
+
+extension CloseTabsBrowserTool {
+    convenience init(scopeProvider: @escaping BrowserToolScopeProvider) {
+        self.init(prepareBatch: { requestedIDs, context in
+            guard let scope = scopeProvider(context), scope.accepts(context),
+                  let resolveTabsToClose = scope.resolveTabsToClose else {
+                return .failure(.unavailable)
+            }
+            return resolveTabsToClose(requestedIDs)
+        })
     }
 }
 
@@ -95,5 +119,35 @@ private func pageLoader(scopeProvider: @escaping BrowserToolScopeProvider, reade
             return .failure(.unavailable)
         }
         return .success(pageContext.withTabId(tabID))
+    }
+}
+
+extension SearchBookmarksBrowserTool {
+    convenience init(bookmarksDatabase: CoreDataDatabase, scopeProvider: @escaping BrowserToolScopeProvider) {
+        self.init { search, context in
+            guard !Task.isCancelled, let scope = scopeProvider(context), scope.accepts(context) else { return nil }
+            let readContext = bookmarksDatabase.makeContext(concurrencyType: .privateQueueConcurrencyType,
+                                                           name: "AIChatSearchBookmarks")
+            let matches = await readContext.perform {
+                BrowserToolBookmarkSearch.matches(in: readContext, search: search)
+            }
+            guard !Task.isCancelled, scope.accepts(context), scopeProvider(context) === scope else { return nil }
+            return matches
+        }
+    }
+}
+
+private enum BrowserToolBookmarkSearch {
+    nonisolated static func matches(in context: NSManagedObjectContext, search: SearchBookmarksBrowserTool.Search) -> [SearchBookmarksBrowserTool.Search.Match] {
+        let rootChildren = BookmarkUtils.fetchRootFolder(context)?.childrenArray ?? []
+        let root = rootChildren + BookmarkUtils.fetchOrphanedEntities(context)
+        return search.matches(in: root) { entity in
+            guard entity.isFolder else { return nil }
+            return (entity.title ?? "", { entity.childrenArray })
+        } bookmark: { entity in
+            guard let url = entity.urlObject, url.scheme?.lowercased() == "https", let host = url.host, !host.isEmpty,
+                  !url.isDuckAIURL else { return nil }
+            return (entity.title ?? host, url)
+        }
     }
 }

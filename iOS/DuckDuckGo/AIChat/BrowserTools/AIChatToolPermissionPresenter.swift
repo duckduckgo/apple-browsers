@@ -19,6 +19,7 @@
 
 import AIChat
 import Combine
+import PrivacyConfig
 import SwiftUI
 import UIKit
 
@@ -39,6 +40,31 @@ extension AIChatNativePermissionPresenting {
 
 @MainActor
 final class AIChatToolPermissionPresenter: AIChatNativePermissionPresenting {
+
+    enum ToolKind {
+        case readTabContent
+        case searchHistory
+        case searchBookmarks
+        case listOpenTabs
+        case findInPage
+        case switchToTab
+        case openTab
+        case closeTabs
+
+        init?(name: String) {
+            switch AIChatBrowserToolsSubfeature(rawValue: name) {
+            case .readTabContent: self = .readTabContent
+            case .searchHistory: self = .searchHistory
+            case .searchBookmarks: self = .searchBookmarks
+            case .listOpenTabs: self = .listOpenTabs
+            case .findInPage: self = .findInPage
+            case .switchToTab: self = .switchToTab
+            case .openTab: self = .openTab
+            case .closeTabs: self = .closeTabs
+            default: return nil
+            }
+        }
+    }
 
     struct Surface {
         let controller: UIViewController

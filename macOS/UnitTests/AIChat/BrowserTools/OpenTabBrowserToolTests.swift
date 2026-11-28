@@ -25,9 +25,17 @@ final class OpenTabBrowserToolTests: XCTestCase {
 
     func testWhenAWebURLIsGivenThenItOpensInTheBackgroundOfTheChatsWindow() async throws {
         let collection = collection(urls: ["https://a.example"])
+        let otherWindow = self.collection(urls: ["https://b.example"])
         let current = collection.tabCollection.tabs[0].uuid
+        let otherTab = otherWindow.tabCollection.tabs[0].uuid
         collection.select(at: .unpinned(0))
-        let (tool, context) = make(collection: collection)
+        otherWindow.select(at: .unpinned(0))
+        let windows = manager(with: [otherWindow, collection])
+        windows.selectedWindowIndex = 0
+        let tool = OpenTabBrowserTool(windowControllersManager: windows)
+        let context = BrowserToolCallContext(ownerTabID: current,
+                                             ownerWindowToken: AIChatTabPickerSource.windowToken(forCollection: collection),
+                                             isBurner: false)
 
         let result = await tool.execute(arguments: ["url": "https://duckduckgo.com/about"], context: context)
 
@@ -36,6 +44,8 @@ final class OpenTabBrowserToolTests: XCTestCase {
         XCTAssertEqual(collection.tabCollection.tabs.count, 2)
         XCTAssertEqual(opened.content.urlForWebView, URL(string: "https://duckduckgo.com/about"))
         XCTAssertEqual(collection.selectedTabViewModel?.tab.uuid, current)
+        XCTAssertEqual(otherWindow.tabCollection.tabs.map(\.uuid), [otherTab])
+        XCTAssertEqual(windows.selectedTab?.uuid, otherTab)
     }
 
     func testWhenDetachedWithoutAnyMainWindowThenItOpensInTheChatsWindow() async {

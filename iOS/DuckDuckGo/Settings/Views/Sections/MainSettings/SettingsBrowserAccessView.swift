@@ -238,13 +238,25 @@ private struct BrowserAccessTool {
         .init(capability: .searchHistory,
               title: UserText.settingsBrowserAccessSearchHistory,
               detail: UserText.settingsBrowserAccessSearchHistoryDetail,
-              icon: Icons.history)
+              icon: Icons.history),
+        .init(capability: .searchBookmarks,
+              title: UserText.settingsBrowserAccessSearchBookmarks,
+              detail: UserText.settingsBrowserAccessSearchBookmarksDetail,
+              icon: Icons.bookmarks)
     ]
 
     static let canDo: [Self] = [
         .init(capability: .switchToTab,
               title: UserText.settingsBrowserAccessSwitchToTab,
               detail: UserText.settingsBrowserAccessSwitchToTabDetail,
-              icon: Icons.arrowCircleRight)
+              icon: Icons.arrowCircleRight),
+        .init(capability: .openTab,
+              title: UserText.settingsBrowserAccessOpenTab,
+              detail: UserText.settingsBrowserAccessOpenTabDetail,
+              icon: DesignSystemImages.Glyphs.Size24.tabNew),
+        .init(capability: .closeTabs,
+              title: UserText.settingsBrowserAccessCloseTabs,
+              detail: UserText.settingsBrowserAccessCloseTabsDetail,
+              icon: Icons.tabCloseAlt)
     ]
 }

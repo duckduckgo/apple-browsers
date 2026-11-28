@@ -3714,6 +3714,13 @@ class MainViewController: UIViewController {
         tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel)
     }
 
+    func refreshTabsAfterBrowserToolOpen() {
+        guard isViewLoaded else { return }
+        refreshTabIcon()
+        tabsBarController?.backgroundTabAdded()
+        swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel)
+    }
+
     /// Home tabs consult the setting + app-wide last-used; existing tabs derive from URL.
     func initialOmnibarToggleMode(for tab: Tab) -> TextEntryMode {
         let resolved: TextEntryMode
@@ -9200,6 +9207,39 @@ extension MainViewController: TabSwitcherDelegate {
                 webExtensionEventsCoordinator?.didCloseTab(tab)
             }
         }
+    }
+
+    func closeTabsForBrowserTool(_ tabs: [Tab], in model: TabsModelManaging, canClose: (Tab) -> Bool) -> Set<String> {
+        let selectedTab = model.currentTab
+        var closedIDs = Set<String>()
+        for tab in tabs where canClose(tab) {
+            newTabPageControllerStore.removePage(for: tab)
+            recordDuckAISessionCloseIfNeeded(closingTabs: [tab])
+            if #available(iOS 18.4, *) {
+                webExtensionEventsCoordinator?.didCloseTab(tab)
+            }
+            discardNewTabPageSessionIfHostingTabClosed([tab])
+            reportDuckAITabClosedIfNeeded(tab)
+
+            tabManager.remove(tab: tab, in: model)
+            if model.indexOf(tab: tab) == nil {
+                closedIDs.insert(tab.uid)
+            }
+        }
+        guard !closedIDs.isEmpty, isViewLoaded, tabManager.currentBrowsingMode == .normal,
+              tabManager.currentTabsModel === model else { return closedIDs }
+        hideSuggestionTray()
+        hideNotificationBarIfBrokenSitePromptShown()
+        if model.currentTab !== selectedTab {
+            updateCurrentTab()
+            showKeyboardOnNewTabPageIfAllowed()
+        } else {
+            themeColorManager.updateThemeColor()
+            refreshTabIcon()
+            refreshTabBar()
+            swipeTabsCoordinator?.refresh(tabsModel: model, scrollToSelected: true)
+        }
+        return closedIDs
     }
 
     func closeTab(_ tab: Tab,

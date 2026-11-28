@@ -65,11 +65,14 @@ public final class BrowserToolInvoker {
             return .failure(callId: request.callId, error: .unavailable)
         }
         // Malformed inputs are rejected before asking. Each tool still validates its values after permission.
-        guard Self.isAcceptedInput(request.input, for: tool) else {
+        guard Self.isAcceptedInput(request.input, for: tool), tool.acceptsArguments(request.input) else {
+            return .failure(callId: request.callId, error: .invalidArguments)
+        }
+        let target = tool.permissionTarget(arguments: request.input, context: context)
+        guard !tool.requiresPermissionTarget || target != nil else {
             return .failure(callId: request.callId, error: .invalidArguments)
         }
         let targetsOtherTab = request.input["tabId"]?.stringValue.map { $0 != context.ownerTabID } ?? false
-        let target = tool.permissionTarget(arguments: request.input, context: context)
         let authorization = await clientToolPermissions.authorize(callID: request.callId, tool: tool, targetsOtherTab: targetsOtherTab,
                                                                   target: target,
                                                                   chatID: catalog.offersRequestAccess ? request.chatId : nil, accessToolNames: nil,

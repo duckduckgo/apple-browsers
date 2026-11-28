@@ -643,7 +643,7 @@ public enum FeatureFlag: String {
     case aiChatSwipeUpNewChat
 
     /// The voice button in a Duck.ai chat with messages continues that chat by voice in the same tab.
-    /// https://app.asana.com/0/0/1217878433324673/f
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220965132955273
     case aiChatVoiceInExistingChat
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220115595487712

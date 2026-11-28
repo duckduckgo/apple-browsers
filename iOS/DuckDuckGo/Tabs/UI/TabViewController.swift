@@ -880,6 +880,7 @@ class TabViewController: UIViewController {
     private var pageTranslationSession: PageTranslationSession?
     /// Counts main-frame loads, so work started on a page can tell the tab has left it; pushState and replaceState don't count.
     private var pageLoads = 0
+    private(set) var pageTranslationOffer: PageTranslationOffer?
     var browserToolScopeFactory: (@MainActor () -> BrowserToolScope?)?
     var tabAttachmentSource: MultiTabAttachmentSource?
 
@@ -3033,6 +3034,8 @@ extension TabViewController: PageTranslationProgress {
     func translationDidFinish() {
         progressWorker.didFinishLoading(.translation)
     }
+
+    func translationStateDidChange(_ state: PageTranslationSession.State) {}
 }
 
 // MARK: - WKNavigationDelegate
@@ -3223,9 +3226,12 @@ extension TabViewController: WKNavigationDelegate {
         let pageLoad = pageLoads
         Task { [weak self, weak webView] in
             // Dropped if another page started loading while detecting; a URL change within the page, such as replaceState, keeps it.
-            guard let webView, case .banner(let offer) = await provider.decision(in: webView),
+            guard let webView, let pageOffer = await provider.offer(in: webView),
                   let self, pageLoads == pageLoad else { return }
-            showTranslationBanner(offer)
+            pageTranslationOffer = pageOffer
+            if pageOffer.showsBanner {
+                showTranslationBanner(pageOffer.offer)
+            }
         }
     }
 
@@ -3273,6 +3279,21 @@ extension TabViewController: WKNavigationDelegate {
             }
             self?.present(sheet, animated: true)
         }
+    }
+
+    var pageTranslationState: PageTranslationSession.State {
+        pageTranslationSession?.state ?? .idle
+    }
+
+    func translatePageFromMenu(_ offer: TranslationOffer) {
+        translationBannerPresenter.dismiss(animated: true)
+        translatePage(offer)
+    }
+
+    /// Reloading is the only way back: the page's original text isn't kept.
+    func showOriginalPage() {
+        cancelPageTranslation()
+        reload()
     }
 
     private func startTranslation(_ offer: TranslationOffer) {
@@ -3409,6 +3430,7 @@ extension TabViewController: WKNavigationDelegate {
             pageLoads += 1
             translationBannerPresenter.dismiss(animated: false)
             cancelPageTranslation()
+            pageTranslationOffer = nil
         }
         if webView === self.webView, case .available = aiChatContextualAttachMoreTabsFeature.state {
             if initialAIChatPromptSession.didStartNavigation(navigation) {

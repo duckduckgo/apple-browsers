@@ -5971,6 +5971,15 @@ Take back control of your personal information with the browser designed for dat
 /* Title of the sheet asking to download what's needed to translate pages in a language on the device, e.g. Download Spanish language pack?. %@ is the page's language */
 "translation.download-sheet.title" = "Download %@ language pack?";
 
+/* Browsing menu item that reloads a translated web page in its original language */
+"translation.menu.show-original" = "Show Original Page";
+
+/* Browsing menu item that translates the current web page, e.g. Translate Page to English. %@ is the language it will be translated to */
+"translation.menu.translate" = "Translate Page to %@";
+
+/* Browsing menu item shown, disabled, while the current web page is being translated */
+"translation.menu.translating" = "Translating…";
+
 /* Toast shown when a tapped .vcf contact link can't be parsed (e.g. malformed RFC 6350 content) */
 "vcard.add-contact.parse-failure" = "Unable to add contact. Try opening the contact file from Downloads instead.";
 

@@ -34,6 +34,7 @@ import UIComponents
 import FeatureFlags_iOS
 import PixelKit
 import AIChat
+import WebPageTranslation
 
 extension TabViewController {
 
@@ -100,6 +101,11 @@ extension TabViewController {
                            clearTabsAndData: @escaping () -> Void) -> [BrowsingMenuEntry] {
         
         var entries = [BrowsingMenuEntry]()
+
+        if let translateEntry = buildTranslateEntry(useSmallIcon: true) {
+            entries.append(translateEntry)
+            entries.append(.separator)
+        }
 
         let linkEntries = buildLinkEntries(with: bookmarksInterface)
         entries.append(contentsOf: linkEntries)
@@ -1247,6 +1253,28 @@ extension TabViewController: BrowsingMenuEntryBuilding {
     func makeKeepSignInEntry() -> BrowsingMenuEntry? {
         guard let link = validLink else { return nil }
         return buildKeepSignInEntry(forLink: link, useSmallIcon: false)
+    }
+
+    func makeTranslateEntry() -> BrowsingMenuEntry? {
+        buildTranslateEntry(useSmallIcon: false)
+    }
+
+    private func buildTranslateEntry(useSmallIcon: Bool) -> BrowsingMenuEntry? {
+        guard pageTranslationOfferProvider?.isEnabled == true, let offer = pageTranslationOffer?.offer else { return nil }
+        let state = pageTranslationState
+        let content = TranslateMenuRow.content(for: offer, state: state, locale: .current)
+        return BrowsingMenuEntry.regular(name: content.name,
+                                         image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.translate : DesignSystemImages.Glyphs.Size24.translate) { [weak self] in
+            switch state {
+            case .idle:
+                self?.translatePageFromMenu(offer)
+            case .translating:
+                // TODO: This is coming next. Show the row disabled (`content.isEnabled`) instead of ignoring the tap.
+                break
+            case .partiallyTranslated, .fullyTranslated:
+                self?.showOriginalPage()
+            }
+        }
     }
 
     func makeYouTubeAdBlockToggleEntry() -> BrowsingMenuEntry? {

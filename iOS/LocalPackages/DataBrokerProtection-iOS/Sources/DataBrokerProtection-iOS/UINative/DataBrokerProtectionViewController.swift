@@ -63,6 +63,8 @@ final public class DataBrokerProtectionViewController: UIViewController {
         repository: DataBrokerProtectionInteractionPixelsUserDefaults(userDefaults: .dbp)
     )
 
+    private lazy var emailComposer = DBPOptOutEmailComposer(presentingViewController: self)
+
     private lazy var webUIViewModel: DBPUIViewModel = {
         return DBPUIViewModel(authenticationDelegate: authenticationDelegate,
                               databaseDelegate: databaseDelegate,
@@ -73,7 +75,7 @@ final public class DataBrokerProtectionViewController: UIViewController {
                               privacyConfigManager: privacyConfigManager,
                               contentScopeProperties: contentScopeProperties,
                               emailOptOutFeatureFlagger: emailOptOutFeatureFlagger,
-                              emailComposer: DBPOptOutEmailComposer(),
+                              emailComposer: emailComposer,
                               freeScanEntryPoint: freeScanEntryPoint)
     }()
 
@@ -190,8 +192,15 @@ final public class DataBrokerProtectionViewController: UIViewController {
         cancellables.removeAll()
         if hasLoadedDashboard {
             webUIViewModel.viewDidDisappear()
+            if isLeavingScreen {
+                emailComposer.presenterDidDisappear()
+            }
         }
         super.viewDidDisappear(animated)
+    }
+
+    private var isLeavingScreen: Bool {
+        sequence(first: self as UIViewController, next: \.parent).contains { $0.isBeingDismissed || $0.isMovingFromParent }
     }
 
     private func loadDashboard() {

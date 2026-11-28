@@ -1814,6 +1814,85 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         XCTAssertEqual(mockAIChatSyncHandler.setAIChatHistoryEnabledCalls, [true])
     }
 
+    // MARK: - Voice in an existing chat
+
+    private func voiceInChatConfig(flagOn: Bool, displayMode: AIChatDisplayMode) -> AIChatNativeConfigValues? {
+        MockDevicePlatform.isIphone = true
+        mockUnifiedToggleInputFeature.isAvailable = true
+        mockAIChatContextualModeFeature.isAvailable = true
+        mockFeatureFlagger.enabledFeatureFlags = flagOn ? [.aiChatVoiceInExistingChat] : []
+        aiChatUserScriptHandler.displayMode = displayMode
+        return aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
+    }
+
+    func testSupportsVoiceInChatFollowsTheFlagInTheFullTabChat() {
+        XCTAssertEqual(voiceInChatConfig(flagOn: true, displayMode: .fullTab)?.supportsVoiceInChat, true)
+        XCTAssertEqual(voiceInChatConfig(flagOn: false, displayMode: .fullTab)?.supportsVoiceInChat, false)
+    }
+
+    func testTheContextualSheetNeverSupportsVoiceInChat() {
+        XCTAssertEqual(voiceInChatConfig(flagOn: true, displayMode: .contextual)?.supportsVoiceInChat, false)
+    }
+
+    func testVoiceInChatAvailabilityReachesTheInputBox() async {
+        let cases: [([String: Any], AIChatVoiceInChatAvailability)] = [
+            (["isAvailable": true], .available),
+            (["isAvailable": false, "reason": "files", "message": "Unavailable in chats with files"],
+             .unavailable(reason: .files, message: "Unavailable in chats with files")),
+            (["isAvailable": false, "reason": "encryptedModel", "message": "m"], .unavailable(reason: .encryptedModel, message: "m")),
+            (["isAvailable": false, "reason": "unsupportedContent", "message": "m"], .unavailable(reason: .unsupportedContent, message: "m")),
+            (["isAvailable": false, "reason": "unavailable"], .unavailable(reason: .unavailable, message: nil)),
+            (["isAvailable": false, "reason": "somethingNew", "message": "m"], .unavailable(reason: .unavailable, message: "m")),
+            (["isAvailable": false, "reason": "files"], .unavailable(reason: .files, message: nil))
+        ]
+        for (params, expected) in cases {
+            let inputBox = MockAIChatInputBox()
+            aiChatUserScriptHandler.setAIChatInputBoxHandler(inputBox)
+
+            _ = await aiChatUserScriptHandler.voiceInChatAvailability(params: params, message: MockUserScriptMessage(name: "test", body: params))
+
+            XCTAssertEqual(inputBox.voiceInChatAvailability, expected, "\(params)")
+        }
+    }
+
+    func testMalformedVoiceInChatAvailabilityKeepsTheLastKnownValue() async {
+        let inputBox = MockAIChatInputBox()
+        inputBox.voiceInChatAvailability = .available
+        aiChatUserScriptHandler.setAIChatInputBoxHandler(inputBox)
+
+        _ = await aiChatUserScriptHandler.voiceInChatAvailability(params: ["reason": "files"], message: MockUserScriptMessage(name: "test", body: [:]))
+
+        XCTAssertEqual(inputBox.voiceInChatAvailability, .available)
+    }
+
+    private var voiceSessionStartedInCurrentChatValues: [String?] {
+        pixelKitMock.actualFireCalls
+            .filter { $0.pixel.name == Pixel.Event.voiceSessionStarted.name }
+            .map { $0.additionalParameters?[PixelParameters.inCurrentChat] }
+    }
+
+    func testVoiceSessionStartedReportsWhetherItContinuesTheCurrentChatOncePerSession() async {
+        let message = MockUserScriptMessage(name: "test", body: [:])
+        aiChatUserScriptHandler.isVoiceRequestedInCurrentChat = true
+        _ = await aiChatUserScriptHandler.voiceSessionStarted(params: [:], message: message)
+        _ = await aiChatUserScriptHandler.voiceSessionStarted(params: [:], message: message)
+
+        XCTAssertEqual(voiceSessionStartedInCurrentChatValues, ["true", "false"])
+    }
+
+    func testAnInCurrentChatRequestThatNeverStartsDoesNotMarkTheNextSession() async {
+        let message = MockUserScriptMessage(name: "test", body: [:])
+        aiChatUserScriptHandler.isVoiceRequestedInCurrentChat = true
+        _ = await aiChatUserScriptHandler.voiceModeClosed(params: [:], message: message)
+        _ = await aiChatUserScriptHandler.voiceSessionStarted(params: [:], message: message)
+
+        aiChatUserScriptHandler.isVoiceRequestedInCurrentChat = true
+        _ = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: message)
+        _ = await aiChatUserScriptHandler.voiceSessionStarted(params: [:], message: message)
+
+        XCTAssertEqual(voiceSessionStartedInCurrentChatValues, ["false", "false"])
+    }
+
     // MARK: - Bonus offer
 
     func testWhenBonusOfferFlagIsOnThenConfigSupportsBonusOffer() {
@@ -3062,6 +3141,7 @@ private final class MockAIChatInputBox: AIChatInputBoxHandling {
     var aiChatInputBoxVisibilityPublisher: Published<AIChatInputBoxVisibility>.Publisher { $aiChatInputBoxVisibility }
 
     var isSubmitBlockedByRecoveryCard = false
+    var voiceInChatAvailability: AIChatVoiceInChatAvailability?
     var isTermsOfServiceShownOnPage = false
     var isAIChatPromoVisible: Bool?
 

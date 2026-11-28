@@ -642,6 +642,10 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1220098815607998
     case aiChatSwipeUpNewChat
 
+    /// The voice button in a Duck.ai chat with messages continues that chat by voice in the same tab.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220965132955273
+    case aiChatVoiceInExistingChat
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220115595487712
     case aiChatSwipeChromeRefinements
 
@@ -1204,6 +1208,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.tabHandoffImprovements))
         case .aiChatSwipeUpNewChat:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.swipeUpNewChat))
+        case .aiChatVoiceInExistingChat:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.voiceInExistingChat))
         case .aiChatSwipeChromeRefinements:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.swipeChromeRefinements))
         case .syncScopedAccessCredentials:

@@ -20,6 +20,8 @@
 import Combine
 import XCTest
 import AIChat
+import DesignResourcesKitIcons
+import FeatureFlags_iOS
 import PrivacyConfig
 @testable import DuckDuckGo
 @testable import Core
@@ -721,6 +723,35 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         XCTAssertEqual(instrumentation.searchActivatedCount, 1)
         XCTAssertEqual(instrumentation.editModeEnteredCount, 1)
         XCTAssertEqual(instrumentation.fireAllTappedCount, 1)
+    }
+
+    // MARK: - Row icons
+
+    func testRowIconsForEachChatType_voiceChatsShowTheChatGlyphOnceVoiceContinuesChats() {
+        typealias Glyphs = DesignSystemImages.Glyphs.Size24
+        let chats = [
+            DuckAiChat(chatId: "text", title: "t", model: "gpt-4o-mini", lastEdit: "2026-05-04T00:00:00.000Z", pinned: false),
+            DuckAiChat(chatId: "voice", title: "t", model: AIChatNativePrompt.voiceMode, lastEdit: "2026-05-03T00:00:00.000Z", pinned: false),
+            DuckAiChat(chatId: "image", title: "t", model: "gpt-4o-mini", lastEdit: "2026-05-02T00:00:00.000Z", pinned: false,
+                       isImageGeneration: true),
+            DuckAiChat(chatId: "pinned-voice", title: "t", model: AIChatNativePrompt.voiceMode, lastEdit: "2026-05-01T00:00:00.000Z", pinned: true)
+        ]
+        let expected: [(flags: [FeatureFlag], icons: [String: UIImage])] = [
+            ([], ["text": Glyphs.chat, "voice": Glyphs.voice, "image": Glyphs.images, "pinned-voice": Glyphs.pin]),
+            ([.aiChatVoiceInExistingChat], ["text": Glyphs.chat, "voice": Glyphs.chat, "image": Glyphs.images, "pinned-voice": Glyphs.pin])
+        ]
+        for (flags, icons) in expected {
+            let sut = makeSUT(chats: chats, featureFlagger: MockFeatureFlagger(enabledFeatureFlags: flags))
+            for section in [Section.pinned, Section.recent] {
+                for row in 0..<sut.numberOfRows(in: section.rawValue) {
+                    let indexPath = IndexPath(row: row, section: section.rawValue)
+                    let chatId = sut.chatId(forRowAt: indexPath) ?? ""
+                    XCTAssertEqual(sut.icon(forRowAt: indexPath)?.pngData(),
+                                   icons[chatId]?.withRenderingMode(.alwaysTemplate).pngData(),
+                                   "\(chatId), flags \(flags)")
+                }
+            }
+        }
     }
 
     // MARK: - Helpers

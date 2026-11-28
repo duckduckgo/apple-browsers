@@ -10,7 +10,7 @@
             {
                 "key": "source",
                 "type": "string",
-                "description": "The entry point source where the user tapped the voice button. address_bar covers the iPad address bar and Unified Input; duck_ai is New voice chat on a Duck.ai page; menu_bar is New Voice Chat in the iPad menu bar. Before duck_ai existed, both reported ntp.",
+                "description": "The entry point source where the user tapped the voice button. address_bar covers the iPad address bar and Unified Input; duck_ai is New voice chat on a Duck.ai page; menu_bar is New Voice Chat in the iPad menu bar; duck_ai_chat is the chat input's voice button in a Duck.ai chat with messages, continuing that chat. Before duck_ai existed, both reported ntp.",
                 "enum": [
                     "ntp",
                     "toolbar",
@@ -21,7 +21,8 @@
                     "widget.quickactions.medium",
                     "siri",
                     "duck_ai",
-                    "menu_bar"
+                    "menu_bar",
+                    "duck_ai_chat"
                 ]
             }
         ]
@@ -31,6 +32,28 @@
         "owners": ["pikorddg"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion"]
+        "parameters": [
+            "appVersion",
+            {
+                "key": "in_current_chat",
+                "type": "boolean",
+                "description": "true when the session continues the chat open in the tab, after the chat input's voice button asked Duck.ai to (startVoiceSession with inCurrentChat); false for a new voice chat"
+            }
+        ]
+    },
+    "aichat_voice_in_chat_unavailable_tapped": {
+        "description": "Fires when the user taps the voice button in a Duck.ai chat with messages while Duck.ai says voice can't continue that chat. Nothing starts and nothing is shown; VoiceOver reads Duck.ai's reason as the button's hint",
+        "owners": ["aataraxiaa"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "reason",
+                "type": "string",
+                "description": "Why Duck.ai says voice can't continue the chat: it has files, it's on an encrypted model, or it has content voice can't use (such as an attached page)",
+                "enum": ["files", "encryptedModel", "unsupportedContent"]
+            }
+        ]
     }
 }

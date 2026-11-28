@@ -46,6 +46,8 @@ public protocol AIChatInputBoxHandling {
     /// behind its own Terms of Service card, which a native disclaimer would only repeat.
     var isTermsOfServiceShownOnPage: Bool { get set }
 
+    /// The page's latest `voiceInChatAvailability` for the bound chat; `nil` until it says.
+    var voiceInChatAvailability: AIChatVoiceInChatAvailability? { get set }
     /// What the page last said about its promos (`aiChatPromoVisibility`): `nil` until it says anything, which
     /// counts as a promo that may still appear.
     var isAIChatPromoVisible: Bool? { get set }
@@ -77,6 +79,32 @@ public enum AIChatInputBoxVisibility: String, Codable {
     case hidden
     case visible
     case unknown
+}
+
+/// Whether the page lets voice continue the chat that's open, from its `voiceInChatAvailability` message.
+public enum AIChatVoiceInChatAvailability: Equatable {
+    case available
+    /// `message` is the page's own, already localized explanation, when it sends one.
+    case unavailable(reason: Reason, message: String?)
+
+    public enum Reason: String {
+        case files
+        case encryptedModel
+        case unsupportedContent
+        /// Any other reason, including ones this version doesn't know.
+        case unavailable
+    }
+
+    /// Reads `{ isAvailable, reason?, message? }`; `nil` when `isAvailable` is missing.
+    public init?(params: Any) {
+        guard let params = params as? [String: Any], let isAvailable = params["isAvailable"] as? Bool else { return nil }
+        if isAvailable {
+            self = .available
+        } else {
+            let reason = (params["reason"] as? String).flatMap(Reason.init(rawValue:)) ?? .unavailable
+            self = .unavailable(reason: reason, message: params["message"] as? String)
+        }
+    }
 }
 
 public struct AIChatStatus: Codable {

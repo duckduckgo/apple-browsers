@@ -5472,6 +5472,15 @@ class MainViewController: UIViewController {
     }
 
     private func openAIChatInVoiceMode(source: AIChatEntryPointSource, fromDeepLink: Bool, opensNewTabOverContent: Bool = false) {
+        guard !presentNoMicPermissionReminderIfNeeded() else { return }
+
+        // Voice mode bypasses `openAIChat`, so fire the entry pixel directly.
+        openAIChatVoiceModeInTab(source: source, fromDeepLink: fromDeepLink, opensNewTabOverContent: opensNewTabOverContent)
+    }
+
+    /// The microphone check every voice start makes first.
+    /// - Returns: whether it showed the reminder instead, so voice mustn't start.
+    func presentNoMicPermissionReminderIfNeeded() -> Bool {
         if let reminder = NoMicPermissionAlert.buildVoiceChatReminderIfNeeded(
             isSitePermissionsEnabled: tabManager.isSitePermissionsEnabled,
             microphoneAuthorization: AVCaptureDevice.authorizationStatus(for: .audio),
@@ -5483,11 +5492,9 @@ class MainViewController: UIViewController {
                 }
             }) {
             present(reminder, animated: true)
-            return
+            return true
         }
-
-        // Voice mode bypasses `openAIChat`, so fire the entry pixel directly.
-        openAIChatVoiceModeInTab(source: source, fromDeepLink: fromDeepLink, opensNewTabOverContent: opensNewTabOverContent)
+        return false
     }
 
     private func openAIChatVoiceModeInTab(source: AIChatEntryPointSource, fromDeepLink: Bool = false, opensNewTabOverContent: Bool = false) {

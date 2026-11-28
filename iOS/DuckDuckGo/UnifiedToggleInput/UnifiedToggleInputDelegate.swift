@@ -35,6 +35,9 @@ protocol UnifiedToggleInputDelegate: AnyObject {
     func unifiedToggleInputDidSubmitQuery(_ query: String)
     func unifiedToggleInputDidRequestVoiceSearch()
     func unifiedToggleInputDidRequestAIVoiceChat()
+    /// Voice continues the bound chat: the host checks the microphone, then calls the coordinator's
+    /// `startVoiceSessionInCurrentChat()`.
+    func unifiedToggleInputDidRequestAIVoiceChatInCurrentChat()
     func unifiedToggleInputDidRequestAIChat(prefilledText: String)
     func unifiedToggleInputDidChangeHeight()
     func unifiedToggleInputDidCommitMode(_ mode: TextEntryMode)
@@ -72,4 +75,5 @@ extension UnifiedToggleInputDelegate {
     func unifiedToggleInputDidTapToActivate() {}
     func unifiedToggleInputDidChangeEditMode(_ isEditing: Bool) {}
     func unifiedToggleInputDidRequestOpenInNewTab(_ url: URL) {}
+    func unifiedToggleInputDidRequestAIVoiceChatInCurrentChat() {}
 }

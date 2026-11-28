@@ -41,6 +41,9 @@ struct TabInputState: Equatable {
     /// Recovery `showModelPicker` pin: keeps the model chip visible mid-chat until prompt submit.
     /// Used when the user has lost access to the selected model.
     var isModelPickerForcedVisible: Bool
+    /// Driven by FE `voiceInChatAvailability`; `nil` until the page says. Persisted per tab because
+    /// FE re-sends it only on a change or when the page becomes visible again.
+    var voiceInChatAvailability: AIChatVoiceInChatAvailability?
 
     init(
         text: String = "",
@@ -52,7 +55,8 @@ struct TabInputState: Equatable {
         selectedTool: AIChatRAGTool? = nil,
         aiChatInputBoxVisibility: AIChatInputBoxVisibility = .unknown,
         isVoiceSessionActive: Bool = false,
-        isModelPickerForcedVisible: Bool = false
+        isModelPickerForcedVisible: Bool = false,
+        voiceInChatAvailability: AIChatVoiceInChatAvailability? = nil
     ) {
         self.text = text
         self.toggleMode = toggleMode
@@ -64,6 +68,7 @@ struct TabInputState: Equatable {
         self.aiChatInputBoxVisibility = aiChatInputBoxVisibility
         self.isVoiceSessionActive = isVoiceSessionActive
         self.isModelPickerForcedVisible = isModelPickerForcedVisible
+        self.voiceInChatAvailability = voiceInChatAvailability
     }
 
     static func == (lhs: TabInputState, rhs: TabInputState) -> Bool {
@@ -77,6 +82,7 @@ struct TabInputState: Equatable {
             && lhs.aiChatInputBoxVisibility == rhs.aiChatInputBoxVisibility
             && lhs.isVoiceSessionActive == rhs.isVoiceSessionActive
             && lhs.isModelPickerForcedVisible == rhs.isModelPickerForcedVisible
+            && lhs.voiceInChatAvailability == rhs.voiceInChatAvailability
     }
 
     /// The in-progress composition: what the user is drafting, as opposed to restored/ambient state.
@@ -101,7 +107,17 @@ struct TabInputState: Equatable {
         let model = chatOnlyModelID.map { "\($0) (chat only)" } ?? selectedModelID ?? "nil"
         let reasoning = selectedReasoningMode?.rawValue ?? "nil"
         let tool = selectedTool?.rawValue ?? "nil"
-        return "mode=\(mode) text.count=\(textLen) attachments=\(attachments) model=\(model) reasoning=\(reasoning) tool=\(tool) inputBox=\(aiChatInputBoxVisibility.rawValue) voice=\(isVoiceSessionActive) modelPickerPin=\(isModelPickerForcedVisible)"
+        return "mode=\(mode) text.count=\(textLen) attachments=\(attachments) model=\(model) reasoning=\(reasoning) tool=\(tool) inputBox=\(aiChatInputBoxVisibility.rawValue) voice=\(isVoiceSessionActive) modelPickerPin=\(isModelPickerForcedVisible) voiceInChat=\(voiceInChatSummary)"
+    }
+}
+
+private extension TabInputState {
+    var voiceInChatSummary: String {
+        switch voiceInChatAvailability {
+        case nil: return "unknown"
+        case .available: return "available"
+        case .unavailable(let reason, _): return "unavailable(\(reason.rawValue))"
+        }
     }
 }
 

@@ -174,6 +174,15 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         }
     }
 
+    /// The bound page's last word on continuing this chat by voice, kept per tab in `TabInputState`.
+    var voiceInChatAvailability: AIChatVoiceInChatAvailability? {
+        didSet {
+            guard oldValue != voiceInChatAvailability else { return }
+            persistDraftToStore()
+            updateToolbarAIVoiceChat()
+        }
+    }
+
     /// The bound page sets this on every bind, so only `unbind` clears it.
     var isAIChatPromoVisible: Bool? {
         didSet {
@@ -950,6 +959,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         aiChatInputBoxVisibility = state.aiChatInputBoxVisibility
         isVoiceSessionActive = state.isVoiceSessionActive
         isModelPickerForcedVisible = state.isModelPickerForcedVisible
+        voiceInChatAvailability = state.voiceInChatAvailability
         setText(state.text)
         syncInputModeFromExternalSource(state.toggleMode)
 
@@ -990,7 +1000,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             selectedTool: toolsController.selectedTool,
             aiChatInputBoxVisibility: aiChatInputBoxVisibility,
             isVoiceSessionActive: isVoiceSessionActive,
-            isModelPickerForcedVisible: isModelPickerForcedVisible
+            isModelPickerForcedVisible: isModelPickerForcedVisible,
+            voiceInChatAvailability: voiceInChatAvailability
         )
     }
 
@@ -1007,6 +1018,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             isAIChatStatusFromEarlierDocument = true
             aiChatInputBoxVisibility = visibility
             isVoiceSessionActive = false
+            voiceInChatAvailability = nil
             if didChangeChat {
                 if !currentText.isEmpty { setText("") }
                 clearAttachments()
@@ -1018,6 +1030,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         var updated = current
         updated.aiChatInputBoxVisibility = visibility
         updated.isVoiceSessionActive = false
+        updated.voiceInChatAvailability = nil
         if didChangeChat {
             updated.clearDraft()
             updated.chatOnlyModelID = nil
@@ -2249,6 +2262,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         fetchModels()
     }
 
+    /// Asks the bound page to continue its chat by voice, only while it last said it can.
+    func startVoiceSessionInCurrentChat() {
+        guard hasSubmittedPrompt, toolbarVoiceButton == .available, let boundUserScript else { return }
+        boundUserScript.submitStartVoiceSessionInCurrentChat()
+    }
+
     func startNewChat() {
         Logger.unifiedInputState.debug("startNewChat [tab=\(self.currentTabUID ?? "nil", privacy: .public)]")
         // The chat this replaces is over, even when both are blank, so the new one counts and reports fresh.
@@ -2273,6 +2292,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         attachmentUsage = nil
         // End voice before clearing its hold: closing voice arms the post-close hold.
         isVoiceSessionActive = false
+        voiceInChatAvailability = nil
         isVoiceRequestedForPage = false
         voiceHoldRelease?.cancel()
         voiceHoldRelease = nil
@@ -3264,8 +3284,21 @@ private extension UnifiedToggleInputCoordinator {
 
     // MARK: Toolbar
 
+    /// Continuing a chat by voice belongs to the Duck.ai tab's own input, not the contextual sheet.
+    private var continuesChatsByVoice: Bool {
+        host == .omnibar && featureFlagger.isFeatureOn(.aiChatVoiceInExistingChat)
+    }
+
+    var toolbarVoiceButton: UnifiedToggleInputVoiceButton {
+        UnifiedToggleInputVoiceButton(isDuckAIMode: inputMode == .aiChat,
+                                      hasSubmittedPrompt: hasSubmittedPrompt,
+                                      continuesChatsByVoice: continuesChatsByVoice,
+                                      isCreatingImage: toolsController.selectedTool == .imageGeneration,
+                                      availability: voiceInChatAvailability)
+    }
+
     func updateToolbarAIVoiceChat() {
-        viewController.isToolbarAIVoiceChatActive = inputMode == .aiChat && !hasSubmittedPrompt
+        viewController.toolbarVoiceButton = toolbarVoiceButton
     }
 
     func applyToolbarPresentation() {
@@ -3294,6 +3327,7 @@ private extension UnifiedToggleInputCoordinator {
     }
 
     func refreshToolsPresentation() {
+        updateToolbarAIVoiceChat()
         let usesSimplifiedPromptBox = simplifiedPromptBoxFeature.isAvailable
         let wasSimplifiedPromptBox = viewController.usesSimplifiedPromptBox
         let presentation = toolsPresentation
@@ -3469,13 +3503,31 @@ private extension UnifiedToggleInputCoordinator {
     func subscribeToAIVoiceChatTap() {
         viewController.handler.aiVoiceChatButtonTappedPublisher
             .sink { [weak self] in
-                guard let self else { return }
-                let hasPendingPageContext = self.hasPendingPageContextProvider?() ?? false
-                self.pixelReporter.reportVoiceTapped(hasPendingPageContext: hasPendingPageContext)
-                self.inputOutcomeMeasurement.record(.voiceStarted)
-                self.delegate?.unifiedToggleInputDidRequestAIVoiceChat()
+                self?.handleAIVoiceChatTap()
             }
             .store(in: &cancellables)
+    }
+
+    /// A chat with messages continues by voice when the page allows it; anything else starts a new voice chat as before.
+    /// A tap while unavailable only counts: how to show the page's reason on touch is an open design question.
+    private func handleAIVoiceChatTap() {
+        switch (hasSubmittedPrompt, toolbarVoiceButton) {
+        case (true, .unavailable):
+            if case .unavailable(let reason, _) = voiceInChatAvailability {
+                pixelReporter.reportVoiceInChatUnavailableTapped(reason: reason)
+            }
+        case (true, .available):
+            reportVoiceStarted()
+            delegate?.unifiedToggleInputDidRequestAIVoiceChatInCurrentChat()
+        default:
+            reportVoiceStarted()
+            delegate?.unifiedToggleInputDidRequestAIVoiceChat()
+        }
+    }
+
+    private func reportVoiceStarted() {
+        pixelReporter.reportVoiceTapped(hasPendingPageContext: hasPendingPageContextProvider?() ?? false)
+        inputOutcomeMeasurement.record(.voiceStarted)
     }
 
     func subscribeToClearButtonTap() {
@@ -3588,5 +3640,32 @@ extension UnifiedToggleInputCoordinator {
             isFirstPrompt: isFirstPrompt,
             hasPageContext: hasPageContext
         )
+    }
+}
+
+// MARK: - Voice Button
+
+extension UnifiedToggleInputVoiceButton {
+
+    /// A new chat always offers voice. A chat with messages follows the page: available, unavailable
+    /// with the page's reason for the reasons web explains, and hidden otherwise, until it says, or
+    /// while Create Image is picked.
+    init(isDuckAIMode: Bool,
+         hasSubmittedPrompt: Bool,
+         continuesChatsByVoice: Bool,
+         isCreatingImage: Bool,
+         availability: AIChatVoiceInChatAvailability?) {
+        guard isDuckAIMode else { self = .hidden; return }
+        guard hasSubmittedPrompt else { self = .available; return }
+        // The page doesn't know about the native Create Image tool until the prompt is sent.
+        guard continuesChatsByVoice, !isCreatingImage else { self = .hidden; return }
+        switch availability {
+        case .available:
+            self = .available
+        case .unavailable(let reason, let message?) where reason != .unavailable && !message.isEmpty:
+            self = .unavailable(message: message)
+        case .unavailable, nil:
+            self = .hidden
+        }
     }
 }

@@ -23,6 +23,7 @@ import BrowserServicesKit
 import BrowserServicesKitTestsUtils
 import Combine
 import Core
+import JavaScriptCore
 @_spi(Testing) import PixelKit
 import SubscriptionTestingUtilities
 import UIKit
@@ -448,7 +449,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
         sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat, trigger: .sendButton)
 
-        XCTAssertFalse(sut.viewController.isToolbarAIVoiceChatActive)
+        XCTAssertEqual(sut.viewController.toolbarVoiceButton, .hidden)
     }
 
     // MARK: - Display State: showCollapsed
@@ -4171,7 +4172,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     func test_showCollapsed_setsToolbarVoiceChatActive() {
         sut.showCollapsed()
-        XCTAssertTrue(sut.viewController.isToolbarAIVoiceChatActive)
+        XCTAssertEqual(sut.viewController.toolbarVoiceButton, .available)
     }
 
     func test_submittingPrompt_clearsToolbarVoiceChatActive() {
@@ -4179,7 +4180,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
         sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat, trigger: .sendButton)
 
-        XCTAssertFalse(sut.viewController.isToolbarAIVoiceChatActive)
+        XCTAssertEqual(sut.viewController.toolbarVoiceButton, .hidden)
     }
 
     func test_startNewChat_restoresToolbarVoiceChatActive() {
@@ -4188,23 +4189,23 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
         sut.startNewChat()
 
-        XCTAssertTrue(sut.viewController.isToolbarAIVoiceChatActive)
+        XCTAssertEqual(sut.viewController.toolbarVoiceButton, .available)
     }
 
     func test_showExpanded_inSearchMode_clearsToolbarVoiceChatActive() {
         sut.showExpanded(inputMode: .search)
-        XCTAssertFalse(sut.viewController.isToolbarAIVoiceChatActive)
+        XCTAssertEqual(sut.viewController.toolbarVoiceButton, .hidden)
     }
 
     func test_deactivateToOmnibar_refreshesToolbarVoiceChatFlag() {
         sut.activateFromOmnibar(inputMode: .aiChat)
-        XCTAssertTrue(sut.viewController.isToolbarAIVoiceChatActive)
+        XCTAssertEqual(sut.viewController.toolbarVoiceButton, .available)
 
         sut.updateInputMode(.search, animated: false)
-        XCTAssertFalse(sut.viewController.isToolbarAIVoiceChatActive)
+        XCTAssertEqual(sut.viewController.toolbarVoiceButton, .hidden)
 
         sut.deactivateToOmnibar()
-        XCTAssertTrue(sut.viewController.isToolbarAIVoiceChatActive)
+        XCTAssertEqual(sut.viewController.toolbarVoiceButton, .available)
     }
 
     // MARK: - AI Chat Shortcut
@@ -4866,6 +4867,8 @@ private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
     func unifiedToggleInputDidSubmitQuery(_ query: String) { submittedQuery = query }
     func unifiedToggleInputDidRequestVoiceSearch() { didRequestVoiceSearchCount += 1 }
     func unifiedToggleInputDidRequestAIVoiceChat() { didRequestAIVoiceChatCount += 1 }
+    var didRequestAIVoiceChatInCurrentChatCount = 0
+    func unifiedToggleInputDidRequestAIVoiceChatInCurrentChat() { didRequestAIVoiceChatInCurrentChatCount += 1 }
     var didRequestAIChatPrefilledText: String?
     func unifiedToggleInputDidRequestAIChat(prefilledText: String) {
         didRequestAIChatCount += 1
@@ -4881,6 +4884,336 @@ private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
     var duckAIPromptSubmissionOrigins: [AIChatEntryPointSource?] = []
     func unifiedToggleInputDidSubmitDuckAIPrompt(origin: AIChatEntryPointSource?) {
         duckAIPromptSubmissionOrigins.append(origin)
+    }
+}
+
+// MARK: - Voice in an existing chat
+
+@MainActor
+extension UnifiedToggleInputCoordinatorTests {
+
+    private static let filesMessage = "Unavailable in chats with files"
+
+    private func makeVoiceInChatCoordinator(flagOn: Bool = true,
+                                            host: UnifiedToggleInputHost = .omnibar,
+                                            pixelKit: PixelKitMock = PixelKitMock(),
+                                            featureFlagger: MockFeatureFlagger? = nil) -> UnifiedToggleInputCoordinator {
+        let coordinator = UnifiedToggleInputCoordinator(
+            host: host,
+            isToggleEnabled: host == .omnibar,
+            preferences: mockPreferences,
+            subscriptionManager: subscriptionManager,
+            toggleModeStorage: mockToggleModeStorage,
+            switchBarSubmissionMetrics: mockSubmissionMetrics,
+            featureDiscovery: mockFeatureDiscovery,
+            pixelFiring: UTIPixelFiring(pixelKit: { pixelKit }),
+            updatedModelPickerFeature: MockUpdatedModelPickerFeature(isAvailable: false),
+            featureFlagger: featureFlagger ?? MockFeatureFlagger(enabledFeatureFlags: flagOn ? [.aiChatVoiceInExistingChat] : [])
+        )
+        coordinator.delegate = mockDelegate
+        return coordinator
+    }
+
+    /// Shows `script`'s chat with messages in Duck.ai mode, as the Duck.ai tab does on selection.
+    private func showChat(_ script: AIChatUserScript, tab: TabUID, in coordinator: UnifiedToggleInputCoordinator) {
+        coordinator.activateForTab(tab)
+        coordinator.bindToTab(script, hasExistingChat: true)
+        coordinator.updateInputMode(.aiChat, animated: false)
+    }
+
+    private func voiceButton(in coordinator: UnifiedToggleInputCoordinator) -> UnifiedToggleInputVoiceButton {
+        coordinator.viewController.toolbarVoiceButton
+    }
+
+    // MARK: Button state
+
+    func testVoiceButtonForEachAvailabilityInAChatWithMessages() {
+        let cases: [(AIChatVoiceInChatAvailability?, UnifiedToggleInputVoiceButton)] = [
+            (nil, .hidden),
+            (.available, .available),
+            (.unavailable(reason: .files, message: Self.filesMessage), .unavailable(message: Self.filesMessage)),
+            (.unavailable(reason: .encryptedModel, message: "encrypted"), .unavailable(message: "encrypted")),
+            (.unavailable(reason: .unsupportedContent, message: "page"), .unavailable(message: "page")),
+            (.unavailable(reason: .unavailable, message: "anything"), .hidden),
+            (.unavailable(reason: .files, message: nil), .hidden),
+            (.unavailable(reason: .files, message: ""), .hidden)
+        ]
+        for (availability, expected) in cases {
+            let coordinator = makeVoiceInChatCoordinator()
+            let script = makeTestUserScript()
+            showChat(script, tab: "tab-A", in: coordinator)
+
+            coordinator.voiceInChatAvailability = availability
+
+            XCTAssertEqual(voiceButton(in: coordinator), expected, "\(String(describing: availability))")
+        }
+    }
+
+    func testCreateImageHidesVoiceInAChatWithMessagesUntilItIsTurnedOff() {
+        mockPreferences.selectedModelId = "gpt-5"
+        let coordinator = makeVoiceInChatCoordinator()
+        coordinator.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [.imageGeneration])]
+        let script = makeTestUserScript()
+        showChat(script, tab: "tab-A", in: coordinator)
+        coordinator.voiceInChatAvailability = .available
+
+        coordinator.handleToolsMenuSelection(.imageGeneration)
+        XCTAssertEqual(coordinator.selectedTool, .imageGeneration)
+        XCTAssertEqual(voiceButton(in: coordinator), .hidden)
+
+        coordinator.handleToolsMenuSelection(.imageGeneration)
+        XCTAssertNil(coordinator.selectedTool)
+        XCTAssertEqual(voiceButton(in: coordinator), .available)
+    }
+
+    func testTurningTheFlagOffWhileAChatIsOpenFallsBackToTodaysVoicePath() {
+        let flagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatVoiceInExistingChat])
+        let coordinator = makeVoiceInChatCoordinator(featureFlagger: flagger)
+        let webView = VoicePushRecordingWebView()
+        let script = makeVoicePushScript(webView: webView)
+        showChat(script, tab: "tab-A", in: coordinator)
+        coordinator.voiceInChatAvailability = .available
+        XCTAssertEqual(voiceButton(in: coordinator), .available)
+
+        flagger.enabledFeatureFlags = []
+        coordinator.viewController.handler.aiVoiceChatButtonTapped()
+
+        XCTAssertEqual(mockDelegate.didRequestAIVoiceChatCount, 1)
+        XCTAssertEqual(mockDelegate.didRequestAIVoiceChatInCurrentChatCount, 0)
+        coordinator.voiceInChatAvailability = .unavailable(reason: .files, message: Self.filesMessage)
+        XCTAssertEqual(voiceButton(in: coordinator), .hidden)
+
+        flagger.enabledFeatureFlags = [.aiChatVoiceInExistingChat]
+        coordinator.voiceInChatAvailability = .available
+        XCTAssertEqual(voiceButton(in: coordinator), .available)
+        drainMainQueue()
+        XCTAssertTrue(webView.voicePushes.isEmpty, "Nothing reaches the page while the flag is off")
+    }
+
+    func testFlagOffKeepsTodaysHiddenVoiceButtonInAChatWithMessages() {
+        let coordinator = makeVoiceInChatCoordinator(flagOn: false)
+        let script = makeTestUserScript()
+        showChat(script, tab: "tab-A", in: coordinator)
+
+        coordinator.voiceInChatAvailability = .available
+
+        XCTAssertEqual(voiceButton(in: coordinator), .hidden)
+    }
+
+    func testANewChatOffersVoiceWhateverThePageSays() {
+        for flagOn in [true, false] {
+            let coordinator = makeVoiceInChatCoordinator(flagOn: flagOn)
+            coordinator.showExpanded(inputMode: .aiChat)
+
+            coordinator.voiceInChatAvailability = .unavailable(reason: .unavailable, message: nil)
+
+            XCTAssertEqual(voiceButton(in: coordinator), .available, "flag on: \(flagOn)")
+        }
+    }
+
+    func testSearchModeNeverShowsVoice() {
+        let coordinator = makeVoiceInChatCoordinator()
+        let script = makeTestUserScript()
+        showChat(script, tab: "tab-A", in: coordinator)
+        coordinator.voiceInChatAvailability = .available
+
+        coordinator.updateInputMode(.search, animated: false)
+
+        XCTAssertEqual(voiceButton(in: coordinator), .hidden)
+    }
+
+    func testTheContextualSheetKeepsTodaysVoiceButton() {
+        let coordinator = makeVoiceInChatCoordinator(host: .contextualChat)
+        coordinator.unifiedToggleInputVC(coordinator.viewController, didSubmitText: "hello", mode: .aiChat, trigger: .sendButton)
+
+        coordinator.voiceInChatAvailability = .available
+
+        XCTAssertEqual(voiceButton(in: coordinator), .hidden)
+    }
+
+    // MARK: Per tab
+
+    func testEachTabKeepsItsOwnAvailabilityAcrossSwitches() {
+        let coordinator = makeVoiceInChatCoordinator()
+        let availableChat = makeTestUserScript()
+        let filesChat = makeTestUserScript()
+        showChat(availableChat, tab: "tab-A", in: coordinator)
+        coordinator.voiceInChatAvailability = .available
+        showChat(filesChat, tab: "tab-B", in: coordinator)
+        XCTAssertEqual(voiceButton(in: coordinator), .hidden, "A tab the page hasn't spoken for yet doesn't borrow another tab's state")
+        coordinator.voiceInChatAvailability = .unavailable(reason: .files, message: Self.filesMessage)
+
+        for _ in 0..<3 {
+            showChat(availableChat, tab: "tab-A", in: coordinator)
+            XCTAssertEqual(voiceButton(in: coordinator), .available)
+            showChat(filesChat, tab: "tab-B", in: coordinator)
+            XCTAssertEqual(voiceButton(in: coordinator), .unavailable(message: Self.filesMessage))
+        }
+    }
+
+    func testALaterMessageReplacesTheAvailability() {
+        let coordinator = makeVoiceInChatCoordinator()
+        let script = makeTestUserScript()
+        showChat(script, tab: "tab-A", in: coordinator)
+        coordinator.voiceInChatAvailability = .available
+
+        coordinator.voiceInChatAvailability = .unavailable(reason: .files, message: Self.filesMessage)
+        XCTAssertEqual(voiceButton(in: coordinator), .unavailable(message: Self.filesMessage))
+
+        coordinator.voiceInChatAvailability = .available
+        XCTAssertEqual(voiceButton(in: coordinator), .available)
+    }
+
+    func testANewChatForgetsTheAvailability() {
+        let coordinator = makeVoiceInChatCoordinator()
+        let script = makeTestUserScript()
+        showChat(script, tab: "tab-A", in: coordinator)
+        coordinator.voiceInChatAvailability = .available
+
+        coordinator.startNewChat()
+        coordinator.unifiedToggleInputVC(coordinator.viewController, didSubmitText: "hello", mode: .aiChat, trigger: .sendButton)
+
+        XCTAssertNil(coordinator.voiceInChatAvailability)
+        XCTAssertEqual(voiceButton(in: coordinator), .hidden)
+    }
+
+    func testANavigationForgetsTheAvailabilityOfThatTab() {
+        let coordinator = makeVoiceInChatCoordinator()
+        let script = makeTestUserScript()
+        let otherScript = makeTestUserScript()
+        showChat(script, tab: "tab-A", in: coordinator)
+        coordinator.voiceInChatAvailability = .available
+        showChat(otherScript, tab: "tab-B", in: coordinator)
+        coordinator.voiceInChatAvailability = .available
+
+        coordinator.handleNavigationCommit(tabUID: "tab-A", didChangeChat: true)
+        coordinator.handleNavigationCommit(tabUID: "tab-B", didChangeChat: true)
+
+        XCTAssertEqual(voiceButton(in: coordinator), .hidden, "The open tab forgets it at once")
+        showChat(script, tab: "tab-A", in: coordinator)
+        XCTAssertEqual(voiceButton(in: coordinator), .hidden, "A background tab forgets it too")
+    }
+
+    // MARK: Tap
+
+    func testTapInAnAvailableChatContinuesItInsteadOfOpeningANewVoiceChat() {
+        let pixelKit = PixelKitMock()
+        let coordinator = makeVoiceInChatCoordinator(pixelKit: pixelKit)
+        let script = makeTestUserScript()
+        showChat(script, tab: "tab-A", in: coordinator)
+        coordinator.voiceInChatAvailability = .available
+
+        coordinator.viewController.handler.aiVoiceChatButtonTapped()
+
+        XCTAssertEqual(mockDelegate.didRequestAIVoiceChatInCurrentChatCount, 1)
+        XCTAssertEqual(mockDelegate.didRequestAIVoiceChatCount, 0)
+        XCTAssertEqual(pixelKit.actualFireCalls.filter { $0.pixel.name == Pixel.Event.unifiedToggleInputVoiceTapped.name }.count, 1,
+                       "An in-chat tap counts as a voice tap, as an empty-chat tap does")
+    }
+
+    func testTapInANewChatTakesTodaysPath() {
+        for flagOn in [true, false] {
+            mockDelegate.didRequestAIVoiceChatCount = 0
+            let coordinator = makeVoiceInChatCoordinator(flagOn: flagOn)
+            coordinator.showExpanded(inputMode: .aiChat)
+            coordinator.voiceInChatAvailability = .available
+
+            coordinator.viewController.handler.aiVoiceChatButtonTapped()
+
+            XCTAssertEqual(mockDelegate.didRequestAIVoiceChatCount, 1, "flag on: \(flagOn)")
+            XCTAssertEqual(mockDelegate.didRequestAIVoiceChatInCurrentChatCount, 0, "flag on: \(flagOn)")
+        }
+    }
+
+    func testTapWhileUnavailableCountsTheTapAndStartsNothing() {
+        let pixelKit = PixelKitMock()
+        let coordinator = makeVoiceInChatCoordinator(pixelKit: pixelKit)
+        let webView = VoicePushRecordingWebView()
+        let script = makeVoicePushScript(webView: webView)
+        showChat(script, tab: "tab-A", in: coordinator)
+        coordinator.voiceInChatAvailability = .unavailable(reason: .files, message: Self.filesMessage)
+
+        coordinator.viewController.handler.aiVoiceChatButtonTapped()
+        coordinator.startVoiceSessionInCurrentChat()
+
+        XCTAssertEqual(mockDelegate.didRequestAIVoiceChatCount, 0)
+        XCTAssertEqual(mockDelegate.didRequestAIVoiceChatInCurrentChatCount, 0)
+        XCTAssertTrue(pixelKit.actualFireCalls.filter { $0.pixel.name == Pixel.Event.unifiedToggleInputVoiceTapped.name }.isEmpty)
+        let unavailableTaps = pixelKit.actualFireCalls.filter { $0.pixel.name == "aichat_voice_in_chat_unavailable_tapped" }
+        XCTAssertEqual(unavailableTaps.map(\.frequency), [.dailyAndCount])
+        XCTAssertEqual(unavailableTaps.first?.pixel.parameters?["reason"], "files")
+        drainMainQueue()
+        XCTAssertTrue(webView.voicePushes.isEmpty, "Nothing reaches the page")
+    }
+
+    func testStartingVoiceInTheCurrentChatPushesItToThePage() {
+        let coordinator = makeVoiceInChatCoordinator()
+        let webView = VoicePushRecordingWebView()
+        let script = makeVoicePushScript(webView: webView)
+        showChat(script, tab: "tab-A", in: coordinator)
+        coordinator.voiceInChatAvailability = .available
+        let pushed = expectation(description: "startVoiceSession pushed")
+        webView.onVoicePush = { _ in pushed.fulfill() }
+
+        coordinator.startVoiceSessionInCurrentChat()
+
+        wait(for: [pushed], timeout: 2)
+        XCTAssertEqual(webView.voicePushes.map { $0["inCurrentChat"] as? Bool }, [true])
+    }
+
+    func testVoiceIsNotPushedOnceThePageStopsAllowingIt() {
+        for availability: AIChatVoiceInChatAvailability? in [nil, .unavailable(reason: .unavailable, message: nil)] {
+            let coordinator = makeVoiceInChatCoordinator()
+            let webView = VoicePushRecordingWebView()
+            let script = makeVoicePushScript(webView: webView)
+            showChat(script, tab: "tab-A", in: coordinator)
+            coordinator.voiceInChatAvailability = .available
+            coordinator.voiceInChatAvailability = availability
+
+            coordinator.startVoiceSessionInCurrentChat()
+
+            drainMainQueue()
+            XCTAssertTrue(webView.voicePushes.isEmpty, "\(String(describing: availability))")
+        }
+    }
+
+    private func makeVoicePushScript(webView: VoicePushRecordingWebView) -> AIChatUserScript {
+        let script = makeTestUserScript()
+        let broker = UserScriptMessageBroker(context: "aiChat", requiresRunInPageContentWorld: true)
+        retainedBridgeReadyWebView = webView
+        retainedBridgeReadyBroker = broker
+        script.webView = webView
+        script.broker = broker
+        return script
+    }
+
+    /// The broker dispatches pushes on the next main-queue turn.
+    private func drainMainQueue() {
+        let drained = expectation(description: "main queue drained")
+        DispatchQueue.main.async { drained.fulfill() }
+        wait(for: [drained], timeout: 2)
+    }
+}
+
+/// Runs the bridge's push JavaScript against a stub page and records each `startVoiceSession`.
+private final class VoicePushRecordingWebView: WKWebView {
+    private(set) var voicePushes: [[String: Any]] = []
+    var onVoicePush: (([String: Any]) -> Void)?
+    private let javaScriptContext = JSContext()!
+
+    override func evaluateJavaScript(_ javaScriptString: String, completionHandler: ((Any?, Error?) -> Void)? = nil) {
+        javaScriptContext.evaluateScript("""
+            var capturedVoice = null;
+            var navigator = { duckduckgo: { messageHandlers: {
+                startVoiceSession: function(event) { capturedVoice = event.params; }
+            } } };
+            """)
+        javaScriptContext.evaluateScript(javaScriptString)
+        if let params = javaScriptContext.objectForKeyedSubscript("capturedVoice")?.toDictionary() as? [String: Any] {
+            voicePushes.append(params)
+            onVoicePush?(params)
+        }
+        completionHandler?(nil, nil)
     }
 }
 

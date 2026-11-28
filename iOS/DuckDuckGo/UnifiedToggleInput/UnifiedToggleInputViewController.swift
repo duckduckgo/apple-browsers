@@ -210,9 +210,9 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.handlerIsTopBarPosition = newValue }
     }
 
-    var isToolbarAIVoiceChatActive: Bool {
-        get { inputBarView.isToolbarAIVoiceChatActive }
-        set { inputBarView.isToolbarAIVoiceChatActive = newValue }
+    var toolbarVoiceButton: UnifiedToggleInputVoiceButton {
+        get { inputBarView.toolbarVoiceButton }
+        set { inputBarView.toolbarVoiceButton = newValue }
     }
 
     var isSubmitBlockedByRecoveryCard: Bool {

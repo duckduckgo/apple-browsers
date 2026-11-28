@@ -666,6 +666,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/task/1220520342210072
     case newChatDefaultModel
 
+    /// iOS only. The voice button in a Duck.ai chat with messages continues that chat by voice.
+    /// https://app.asana.com/0/0/1217878433324673/f
+    case voiceInExistingChat
     /// Offers to translate and summarize pages in another language from the Duck.ai tab-bar button (macOS).
     /// https://app.asana.com/1/137249556945/project/1203972458584429/task/1220953171633449
     case offerTranslationAndSummarize

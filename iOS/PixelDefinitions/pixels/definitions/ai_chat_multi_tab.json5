@@ -55,7 +55,7 @@
                 "key": "reason",
                 "description": "Pending source-page collection, another cross-tab collection, or both blocking the last wait.",
                 "type": "string",
-                "enum": ["source_collection", "cross_tab_collection", "both"]
+                "enum": ["source_collection", "cross_tab_collection", "both", "timed_out"]
             }
         ]
     },

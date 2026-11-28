@@ -19,6 +19,7 @@
 import Foundation
 import os.log
 import Persistence
+import PixelKit
 
 enum DeclaredAgeStorageKeys: String, StorageKeyDescribing {
     case lastRequestDate = "declaredAgeLastRequestDate"
@@ -39,13 +40,16 @@ public final class DeclaredAgeRequester {
 
     private let service: DeclaredAgeServicing
     private let storage: any ThrowingKeyedStoring<DeclaredAgeSettings>
+    private let pixelFiring: PixelFiring?
     private let now: () -> Date
 
     public init(service: DeclaredAgeServicing,
                 storage: any ThrowingKeyedStoring<DeclaredAgeSettings>,
+                pixelFiring: PixelFiring? = PixelKit.shared,
                 now: @escaping () -> Date = Date.init) {
         self.service = service
         self.storage = storage
+        self.pixelFiring = pixelFiring
         self.now = now
     }
 
@@ -76,10 +80,11 @@ public final class DeclaredAgeRequester {
         try? storage.set(true, for: \.requestWasNotRequired)
         try? storage.set(isReinstall, for: \.reinstallWasHandled)
         Logger.declaredAge.info("Marked as not required")
+        pixelFiring?.fire(DeclaredAgePixel.checkNotRequired(isReinstall: isReinstall), frequency: .standard)
     }
 
     public func requestDeclaredAge(isReinstall: Bool = false, in anchor: DeclaredAgeAnchor) async -> Bool {
-        guard await request(in: anchor) else {
+        guard await request(isReinstall: isReinstall, in: anchor) else {
             // No marker is stored, so the next launch retries.
             return false
         }
@@ -100,15 +105,26 @@ public final class DeclaredAgeRequester {
 
 private extension DeclaredAgeRequester {
 
-    func request(in anchor: DeclaredAgeAnchor) async -> Bool {
+    func request(isReinstall: Bool, in anchor: DeclaredAgeAnchor) async -> Bool {
+        pixelFiring?.fire(DeclaredAgePixel.requestShown(isReinstall: isReinstall), frequency: .standard)
+
+        let didRequest: Bool
+
         do {
-            let didRequest = try await service.requestDeclaredAge(in: anchor)
+            didRequest = try await service.requestDeclaredAge(in: anchor)
             Logger.declaredAge.info("Request finished (supported by the OS: \(didRequest))")
-            return didRequest
+
         } catch {
             Logger.declaredAge.error("Request failed: \(String(describing: error), privacy: .public)")
+            pixelFiring?.fire(DeclaredAgePixel.requestFailed(isReinstall: isReinstall), frequency: .dailyAndCount)
             return false
         }
+
+        if didRequest {
+            pixelFiring?.fire(DeclaredAgePixel.requestCompleted(isReinstall: isReinstall), frequency: .standard)
+        }
+
+        return didRequest
     }
 
     func markRequested(isReinstall: Bool) {

@@ -22,6 +22,7 @@ import SwiftUI
 import UIKit
 import WebKit
 import BareBonesBrowserKit
+import BrowserServicesKit
 import Core
 import DataBrokerProtection_iOS
 import AIChat
@@ -96,6 +97,9 @@ extension DebugScreensViewModel {
                 controller.presentShareSheet(withItems: [DiagnosticReportDataSource(delegate: Delegate(), tabManager: d.tabManager, fireproofing: d.fireproofing)], fromView: controller.view)
             }),
             resetModalPromptsCooldownPeriodScreen,
+            .action(title: "Force Show Declared Age", { _ in
+                self.forceShowDeclaredAge()
+            }),
 
             // MARK: SwiftUI Views
             .view(title: "DuckUI", { _ in
@@ -365,6 +369,16 @@ extension DebugScreensViewModel {
         return .action(title: "Reset Prompts Cooldown Period") { _ in
             cooldownResetter.resetModalCooldown()
         }
+    }
+
+    @MainActor
+    private func forceShowDeclaredAge() {
+        guard let controller = UIApplication.shared.firstKeyWindow?.rootViewController?.presentedViewController else { return }
+
+        let requester = DeclaredAgeRequester(service: DefaultDeclaredAgeService(), storage: dependencies.keyValueStore.throwingKeyedStoring())
+        let prompt = DeclaredAgePrompt(requester: requester, featureFlagger: AppDependencyProvider.shared.featureFlagger)
+        prompt.anchorProvider = { controller }
+        prompt.present()
     }
 
     private var webExtensionsDebugScreen: DebugScreen? {

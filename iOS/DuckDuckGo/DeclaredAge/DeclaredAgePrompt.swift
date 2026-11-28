@@ -52,7 +52,21 @@ final class DeclaredAgePrompt {
             return true
         }
 
-        guard isRequestNeeded, featureFlagger.isFeatureOn(.declaredAgeRange), let anchor = anchorProvider?() else {
+        guard isRequestNeeded, featureFlagger.isFeatureOn(.declaredAgeRange) else {
+            return false
+        }
+
+        return present()
+    }
+
+    /// Presents regardless of whether a request is needed. Returns whether the request was started.
+    @discardableResult
+    func present() -> Bool {
+        guard !isPresenting else {
+            return true
+        }
+
+        guard let anchor = anchorProvider?() else {
             return false
         }
 

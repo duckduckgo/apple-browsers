@@ -10099,12 +10099,14 @@ extension MainViewController: UIDropInteractionDelegate {
         
         if session.canLoadObjects(ofClass: URL.self) {
             _ = session.loadObjects(ofClass: URL.self) { urls in
-                urls.forEach { self.loadDroppedURLInNewTab($0) }
+                // Filter out dropped content with a script scheme (javascript:, data:, vbscript:) before loading it
+                urls.filter(DroppedContentPolicy.allows).forEach { self.loadDroppedURLInNewTab($0) }
             }
             
         } else if session.canLoadObjects(ofClass: String.self) {
             _ = session.loadObjects(ofClass: String.self) { strings in
-                self.loadQuery(strings[0], via: .drop)
+                guard let text = strings.first, DroppedContentPolicy.allows(text) else { return }
+                self.loadQuery(text, via: .drop)
             }
             
         }

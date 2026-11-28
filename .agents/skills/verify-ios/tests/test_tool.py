@@ -209,6 +209,45 @@ class AppLogTests(unittest.TestCase):
         self.assertFalse(os.path.exists(self.path + ".missing"))
 
 
+class AppBuildPackagesTests(unittest.TestCase):
+    """The app build uses pre-resolved packages only when VERIFY_IOS_PACKAGES names them, so a machine without access
+    to the private packages can still build"""
+
+    def app_build_command(self, packages):
+        calls = []
+
+        def fake_run(cmd, **_):
+            calls.append(cmd)
+            return subprocess.CompletedProcess(cmd, 1)   # a failed build stops before any build state is recorded
+
+        with mock.patch.object(device.Device, "_ensure", return_value=False), \
+                mock.patch.object(device.Device, "udid", new_callable=mock.PropertyMock, return_value="UDID"), \
+                mock.patch.object(env, "source_stamp", return_value="stamp"), \
+                mock.patch.object(env, "PACKAGES", packages), \
+                mock.patch.object(device.subprocess, "run", side_effect=fake_run):
+            with self.assertRaises(env.Failed):
+                device.Device("iphone").build(app=True, runner=False)
+        self.assertEqual(len(calls), 1)
+        return calls[0]
+
+    def test_packages_dir_is_used_without_resolving(self):
+        cmd = self.app_build_command("/resolved/packages")
+        i = cmd.index("-clonedSourcePackagesDirPath")
+        self.assertEqual(cmd[i + 1], "/resolved/packages")
+        self.assertIn("-disableAutomaticPackageResolution", cmd)
+
+    def test_a_relative_packages_dir_is_made_absolute_for_every_build(self):
+        script = "import os; from verify_ios import env; print(env.PACKAGES); print(os.environ['VERIFY_IOS_PACKAGES'])"
+        p = subprocess.run([sys.executable, "-c", script], capture_output=True, text=True, cwd=TMP,
+                           env={**os.environ, "VERIFY_IOS_PACKAGES": "pkgs", "PYTHONPATH": os.path.join(env.SKILL, "lib")})
+        self.assertEqual(p.stdout.split(), [os.path.join(os.path.realpath(TMP), "pkgs")] * 2, p.stderr)
+
+    def test_without_packages_dir_the_build_resolves_its_own(self):
+        cmd = self.app_build_command("")
+        self.assertNotIn("-clonedSourcePackagesDirPath", cmd)
+        self.assertNotIn("-disableAutomaticPackageResolution", cmd)
+
+
 class BuildLocationTests(unittest.TestCase):
     def test_builds_live_in_the_worktree_and_git_ignores_them(self):
         for path in (env.APP_DD, env.RUNNER_DD):

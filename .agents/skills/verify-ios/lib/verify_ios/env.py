@@ -66,6 +66,10 @@ BUILD = f"{ROOT}/DerivedData/verify-ios"
 APP_DD = f"{BUILD}/app"
 RUNNER_DD = f"{BUILD}/runner"
 APP = f"{APP_DD}/Build/Products/Debug-iphonesimulator/DuckDuckGo.app"
+# Dir of Swift packages already resolved, for machines that can't fetch the private ones
+PACKAGES = os.environ.get("VERIFY_IOS_PACKAGES", "")
+if PACKAGES:
+    PACKAGES = os.environ["VERIFY_IOS_PACKAGES"] = os.path.abspath(os.path.expanduser(PACKAGES))
 EVIDENCE = f"{HOME}/evidence"
 BASE_PORT = 20000 + int(hashlib.sha1(ROOT.encode()).hexdigest(), 16) % 1000 * 8
 

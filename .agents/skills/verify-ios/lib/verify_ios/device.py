@@ -124,9 +124,11 @@ class Device:
         self._ensure()   # xcodebuild needs a concrete destination; it need not be booted
         out, jobs = {}, []
         if app:
+            packages = ["-clonedSourcePackagesDirPath", env.PACKAGES, "-disableAutomaticPackageResolution"] if env.PACKAGES else []
             jobs.append(("app", ["xcodebuild", "-project", f"{ROOT}/iOS/DuckDuckGo-iOS.xcodeproj", "-scheme", "iOS Browser",
                                  "-configuration", "Debug", "-destination", f"platform=iOS Simulator,id={self.udid}",
-                                 "-derivedDataPath", APP_DD, "-skipPackagePluginValidation", "-skipMacroValidation", "build"]))
+                                 "-derivedDataPath", APP_DD, *packages, "-skipPackagePluginValidation",
+                                 "-skipMacroValidation", "build"]))
         if runner:
             jobs.append(("runner", ["xcodebuild", "build-for-testing", "-project", f"{SKILL}/runner/VRunner.xcodeproj",
                                     "-scheme", "VRunner-iOS", "-destination", f"platform=iOS Simulator,id={self.udid}",

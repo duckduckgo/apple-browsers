@@ -28,18 +28,18 @@ final class TranslateMenuRowTests: XCTestCase {
 
     func testIdleOffersToTranslateIntoTheTargetLanguage() {
         XCTAssertEqual(TranslateMenuRow.content(for: offer, state: .idle, locale: locale),
-                       TranslateMenuRow.Content(name: "Translate Page to English", isEnabled: true))
+                       TranslateMenuRow.Content(name: "Translate Page to English", isEnabled: true, showsDot: false))
     }
 
     func testTranslatingIsDisabled() {
         XCTAssertEqual(TranslateMenuRow.content(for: offer, state: .translating, locale: locale),
-                       TranslateMenuRow.Content(name: "Translating…", isEnabled: false))
+                       TranslateMenuRow.Content(name: "Translating…", isEnabled: false, showsDot: false))
     }
 
     func testATranslatedPageOffersTheOriginal() {
         for state in [PageTranslationSession.State.partiallyTranslated, .fullyTranslated] {
             XCTAssertEqual(TranslateMenuRow.content(for: offer, state: state, locale: locale),
-                           TranslateMenuRow.Content(name: "Show Original Page", isEnabled: true))
+                           TranslateMenuRow.Content(name: "Show Original Page", isEnabled: true, showsDot: true))
         }
     }
 }

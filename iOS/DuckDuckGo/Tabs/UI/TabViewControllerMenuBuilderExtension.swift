@@ -1264,15 +1264,18 @@ extension TabViewController: BrowsingMenuEntryBuilding {
         let state = pageTranslationState
         let content = TranslateMenuRow.content(for: offer, state: state, locale: .current)
         return BrowsingMenuEntry.regular(name: content.name,
-                                         image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.translate : DesignSystemImages.Glyphs.Size24.translate) { [weak self] in
-            switch state {
+                                         image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.translate : DesignSystemImages.Glyphs.Size24.translate,
+                                         showNotificationDot: content.showsDot,
+                                         isEnabled: content.isEnabled) { [weak self] in
+            // The open menu can show an older state than the page's; act on the page's.
+            guard let self else { return }
+            switch pageTranslationState {
             case .idle:
-                self?.translatePageFromMenu(offer)
+                translatePageFromMenu(offer)
             case .translating:
-                // TODO: This is coming next. Show the row disabled (`content.isEnabled`) instead of ignoring the tap.
                 break
             case .partiallyTranslated, .fullyTranslated:
-                self?.showOriginalPage()
+                showOriginalPage()
             }
         }
     }

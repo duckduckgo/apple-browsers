@@ -234,7 +234,9 @@ class MainViewController: UIViewController {
     let toggleModeStorage: ToggleModeStoring
     var fireExecutor: FireExecuting
     private var launchTabObserver: LaunchTabNotification.Observer?
-    private var isDownloadMenuAlertVisible: Bool?
+    private var isMenuAlertVisible: Bool?
+    /// Rebuilds the open website menu from its tab, so a row reflects a change while the menu is on screen.
+    private var refreshOpenBrowsingMenu: (() -> Void)?
     private weak var sitePermissionAnimationTab: TabViewController?
     var isNewTabPageVisible: Bool {
         newTabPageViewController != nil
@@ -1129,7 +1131,7 @@ class MainViewController: UIViewController {
         registerForDownloadMenuAlertNotifications()
 
         decorate()
-        refreshDownloadMenuAlertState(animated: false)
+        refreshMenuAlertState(animated: false)
 
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
 
@@ -1885,13 +1887,17 @@ class MainViewController: UIViewController {
     }
 
     @objc private func downloadMenuAlertStateDidChange() {
-        refreshDownloadMenuAlertState(animated: true)
+        refreshMenuAlertState(animated: true)
     }
 
-    private func refreshDownloadMenuAlertState(animated: Bool) {
-        let isVisible = AppDependencyProvider.shared.downloadManager.hasDownloadsNeedingAttention
-        let shouldAnimate = animated && isDownloadMenuAlertVisible != isVisible
-        isDownloadMenuAlertVisible = isVisible
+    private var shouldShowMenuAlert: Bool {
+        AppDependencyProvider.shared.downloadManager.hasDownloadsNeedingAttention || currentTab?.isPageTranslated == true
+    }
+
+    private func refreshMenuAlertState(animated: Bool) {
+        let isVisible = shouldShowMenuAlert
+        let shouldAnimate = animated && isMenuAlertVisible != isVisible
+        isMenuAlertVisible = isVisible
 
         viewCoordinator.menuToolbarButton.setMenuAlertVisible(isVisible, animated: shouldAnimate)
         viewCoordinator.omniBar.barView.menuButton.setMenuAlertVisible(isVisible, animated: shouldAnimate)
@@ -2783,6 +2789,7 @@ class MainViewController: UIViewController {
         // without this the user lands on NTP with no visible bars.
         viewCoordinator.hideAITabChrome()
         reconcileToolbarVisibilityForCurrentTab()
+        refreshMenuAlertState(animated: false)
 
         viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
         refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
@@ -3628,6 +3635,7 @@ class MainViewController: UIViewController {
         observePageBackgroundColor(for: tab)
         tab.chromeDelegate = self
         tab.updateWebViewBottomAnchor(for: currentBarsVisibility)
+        refreshMenuAlertState(animated: false)
 
         if isInMinimalChromeLayout {
             tab.borderView.isBottomVisible = appSettings.currentAddressBarPosition.isBottom
@@ -6870,7 +6878,16 @@ extension MainViewController: OmniBarDelegate {
                                                menuEntries: menuEntries,
                                                daxDialogsManager: daxDialogsManager)
         browsingMenu.isUsingSingleBar = isUsingSingleBar
+        if context == .website {
+            refreshOpenBrowsingMenu = { [weak self, weak browsingMenu, weak tab] in
+                guard let self, let browsingMenu, let tab else { return }
+                browsingMenu.update(menuEntries: tab.buildBrowsingMenu(with: menuBookmarksViewModel,
+                                                                       mobileCustomization: mobileCustomization,
+                                                                       clearTabsAndData: onFirePressed))
+            }
+        }
         browsingMenu.onDismiss = { wasActionSelected in
+            self.refreshOpenBrowsingMenu = nil
             self.showMenuHighlighterIfNeeded()
             self.viewCoordinator.menuToolbarButton.isEnabled = true
             if !wasActionSelected {
@@ -6912,21 +6929,36 @@ extension MainViewController: OmniBarDelegate {
             return
         }
 
-        let view = BrowsingMenuSheetView(model: model,
-                                         headerDataSource: browsingMenuHeaderDataSource,
-                                         highlightRowWithTag: menuHighlightingTag,
-                                         dismissInstantly: isNewTabTransitionEnabled ? { [weak self] in
-                                             self?.dismissPresentedSheetInstantly()
-                                         } : nil,
-                                         onDismiss: { wasActionSelected in
-                                             self.showMenuHighlighterIfNeeded()
-                                             self.viewCoordinator.menuToolbarButton.isEnabled = true
-                                             if !wasActionSelected {
-                                                 PixelKit.fire(Pixel.Event.browsingMenuDismissed)
-                                             }
-                                         })
+        let highlightTag = menuHighlightingTag
+        func makeView(_ model: BrowsingMenuModel) -> BrowsingMenuSheetView {
+            BrowsingMenuSheetView(model: model,
+                                  headerDataSource: browsingMenuHeaderDataSource,
+                                  highlightRowWithTag: highlightTag,
+                                  dismissInstantly: isNewTabTransitionEnabled ? { [weak self] in
+                                      self?.dismissPresentedSheetInstantly()
+                                  } : nil,
+                                  onDismiss: { wasActionSelected in
+                                      self.refreshOpenBrowsingMenu = nil
+                                      self.showMenuHighlighterIfNeeded()
+                                      self.viewCoordinator.menuToolbarButton.isEnabled = true
+                                      if !wasActionSelected {
+                                          PixelKit.fire(Pixel.Event.browsingMenuDismissed)
+                                      }
+                                  })
+        }
 
-        let controller = BrowsingMenuSheetViewController(rootView: view)
+        let controller = BrowsingMenuSheetViewController(rootView: makeView(model))
+        if context == .website {
+            refreshOpenBrowsingMenu = { [weak self, weak controller, weak tab] in
+                guard let self, let controller, let tab,
+                      let model = tab.buildSheetBrowsingMenu(context: context,
+                                                             with: menuBookmarksViewModel,
+                                                             mobileCustomization: mobileCustomization,
+                                                             browsingMenuSheetCapability: browsingMenuSheetCapability,
+                                                             clearTabsAndData: onFirePressed) else { return }
+                controller.rootView = makeView(model)
+            }
+        }
         let contentHeight = model.estimatedContentHeight(
             headerDataSource: browsingMenuHeaderDataSource,
             verticalSizeClass: traitCollection.verticalSizeClass
@@ -8137,6 +8169,14 @@ extension MainViewController: NewTabPageControllerDelegate {
 }
 
 extension MainViewController: TabDelegate {
+
+    func tabDidChangePageTranslationState(_ tab: TabViewController) {
+        guard tab === currentTab else { return }
+        refreshOpenBrowsingMenu?()
+        // Refreshing the button cancels its site permission animation, so only when the dot changes.
+        guard shouldShowMenuAlert != isMenuAlertVisible else { return }
+        refreshMenuAlertState(animated: true)
+    }
 
     func tabIsShowingOtherPrompt(_ tab: TabViewController) -> Bool {
         notificationView != nil || findInPageView?.isHidden == false || tab.isDuckPlayerPillVisible

@@ -881,6 +881,8 @@ class TabViewController: UIViewController {
     /// Counts main-frame loads, so work started on a page can tell the tab has left it; pushState and replaceState don't count.
     private var pageLoads = 0
     private(set) var pageTranslationOffer: PageTranslationOffer?
+    /// The page the user went back to the original of; it doesn't get the banner again.
+    private var revertedTranslationURL: URL?
     var browserToolScopeFactory: (@MainActor () -> BrowserToolScope?)?
     var tabAttachmentSource: MultiTabAttachmentSource?
 
@@ -2215,6 +2217,8 @@ class TabViewController: UIViewController {
 
         guard let newURL = newURL else { return }
 
+        forgetRevertedTranslationIfLeavingPage(for: newURL)
+
         if url == nil {
             url = newURL
         } else if addressBarURLFilter.shouldUpdate(for: newURL) {
@@ -3035,7 +3039,9 @@ extension TabViewController: PageTranslationProgress {
         progressWorker.didFinishLoading(.translation)
     }
 
-    func translationStateDidChange(_ state: PageTranslationSession.State) {}
+    func translationStateDidChange(_ state: PageTranslationSession.State) {
+        delegate?.tabDidChangePageTranslationState(self)
+    }
 }
 
 // MARK: - WKNavigationDelegate
@@ -3229,7 +3235,7 @@ extension TabViewController: WKNavigationDelegate {
             guard let webView, let pageOffer = await provider.offer(in: webView),
                   let self, pageLoads == pageLoad else { return }
             pageTranslationOffer = pageOffer
-            if pageOffer.showsBanner {
+            if pageOffer.showsBanner && Self.showsTranslationBanner(at: pageOffer.url, reverted: revertedTranslationURL) {
                 showTranslationBanner(pageOffer.offer)
             }
         }
@@ -3285,6 +3291,10 @@ extension TabViewController: WKNavigationDelegate {
         pageTranslationSession?.state ?? .idle
     }
 
+    var isPageTranslated: Bool {
+        pageTranslationState == .partiallyTranslated || pageTranslationState == .fullyTranslated
+    }
+
     func translatePageFromMenu(_ offer: TranslationOffer) {
         translationBannerPresenter.dismiss(animated: true)
         translatePage(offer)
@@ -3293,7 +3303,15 @@ extension TabViewController: WKNavigationDelegate {
     /// Reloading is the only way back: the page's original text isn't kept.
     func showOriginalPage() {
         cancelPageTranslation()
+        revertedTranslationURL = webView.url
         reload()
+    }
+
+    static func showsTranslationBanner(at url: URL, reverted: URL?) -> Bool {
+        guard let reverted else {
+            return true
+        }
+        return !isSamePage(url, as: reverted)
     }
 
     private func startTranslation(_ offer: TranslationOffer) {
@@ -3305,6 +3323,24 @@ extension TabViewController: WKNavigationDelegate {
                                                                        progress: self)
         pageTranslationSession = session
         session.start(offer)
+    }
+
+    /// The same URL apart from its fragment.
+    static func isSamePage(_ url: URL, as page: URL) -> Bool {
+        func withoutFragment(_ url: URL) -> URL? {
+            var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+            components?.fragment = nil
+            return components?.url
+        }
+        return withoutFragment(url) == withoutFragment(page)
+    }
+
+    /// Show Original reloads the page, so the reverted page is known by its URL rather than its load; any change
+    /// other than an in-page link lets the banner come back.
+    private func forgetRevertedTranslationIfLeavingPage(for newURL: URL) {
+        if let revertedTranslationURL, !Self.isSamePage(newURL, as: revertedTranslationURL) {
+            self.revertedTranslationURL = nil
+        }
     }
 
     /// Stops the page's translation, if any, and clears its bar; a bar that a page load has taken over stays.

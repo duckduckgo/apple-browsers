@@ -85,6 +85,13 @@ final class PageTranslationOfferProviderTests: XCTestCase {
                                                        url: URL(string: "https://example.fr/")!))
     }
 
+    func testTheBannerIsSkippedOnlyOnTheRevertedPage() {
+        let page = URL(string: "https://a.fr/p")!
+        XCTAssertTrue(TabViewController.showsTranslationBanner(at: page, reverted: nil))
+        XCTAssertFalse(TabViewController.showsTranslationBanner(at: URL(string: "https://a.fr/p#frag")!, reverted: page))
+        XCTAssertTrue(TabViewController.showsTranslationBanner(at: URL(string: "https://a.fr/q")!, reverted: page))
+    }
+
     func testNoOfferOnASiteInTheFeatureExceptions() async throws {
         let manager = MockPrivacyConfigurationManager()
         manager.privacyConfig = try WebPageTranslationSettingsTests.config(settings: "{}", exceptions: ["example.fr"])

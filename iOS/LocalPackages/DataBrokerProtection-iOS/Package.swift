@@ -21,8 +21,8 @@
 import PackageDescription
 import Foundation
 
-// DBP_DEBUG_TOOLS gates the email opt-out debug tools. It's on in debug builds and in CI's test build, which sets
-// SPM_FORCE_DEBUG but builds packages in release, so the tools' tests still run there. It never touches DEBUG itself.
+// SPM builds packages in release under the CI configuration, so `.when(configuration: .debug)` misses CI test builds;
+// SPM_FORCE_DEBUG covers them.
 let debugToolsSettings: [SwiftSetting] = [.define("DBP_DEBUG_TOOLS", .when(configuration: .debug))]
     + (ProcessInfo.processInfo.environment["SPM_FORCE_DEBUG"] == "1" ? [.define("DBP_DEBUG_TOOLS")] : [])
 

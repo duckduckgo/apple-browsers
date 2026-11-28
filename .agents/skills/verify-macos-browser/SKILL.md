@@ -111,7 +111,8 @@ The attempt folder holds `proof.py`, `report.md`, `manifest.json` (revision, dir
 hashes, launch args, flags, macOS and Xcode, VM, skill hash, checks, rerun command), your screenshots,
 `final.png`, `app.log`, `log.txt`, `pixels.json`, `wide-events.json`, `transcript.jsonl` (every `verify.sh` call),
 and `recording.mp4`, from after launch to `final.png`: a VM's whole screen, or on this Mac only the app's window,
-cut where another app came in front or the window moved, resized or closed (Problems: "cut short"). `prove --no-video` turns it off; the report says so.
+cut where another app came in front or the window moved, resized or closed (Problems: "cut short"). It is re-encoded to at
+most 2048 pixels wide, 30 fps and 3 Mbit/s (`scripts/shrink.swift`), about 20 MB a minute, so it uploads. `prove --no-video` turns it off; the report says so.
 
 `report.md` is one PR verification scenario: **Verified** (the docstring), **Evidence**, **Outcome** (label,
 passed, failed, problems, warnings, notes), **Details** (revision, build and running binary, target and its

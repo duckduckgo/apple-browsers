@@ -75,13 +75,13 @@ public struct DataBrokerProtectionDebugEmailOptOutSeeder {
                 throw DebugEmailOptOutSeedError.noProfileQuery(brokerURL: brokerURL)
             }
 
+            guard !brokerQueryData.contains(where: { $0.optOutJobData.contains { $0.extractedProfile.identifier == Self.identifier } }) else {
+                return nil
+            }
+
             for profileQueryId in brokerQueryData.compactMap(\.profileQuery.id) {
                 try database.updateLastRunDate(foundDate, brokerId: brokerId, profileQueryId: profileQueryId)
                 try database.updatePreferredRunDate(deferredScanDate, brokerId: brokerId, profileQueryId: profileQueryId)
-            }
-
-            guard !brokerQueryData.contains(where: { $0.optOutJobData.contains { $0.extractedProfile.identifier == Self.identifier } }) else {
-                return nil
             }
 
             let profileQuery = firstQueryData.profileQuery

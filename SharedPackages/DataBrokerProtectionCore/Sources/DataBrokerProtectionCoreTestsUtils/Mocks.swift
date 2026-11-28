@@ -2801,9 +2801,13 @@ public final class MockDataBrokerProtectionCustomOptOutStatsProvider: DataBroker
 
     var customStatsWasCalled = false
     var customStatsToReturn = CustomOptOutStats(customIndividualDataBrokerStat: [], customAggregateBrokersStat: CustomAggregateBrokersStat(optoutSubmitSuccessRate: 0))
+    public private(set) var requestedWindows: [(startDate: Date?, endDate: Date)] = []
+
+    public init() {}
 
     public func customOptOutStats(startDate: Date?, endDate: Date, andQueryData queryData: [BrokerProfileQueryData]) -> CustomOptOutStats {
         customStatsWasCalled = true
+        requestedWindows.append((startDate: startDate, endDate: endDate))
         return customStatsToReturn
     }
 }

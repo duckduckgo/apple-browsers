@@ -519,4 +519,83 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
         XCTAssertTrue(repository.didSetCustomStatsPixelsLastSentTimestamp, "Should update timestamp after firing")
     }
 
+    // MARK: - Custom stats reporting window
+
+    func testWhenCustomStatsFire_thenWindowRunsFromLastSentMinus24HoursToNowMinus24Hours() throws {
+        // Given
+        let lastSent = Date.nowMinus(hours: 25)
+        let repository = MockDataBrokerProtectionStatsPixelsRepository()
+        repository._customStatsPixelsLastSentTimestamp = lastSent
+        let statsProvider = MockDataBrokerProtectionCustomOptOutStatsProvider()
+        let sut = makeCustomStatsSUT(repository: repository, statsProvider: statsProvider)
+
+        // When
+        sut.fireCustomStatsPixelsIfNeeded()
+
+        // Then
+        let window = try XCTUnwrap(statsProvider.requestedWindows.first)
+        let startDate = try XCTUnwrap(window.startDate)
+        let savedTimestamp = try XCTUnwrap(repository._customStatsPixelsLastSentTimestamp)
+        XCTAssertEqual(statsProvider.requestedWindows.count, 1)
+        XCTAssertEqual(startDate.timeIntervalSince(lastSent), -Self.twentyFourHours, accuracy: Self.tolerance)
+        XCTAssertEqual(startDate.timeIntervalSinceNow, -49 * 60 * 60, accuracy: Self.tolerance)
+        XCTAssertEqual(window.endDate.timeIntervalSinceNow, -Self.twentyFourHours, accuracy: Self.tolerance)
+        XCTAssertEqual(savedTimestamp.timeIntervalSinceNow, 0, accuracy: Self.tolerance)
+    }
+
+    func testWhenCustomStatsFireTwice_thenSecondWindowStartsWhereFirstWindowEnded() throws {
+        // Given
+        let repository = MockDataBrokerProtectionStatsPixelsRepository()
+        repository._customStatsPixelsLastSentTimestamp = Date.nowMinus(hours: 25)
+        let statsProvider = MockDataBrokerProtectionCustomOptOutStatsProvider()
+        let sut = makeCustomStatsSUT(repository: repository,
+                                     statsProvider: statsProvider,
+                                     trigger: AlwaysFireCustomStatsPixelsTrigger())
+
+        // When
+        sut.fireCustomStatsPixelsIfNeeded()
+        let firstSavedTimestamp = try XCTUnwrap(repository._customStatsPixelsLastSentTimestamp)
+        sut.fireCustomStatsPixelsIfNeeded()
+
+        // Then
+        XCTAssertEqual(statsProvider.requestedWindows.count, 2)
+        let firstWindow = statsProvider.requestedWindows[0]
+        let secondWindow = statsProvider.requestedWindows[1]
+        XCTAssertEqual(firstWindow.endDate.timeIntervalSince(firstSavedTimestamp), -Self.twentyFourHours, accuracy: Self.tolerance)
+        XCTAssertEqual(secondWindow.startDate, firstWindow.endDate)
+    }
+
+    func testWhenCustomStatsWereNeverSent_thenWindowHasNoStartDate() throws {
+        // Given
+        let repository = MockDataBrokerProtectionStatsPixelsRepository()
+        let statsProvider = MockDataBrokerProtectionCustomOptOutStatsProvider()
+        let sut = makeCustomStatsSUT(repository: repository, statsProvider: statsProvider)
+
+        // When
+        sut.fireCustomStatsPixelsIfNeeded()
+
+        // Then
+        let window = try XCTUnwrap(statsProvider.requestedWindows.first)
+        XCTAssertNil(window.startDate)
+        XCTAssertEqual(window.endDate.timeIntervalSinceNow, -Self.twentyFourHours, accuracy: Self.tolerance)
+    }
+
+    private static let twentyFourHours: TimeInterval = 24 * 60 * 60
+    private static let tolerance: TimeInterval = 5
+
+    private func makeCustomStatsSUT(repository: MockDataBrokerProtectionStatsPixelsRepository,
+                                    statsProvider: MockDataBrokerProtectionCustomOptOutStatsProvider,
+                                    trigger: CustomStatsPixelsTrigger = DefaultCustomStatsPixelsTrigger()) -> DataBrokerProtectionStatsPixels {
+        let database = MockDatabase()
+        database.brokerProfileQueryDataToReturn = [.mock()]
+        return DataBrokerProtectionStatsPixels(database: database,
+                                               handler: handler,
+                                               repository: repository,
+                                               customStatsPixelsTrigger: trigger,
+                                               customOptOutStatsProvider: statsProvider)
+    }
+}
+
+private struct AlwaysFireCustomStatsPixelsTrigger: CustomStatsPixelsTrigger {
+    func shouldFireCustomStatsPixels(fromDate: Date?) -> Bool { true }
 }

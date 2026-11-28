@@ -118,13 +118,17 @@ public final class DataBrokerProtectionStatsPixels: StatsPixels {
         fireRegularIntervalConfirmationPixelsForSubmittedOptOuts(for: brokerProfileQueryData)
     }
 
+    /// Reports opt-outs created in `[lastSent − 24h, now − 24h]`, then saves `now` as the last-sent timestamp.
+    /// Both ends come from `customStatsWindowEnd(forReportSentAt:)`, so each window starts where the previous one ended.
     public func fireCustomStatsPixelsIfNeeded() {
-        let startDate = repository.customStatsPixelsLastSentTimestamp
+        let lastSentTimestamp = repository.customStatsPixelsLastSentTimestamp
 
-        guard customStatsPixelsTrigger.shouldFireCustomStatsPixels(fromDate: startDate),
+        guard customStatsPixelsTrigger.shouldFireCustomStatsPixels(fromDate: lastSentTimestamp),
         let queryData = try? database.fetchActiveBrokerProfileQueryData() else { return }
 
-        let endDate = Date.nowMinus(hours: 24)
+        let now = Date()
+        let startDate = lastSentTimestamp.map(Self.customStatsWindowEnd(forReportSentAt:))
+        let endDate = Self.customStatsWindowEnd(forReportSentAt: now)
 
         let customOptOutStats = customOptOutStatsProvider.customOptOutStats(startDate: startDate,
                                                                             endDate: endDate,
@@ -133,7 +137,12 @@ public final class DataBrokerProtectionStatsPixels: StatsPixels {
         fireCustomDataBrokerStatsPixels(customOptOutStats: customOptOutStats)
         fireCustomGlobalStatsPixel(customOptOutStats: customOptOutStats)
 
-        repository.customStatsPixelsLastSentTimestamp = Date()
+        repository.customStatsPixelsLastSentTimestamp = now
+    }
+
+    /// A report sent at `date` covers opt-outs created up to 24 hours before it, leaving time for their requests to complete.
+    private static func customStatsWindowEnd(forReportSentAt date: Date) -> Date {
+        Calendar.current.date(byAdding: .hour, value: -24, to: date) ?? date
     }
 
 }

@@ -19,6 +19,12 @@
 //
 
 import PackageDescription
+import Foundation
+
+// DBP_DEBUG_TOOLS gates the email opt-out debug tools. It's on in debug builds and in CI's test build, which sets
+// SPM_FORCE_DEBUG but builds packages in release, so the tools' tests still run there. It never touches DEBUG itself.
+let debugToolsSettings: [SwiftSetting] = [.define("DBP_DEBUG_TOOLS", .when(configuration: .debug))]
+    + (ProcessInfo.processInfo.environment["SPM_FORCE_DEBUG"] == "1" ? [.define("DBP_DEBUG_TOOLS")] : [])
 
 let package = Package(
     name: "DataBrokerProtection-iOS",
@@ -57,7 +63,7 @@ let package = Package(
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
-            ]
+            ] + debugToolsSettings
         ),
         .testTarget(
             name: "DataBrokerProtection-iOSTests",
@@ -69,7 +75,8 @@ let package = Package(
                 .product(name: "DataBrokerProtectionCoreTestsUtils", package: "DataBrokerProtectionCore"),
                 .product(name: "Persistence", package: "Persistence"),
                 .product(name: "SubscriptionTestingUtilities", package: "BrowserServicesKit"),
-            ]
+            ],
+            swiftSettings: debugToolsSettings
         )
     ]
 )

@@ -23,7 +23,7 @@ import DataBrokerProtectionCore
 public protocol DBPOptOutEmailComposing {
     @MainActor var canSendMail: Bool { get }
     @MainActor func compose(_ email: DBPUIOpenOptOutEmailRequest) async -> MFMailComposeResult
-#if DEBUG
+#if DBP_DEBUG_TOOLS
     @MainActor func simulateSend(_ email: DBPUIOpenOptOutEmailRequest) async -> Bool
 #endif
 }
@@ -66,7 +66,7 @@ final class DBPOptOutEmailComposer: NSObject, DBPOptOutEmailComposing {
         }
     }
 
-#if DEBUG
+#if DBP_DEBUG_TOOLS
     @MainActor
     func simulateSend(_ email: DBPUIOpenOptOutEmailRequest) async -> Bool {
         guard pendingCompose == nil, let presentingViewController = readyPresentingViewController else { return false }

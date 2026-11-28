@@ -16,7 +16,7 @@
 //  limitations under the License.
 //
 
-#if DEBUG
+#if DBP_DEBUG_TOOLS
 import Foundation
 import DDGError
 

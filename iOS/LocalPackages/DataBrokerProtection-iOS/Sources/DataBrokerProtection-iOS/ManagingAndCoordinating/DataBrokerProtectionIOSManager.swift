@@ -865,7 +865,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DebugCommandsDelegate 
     }
 
     public func seedEmailOptOutTestRecords() throws -> [String] {
-#if DEBUG
+#if DBP_DEBUG_TOOLS
         try DataBrokerProtectionDebugEmailOptOutSeeder(database: vaultResources().database).seed()
 #else
         []

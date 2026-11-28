@@ -63,7 +63,7 @@ final class DBPUIViewModelHandshakeTests: XCTestCase {
                              contentScopeProperties: .mock,
                              emailOptOutFeatureFlagger: featureFlagger,
                              emailComposer: emailComposer)
-#if DEBUG
+#if DBP_DEBUG_TOOLS
         sut.emailOptOutDebugSettings = DBPEmailOptOutDebugSettings(userDefaults: debugUserDefaults)
 #endif
     }
@@ -92,7 +92,7 @@ final class DBPUIViewModelHandshakeTests: XCTestCase {
                                                         isUserEligibleForFreeTrial: true))
     }
 
-#if DEBUG
+#if DBP_DEBUG_TOOLS
     @MainActor
     func testCanSendEmail_whenInternalUserForcesItInDebug_isTrueWithoutAMailAccount() async {
         emailComposer.canSendMail = false
@@ -138,7 +138,7 @@ final class DBPUIViewModelHandshakeTests: XCTestCase {
         }
     }
 
-#if DEBUG
+#if DBP_DEBUG_TOOLS
     @MainActor
     func testOpenOptOutEmail_whenInternalUserSimulatesSendInDebug_returnsSent() async {
         emailComposer.canSendMail = false

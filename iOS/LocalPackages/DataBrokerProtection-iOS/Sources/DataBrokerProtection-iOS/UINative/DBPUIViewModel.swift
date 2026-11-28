@@ -48,7 +48,7 @@ public final class DBPUIViewModel {
     private let freeScanEntryPoint: FreemiumDBPEntryPoint?
     private let emailOptOutFeatureFlagger: EmailOptOutFeatureFlagging
     private let emailComposer: DBPOptOutEmailComposing
-#if DEBUG
+#if DBP_DEBUG_TOOLS
     var emailOptOutDebugSettings = DBPEmailOptOutDebugSettings()
 #endif
 
@@ -282,7 +282,7 @@ extension DBPUIViewModel: DBPUICommunicationDelegate, DBPUIHandshakeDelegate {
     public func openOptOutEmail(_ request: DBPUIOpenOptOutEmailRequest) async -> DBPUIOpenOptOutEmailResult {
         guard isEmailOptOutEnabled() else { return DBPUIOpenOptOutEmailResult(sent: false) }
 
-#if DEBUG
+#if DBP_DEBUG_TOOLS
         if !emailComposer.canSendMail, isCanSendEmailForcedForDebug {
             return DBPUIOpenOptOutEmailResult(sent: await emailComposer.simulateSend(request))
         }
@@ -302,7 +302,7 @@ extension DBPUIViewModel: DBPUICommunicationDelegate, DBPUIHandshakeDelegate {
     }
 
     private var isCanSendEmailForcedForDebug: Bool {
-#if DEBUG
+#if DBP_DEBUG_TOOLS
         privacyConfigManager.internalUserDecider.isInternalUser && emailOptOutDebugSettings.isCanSendEmailForced
 #else
         false

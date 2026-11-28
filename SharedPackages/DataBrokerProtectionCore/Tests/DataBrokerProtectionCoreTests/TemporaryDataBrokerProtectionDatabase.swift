@@ -62,9 +62,19 @@ final class TemporaryDataBrokerProtectionDatabase {
                                                             birthYear: 1970))
     }
 
-    func saveBroker(fixture: String) throws -> (brokerId: Int64, profileQueryId: Int64) {
+    func saveBroker(fixture: String, confirmOptOutScanHours: Int? = nil) throws -> (brokerId: Int64, profileQueryId: Int64) {
         let jsonURL = Bundle.module.url(forResource: fixture, withExtension: "json", subdirectory: "BundleResources")!
-        let brokerId = try database.saveBroker(brokerResource: DataBroker.initFromResource(jsonURL))
+        var json = try Data(contentsOf: jsonURL)
+        if let confirmOptOutScanHours {
+            guard var broker = try JSONSerialization.jsonObject(with: json) as? [String: Any],
+                  var schedulingConfig = broker["schedulingConfig"] as? [String: Any] else {
+                throw CocoaError(.coderReadCorrupt)
+            }
+            schedulingConfig["confirmOptOutScan"] = confirmOptOutScanHours
+            broker["schedulingConfig"] = schedulingConfig
+            json = try JSONSerialization.data(withJSONObject: broker)
+        }
+        let brokerId = try database.saveBroker(brokerResource: DataBroker.initFromData(json))
         let profileQuery = ProfileQuery(firstName: "John", lastName: "Doe", city: "New York", state: "NY", birthYear: 1970)
         let profileQueryId = try database.saveProfileQuery(profileQuery: profileQuery, profileId: 1)
         try database.saveScanJob(brokerId: brokerId, profileQueryId: profileQueryId, lastRunDate: nil, preferredRunDate: Date())

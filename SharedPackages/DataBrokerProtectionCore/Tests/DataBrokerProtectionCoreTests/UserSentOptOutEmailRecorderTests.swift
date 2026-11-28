@@ -69,13 +69,49 @@ final class UserSentOptOutEmailRecorderTests: XCTestCase {
     }
 
     func testUserSendsEmail_confirmationScanIsScheduled() throws {
-        let record = try saveRecord(fixture: "valid-broker", scanPreferredRunDate: Date().addingTimeInterval(30 * 24 * 60 * 60))
+        let record = try saveRecord(fixture: "valid-broker",
+                                    confirmOptOutScanHours: 72,
+                                    scanPreferredRunDate: Date().addingTimeInterval(30 * 24 * 60 * 60))
         let now = Date()
 
         try makeRecorder().record(recordIds: [record.extractedProfileId], now: now)
 
         let queryData = try XCTUnwrap(temporaryDatabase.database.brokerProfileQueryData(for: record.brokerId, and: record.profileQueryId))
-        XCTAssertLessThanOrEqual(try XCTUnwrap(queryData.scanJobData.preferredRunDate), now.addingTimeInterval(60))
+        XCTAssertEqual(try XCTUnwrap(queryData.scanJobData.preferredRunDate).timeIntervalSince(now), Double(72 * 60 * 60), accuracy: 60)
+    }
+
+    func testUserSendsEmailWithARepeatedRecordId_recordsItOnce() throws {
+        let record = try saveRecord(fixture: "valid-broker")
+
+        try makeRecorder().record(recordIds: [record.extractedProfileId, record.extractedProfileId])
+
+        XCTAssertEqual(try fetchOptOut(record).historyEvents.filter { $0.type == .optOutByUserEmail }.count, 1)
+        XCTAssertEqual(pixelHandler.firedEvents.filter { $0.name == "dbp_optout_process_submit-success" }.count, 1)
+    }
+
+    func testUserSendsEmailThenAScanFindsTheRecordRemoved_successPixelCarriesEmailSent() throws {
+        let record = try saveRecord(fixture: "valid-broker")
+        try makeRecorder().record(recordIds: [record.extractedProfileId])
+        let attempt = try XCTUnwrap(temporaryDatabase.database.fetchAttemptInformation(for: record.extractedProfileId))
+        let queryData = try XCTUnwrap(temporaryDatabase.database.brokerProfileQueryData(for: record.brokerId, and: record.profileQueryId))
+        let removedProfile = try XCTUnwrap(queryData.optOutJobData.first?.extractedProfile)
+        let dependencies = MockBrokerProfileJobDependencies()
+        dependencies.database = temporaryDatabase.database
+        dependencies.pixelHandler = pixelHandler
+
+        try BrokerProfileScanSubJob(dependencies: dependencies).markSavedProfilesAsRemovedAndNotifyUser(
+            removedProfiles: [removedProfile],
+            brokerId: record.brokerId,
+            profileQueryId: record.profileQueryId,
+            brokerProfileQueryData: queryData,
+            database: temporaryDatabase.database,
+            pixelHandler: pixelHandler,
+            eventsHandler: MockOperationEventsHandler()
+        )
+
+        let success = try XCTUnwrap(pixelHandler.firedEvents.first { $0.name == "dbp_optout_process_success" }?.params)
+        XCTAssertEqual(success[DataBrokerProtectionSharedPixels.Consts.emailSent], "true")
+        XCTAssertEqual(success[DataBrokerProtectionSharedPixels.Consts.attemptIdParamKey], attempt.attemptId)
     }
 
     func testUserSendsEmailForAnUnknownRecord_otherRecordsAreStillRecorded() throws {
@@ -124,8 +160,8 @@ final class UserSentOptOutEmailRecorderTests: XCTestCase {
         let extractedProfileId: Int64
     }
 
-    private func saveRecord(fixture: String, scanPreferredRunDate: Date = Date()) throws -> Record {
-        let (brokerId, profileQueryId) = try temporaryDatabase.saveBroker(fixture: fixture)
+    private func saveRecord(fixture: String, confirmOptOutScanHours: Int? = nil, scanPreferredRunDate: Date = Date()) throws -> Record {
+        let (brokerId, profileQueryId) = try temporaryDatabase.saveBroker(fixture: fixture, confirmOptOutScanHours: confirmOptOutScanHours)
         try temporaryDatabase.database.updatePreferredRunDate(scanPreferredRunDate, brokerId: brokerId, profileQueryId: profileQueryId)
         let extractedProfile = ExtractedProfile(name: "John Doe", profileUrl: "https://example.com/john-doe", identifier: "john-doe")
         try temporaryDatabase.database.saveOptOutJob(optOut: .mock(with: extractedProfile, brokerId: brokerId, profileQueryId: profileQueryId),

@@ -345,7 +345,11 @@ private final class MockAiChatsConfigProvider: NewTabPageOmnibarConfigProviding 
     var isImageGenerationEnabled: Bool = false
     var isUpdatedCreateImageEnabled: Bool = false
     @MainActor var imageGenerationModelId: String? { nil }
-    @MainActor func activateImageGeneration() -> NewTabPageDataModel.OmnibarCreateImageModelSwitch? { nil }
+    @MainActor func activateImageGeneration(fromModelId: String?) -> NewTabPageDataModel.OmnibarCreateImageModelSwitch? { nil }
+    var isModelPickPerTab: Bool { false }
+    @MainActor var preferredImageGenerationModelId: String? { nil }
+    func modelPicked(modelId: String, previousModelId: String?) {}
+    func reasoningEffortPicked(_ reasoningEffort: String) {}
     var isWebSearchEnabled: Bool = false
     var isCustomizeResponsesEnabled: Bool = false
     @MainActor
@@ -358,6 +362,7 @@ private final class MockAiChatsConfigProvider: NewTabPageOmnibarConfigProviding 
     @MainActor
     func selectUsageLimitsCta(modelId: String?) -> NewTabPageDataModel.OmnibarUsageLimitsCtaOutcome { .handled }
     var usageLimitsPublisher: AnyPublisher<Void, Never> { Empty<Void, Never>().eraseToAnyPublisher() }
+    var userDefaultModelChangesPublisher: AnyPublisher<Void, Never> { Empty<Void, Never>().eraseToAnyPublisher() }
     @MainActor var showAttachmentPrivacyDisclaimer: Bool { false }
     @MainActor
     func attachmentPrivacyDisclaimerShown(kind: NewTabPageDataModel.OmnibarAttachmentPrivacyKind) {}
@@ -367,12 +372,11 @@ private final class MockAiChatsConfigProvider: NewTabPageOmnibarConfigProviding 
     @MainActor func selectLauncherPromoCta() {}
     @MainActor func dismissLauncherPromo() {}
     @MainActor func launcherPromoIgnored() {}
-    @MainActor func chatSubmitted() {}
     var launcherPromoPublisher: AnyPublisher<Void, Never> { Empty<Void, Never>().eraseToAnyPublisher() }
     var isAttachTabsEnabled: Bool = false
     var isAttachTabsEnabledPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
     var selectedModelId: String?
-    var selectedModelIdPublisher: AnyPublisher<String?, Never> {Just(nil).eraseToAnyPublisher() }
+    var selectedModelIdPublisher: AnyPublisher<String?, Never> { Just(nil).eraseToAnyPublisher() }
     var selectedModelShortName: String?
     var isReasoningEffortEnabled: Bool = false
     var selectedReasoningEffort: String?

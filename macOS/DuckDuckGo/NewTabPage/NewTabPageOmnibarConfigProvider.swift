@@ -99,8 +99,10 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private let remoteSettings: AIChatRemoteSettings
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let firePixel: (PixelKit.Event) -> Void
-    /// The persisted global pick; with new chats on the default, an in-memory one that ends with each sent prompt.
+    /// The persisted global pick; with new chats on the default, none, as each New Tab Page tab keeps its own.
     private let modelPick: DuckAIPublishingModelPickStoring
+    let isModelPickPerTab: Bool
+    let userDefaultModelChangesPublisher: AnyPublisher<Void, Never>
     /// Set while new chats start on the default.
     private let newChatDefaults: AIChatNewChatDefaultSource?
     private let searchPreferences: SearchPreferences
@@ -154,8 +156,13 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         var aiChatPreferencesPersistor = aiChatPreferencesPersistor
         Self.migrateLegacySelectedModelIdIfNeeded(from: keyValueStore, into: &aiChatPreferencesPersistor)
         let startsNewChatsOnDefault = featureFlagger.isFeatureOn(.aiChatNewChatDefaultModel)
-        self.modelPick = startsNewChatsOnDefault ? InMemoryModelPickStore() : PersistedModelPickStore(preferences: aiChatPreferencesPersistor)
+        self.isModelPickPerTab = startsNewChatsOnDefault
+        self.modelPick = startsNewChatsOnDefault ? WebKeptModelPickStore() : PersistedModelPickStore(preferences: aiChatPreferencesPersistor)
         self.newChatDefaults = startsNewChatsOnDefault ? newChatDefaults : nil
+        // One provider serves every page, so a Fire Window's page never re-points it.
+        let userDefaultModel = startsNewChatsOnDefault ? duckAiStorageHandlerProvider(.regular).map(DuckAiUserDefaultModelStore.init(storage:)) : nil
+        self.userDefaultModelChangesPublisher = userDefaultModel?.changes.receive(on: DispatchQueue.main).eraseToAnyPublisher()
+            ?? Empty().eraseToAnyPublisher()
         self.searchPreferences = searchPreferences
         self.windowControllersManager = windowControllersManager
         self.duckAiStorageHandlerProvider = duckAiStorageHandlerProvider
@@ -171,9 +178,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
 
         defaultChangesCancellable = self.newChatDefaults?.defaultChanges
             .sink { [weak self] in self?.usageLimitsChangedSubject.send(()) }
-        // One provider serves every page, so a Fire Window's page never re-points it.
-        observeUserDefaultModel(in: duckAiStorageHandlerProvider(.regular))
-        endPickWhenAnotherTabShowsTheNewTabPage()
+        self.newChatDefaults?.observeUserDefaultModel(userDefaultModel, receivingUpdatesOn: DispatchQueue.main)
 
         // Address-bar Customize Responses changes (modal or toggle) post this; re-push config so open
         // NTPs update without waiting for their own toggle. The NTP's own paths notify directly.
@@ -287,22 +292,18 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         featureFlagger.isFeatureOn(.aiChatNtpChatTools)
     }
 
-    /// The pick, else the new-chat default (flag on). Web echoes it back, so the setter compares against it too.
+    /// The shared pick, else the new-chat default; with per-tab picks, always the default. Web echoes it back.
     var selectedModelId: String? {
         get {
             modelPick.modelId ?? newChatDefaultSelection?.modelId
         }
         set {
             guard newValue != selectedModelId else { return }
-            // The drawer's CTA by another route, so it settles the message too. Before the write:
-            // it needs the model we were on.
+            // Before the write: settling the usage message needs the model we were on.
             if let newValue {
-                usageWarningViewModel?.userSwitchedModel(from: selectedModelId, to: newValue)
+                modelPicked(modelId: newValue, previousModelId: selectedModelId)
             }
             modelPick.modelId = newValue
-            if newValue != nil {
-                PixelKit.fire(AIChatPixel.aiChatNtpModelSelected, frequency: .dailyAndCount, includeAppVersionParameter: true)
-            }
         }
     }
 
@@ -319,17 +320,29 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         }
     }
 
-    /// Sent only while new chats start on the default. Every New Tab Page prompt opens a new chat.
+    /// Sent only while new chats start on the default. Every New Tab Page prompt opens a new chat, and its tab
+    /// kept the pick, so anything sent other than the default counts as picked.
     func newChatModelPixelParameters(sentModelId: String?,
                                      sentReasoningEffort: String?,
                                      isImageGeneration: Bool = false) -> DuckAINewChatModelPixelParameters? {
         guard newChatDefaults != nil else { return nil }
         return DuckAINewChatModelPixelParameters(sentModelId: sentModelId,
                                                  sentReasoningEffort: sentReasoningEffort,
-                                                 isModelPicked: modelPick.modelId != nil,
-                                                 pickedReasoningEffort: modelPick.reasoningEffort,
+                                                 isModelPicked: sentModelId != newChatDefaultSelection?.modelId,
+                                                 pickedReasoningEffort: sentReasoningEffort,
                                                  newChatDefault: newChatDefaultSelection,
                                                  isImageGeneration: isImageGeneration)
+    }
+
+    /// The drawer's CTA by another route, so it settles the message too.
+    func modelPicked(modelId: String, previousModelId: String?) {
+        usageWarningViewModel?.userSwitchedModel(from: previousModelId, to: modelId)
+        PixelKit.fire(AIChatPixel.aiChatNtpModelSelected, frequency: .dailyAndCount, includeAppVersionParameter: true)
+    }
+
+    func reasoningEffortPicked(_ reasoningEffort: String) {
+        guard isReasoningEffortEnabled else { return }
+        PixelKit.fire(AIChatPixel.aiChatNtpReasoningEffortSelected, frequency: .dailyAndCount, includeAppVersionParameter: true)
     }
 
     /// The model and effort a new chat starts on when nothing was picked; `nil` while new chats start on the last pick.
@@ -344,10 +357,6 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
 
     private var newChatDefaultReasoningEffort: String? {
         newChatDefaultSelection?.reasoningEffort(onModelId: selectedModelId)?.rawValue
-    }
-
-    func chatSubmitted() {
-        modelPick.endPick()
     }
 
     var isReasoningEffortEnabled: Bool {
@@ -365,8 +374,8 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
             guard isReasoningEffortEnabled else { return }
             guard newValue != selectedReasoningEffort else { return }
             modelPick.reasoningEffort = newValue
-            if newValue != nil {
-                PixelKit.fire(AIChatPixel.aiChatNtpReasoningEffortSelected, frequency: .dailyAndCount, includeAppVersionParameter: true)
+            if let newValue {
+                reasoningEffortPicked(newValue)
             }
         }
     }
@@ -386,16 +395,23 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     @MainActor
     var imageGenerationModelId: String? {
         guard isUpdatedCreateImageEnabled else { return nil }
-        return imageGenerationModel(in: availableModelsProvider())?.id
+        let models = availableModelsProvider()
+        return imageGenerationModel(replacing: models.first(where: { $0.id == selectedModelId }), in: models)?.id
     }
 
     @MainActor
-    func activateImageGeneration() -> NewTabPageDataModel.OmnibarCreateImageModelSwitch? {
+    var preferredImageGenerationModelId: String? {
+        AIChatModel.preferredImageGenerationModel(in: availableModelsProvider())?.id
+    }
+
+    /// With per-tab picks the store keeps nothing, so only the notice comes out of this; web switches the tab.
+    @MainActor
+    func activateImageGeneration(fromModelId: String?) -> NewTabPageDataModel.OmnibarCreateImageModelSwitch? {
         guard isUpdatedCreateImageEnabled else { return nil }
 
         let models = availableModelsProvider()
-        let previousModel = models.first(where: { $0.id == selectedModelId })
-        guard let imageModel = imageGenerationModel(in: models),
+        let previousModel = models.first(where: { $0.id == (fromModelId ?? selectedModelId) })
+        guard let imageModel = imageGenerationModel(replacing: previousModel, in: models),
               previousModel?.id != imageModel.id else {
             return nil
         }
@@ -412,11 +428,9 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         )
     }
 
-    private func imageGenerationModel(in models: [AIChatModel]) -> AIChatModel? {
-        if let selectedModel = models.first(where: { $0.id == selectedModelId }),
-           selectedModel.entityHasAccess,
-           selectedModel.supportsTool(.imageGeneration) {
-            return selectedModel
+    private func imageGenerationModel(replacing currentModel: AIChatModel?, in models: [AIChatModel]) -> AIChatModel? {
+        if let currentModel, currentModel.entityHasAccess, currentModel.supportsTool(.imageGeneration) {
+            return currentModel
         }
         return AIChatModel.preferredImageGenerationModel(in: models)
     }
@@ -457,43 +471,6 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private var highUsageNoticeSource: AIChatHighUsageNoticeSource?
     private var usageLimitsCancellables = Set<AnyCancellable>()
     private var defaultChangesCancellable: AnyCancellable?
-    private var userDefaultModelChangesCancellable: AnyCancellable?
-    private var newTabPageTabIDsSincePickEnded: Set<String> = []
-    private var newTabPageTabsCancellable: AnyCancellable?
-
-    /// Every page shares one pick, so it ends once the page shows for a tab it hasn't shown on since.
-    @MainActor
-    private func endPickWhenAnotherTabShowsTheNewTabPage() {
-        guard newChatDefaults != nil, let windowControllersManager else { return }
-        newTabPageTabIDsSincePickEnded = Self.newTabPageTabIDsShown(in: windowControllersManager)
-        newTabPageTabsCancellable = windowControllersManager.tabsChanged
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self, weak windowControllersManager] in
-                guard let self, let windowControllersManager else { return }
-                let shownTabIDs = Self.newTabPageTabIDsShown(in: windowControllersManager)
-                guard !shownTabIDs.isSubset(of: newTabPageTabIDsSincePickEnded) else { return }
-                modelPick.endPick()
-                newTabPageTabIDsSincePickEnded = shownTabIDs
-            }
-    }
-
-    @MainActor
-    private static func newTabPageTabIDsShown(in windowControllersManager: WindowControllersManagerProtocol) -> Set<String> {
-        Set(windowControllersManager.allTabCollectionViewModels.compactMap { tabs in
-            guard let tab = tabs.selectedTabViewModel?.tab, case .newtab = tab.content else { return nil }
-            return tab.uuid
-        })
-    }
-
-    /// Every page shares one pick, so a new user default ends it and all pages start on that default.
-    private func observeUserDefaultModel(in storage: DuckAiNativeStorageHandling?) {
-        guard let newChatDefaults, let storage else { return }
-        let userDefaultModel = DuckAiUserDefaultModelStore(storage: storage)
-        newChatDefaults.observeUserDefaultModel(userDefaultModel, receivingUpdatesOn: DispatchQueue.main)
-        userDefaultModelChangesCancellable = userDefaultModel.changes
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] in self?.modelPick.endPick() }
-    }
 
     var usageLimitsPublisher: AnyPublisher<Void, Never> {
         usageLimitsChangedSubject.eraseToAnyPublisher()

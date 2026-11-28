@@ -37,11 +37,10 @@ protocol DuckAIModelPickStoring: AnyObject {
     var reasoningEffort: String? { get set }
 }
 
-/// A pick store an input follows through publishers and ends on demand, as the New Tab Page does.
+/// A pick store an input follows through publishers, as the New Tab Page does.
 protocol DuckAIPublishingModelPickStoring: DuckAIModelPickStoring {
     var modelIdPublisher: AnyPublisher<String?, Never> { get }
     var reasoningEffortPublisher: AnyPublisher<String?, Never> { get }
-    func endPick()
 }
 
 /// One pick shared by every input and kept across launches.
@@ -75,45 +74,32 @@ final class PersistedModelPickStore: DuckAIPublishingModelPickStoring {
     var reasoningEffortPublisher: AnyPublisher<String?, Never> {
         preferences.selectedReasoningEffortPublisher
     }
-
-    /// The persisted pick is what every new chat starts on, so sending a prompt keeps it.
-    func endPick() {}
 }
 
-/// An unsent pick kept in memory only, so it never seeds another input or launch.
-final class InMemoryModelPickStore: DuckAIPublishingModelPickStoring {
-
-    private let modelIdSubject = PassthroughSubject<String?, Never>()
-    private let reasoningEffortSubject = PassthroughSubject<String?, Never>()
+/// For a page that keeps each tab's pick itself: native keeps none, so reads fall back to the new-chat default.
+final class WebKeptModelPickStore: DuckAIPublishingModelPickStoring {
 
     var modelId: String? {
-        didSet {
-            guard modelId != oldValue else { return }
-            modelIdSubject.send(modelId)
-        }
+        get { nil }
+        set {}
     }
 
-    var modelShortName: String?
+    var modelShortName: String? {
+        get { nil }
+        set {}
+    }
 
     var reasoningEffort: String? {
-        didSet {
-            guard reasoningEffort != oldValue else { return }
-            reasoningEffortSubject.send(reasoningEffort)
-        }
+        get { nil }
+        set {}
     }
 
     var modelIdPublisher: AnyPublisher<String?, Never> {
-        modelIdSubject.eraseToAnyPublisher()
+        Empty().eraseToAnyPublisher()
     }
 
     var reasoningEffortPublisher: AnyPublisher<String?, Never> {
-        reasoningEffortSubject.eraseToAnyPublisher()
-    }
-
-    func endPick() {
-        modelId = nil
-        modelShortName = nil
-        reasoningEffort = nil
+        Empty().eraseToAnyPublisher()
     }
 }
 

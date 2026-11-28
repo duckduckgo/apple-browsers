@@ -20,11 +20,11 @@
 import MessageUI
 
 public protocol DBPOptOutEmailComposing {
-    var canSendMail: Bool { get }
+    @MainActor var canSendMail: Bool { get }
 }
 
 struct DBPOptOutEmailComposer: DBPOptOutEmailComposing {
-    var canSendMail: Bool {
+    @MainActor var canSendMail: Bool {
         MFMailComposeViewController.canSendMail()
     }
 }

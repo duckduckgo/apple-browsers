@@ -437,7 +437,7 @@ private final class MockDelegate: DBPUICommunicationDelegate, DBPUIHandshakeDele
 
     func isEmailOptOutEnabled() -> Bool { isEmailOptOutEnabledValue }
 
-    func canSendEmail() -> Bool { canSendEmailValue }
+    func canSendEmail() async -> Bool { canSendEmailValue }
 }
 
 private final class MockWebSettings: DataBrokerProtectionWebUIURLSettingsRepresentable {

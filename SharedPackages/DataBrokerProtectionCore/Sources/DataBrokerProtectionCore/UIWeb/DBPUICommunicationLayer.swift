@@ -88,14 +88,14 @@ public protocol DBPUICommunicationDelegate: AnyObject {
     func needBackgroundAppRefresh() async -> Bool
     func enableBackgroundAppRefresh() async
     func isEmailOptOutEnabled() -> Bool
-    func canSendEmail() -> Bool
+    func canSendEmail() async -> Bool
     func openOptOutEmail(_ request: DBPUIOpenOptOutEmailRequest) async -> DBPUIOpenOptOutEmailResult
     func confirmOptOutEmailSent(recordIds: [Int64]) async
 }
 
 public extension DBPUICommunicationDelegate {
     func isEmailOptOutEnabled() -> Bool { false }
-    func canSendEmail() -> Bool { false }
+    func canSendEmail() async -> Bool { false }
     func openOptOutEmail(_ request: DBPUIOpenOptOutEmailRequest) async -> DBPUIOpenOptOutEmailResult {
         DBPUIOpenOptOutEmailResult(sent: false)
     }
@@ -421,8 +421,6 @@ public struct DBPUICommunicationLayer: Subfeature {
     }
 
     func getFeatureConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        // Mail's account check is UIKit API, so it has to run on the main thread.
-        let canSendEmail = await MainActor.run { delegate?.canSendEmail() ?? false }
         // brokerRemovalEnabled is hardcoded to true, given it's an "inaugural" flag for Data Broker Removal
         return DBPUIFeatureConfigurationResponse(
             useUnifiedFeedback: privacyConfig.privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.useUnifiedFeedback),
@@ -431,7 +429,7 @@ public struct DBPUICommunicationLayer: Subfeature {
             needBackgroundAppRefresh: await delegate?.needBackgroundAppRefresh() ?? false,
             userAssistanceEnabled: assistedOptOutsDelegate?.isUserAssistanceEnabled ?? false,
             emailOptOutEnabled: delegate?.isEmailOptOutEnabled() ?? false,
-            canSendEmail: canSendEmail
+            canSendEmail: await delegate?.canSendEmail() ?? false
         )
     }
 

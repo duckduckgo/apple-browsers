@@ -270,7 +270,8 @@ extension DBPUIViewModel: DBPUICommunicationDelegate, DBPUIHandshakeDelegate {
         emailOptOutFeatureFlagger.isEmailOptOutEnabled
     }
 
-    public func canSendEmail() -> Bool {
+    @MainActor
+    public func canSendEmail() async -> Bool {
         emailComposer.canSendMail
     }
 }

@@ -277,6 +277,10 @@ final class DBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeatureFlagging {
             || appDependencies.featureFlagger.isFeatureOn(.dbpFreemiumPIR)
     }
 
+    var isEmailOptOutEnabled: Bool {
+        appDependencies.featureFlagger.isFeatureOn(.dbpEmailOptOut)
+    }
+
     init(appDependencies: DependencyProvider,
          freemiumPIRDebugSettings: FreemiumPIRDebugSettings) {
         self.appDependencies = appDependencies

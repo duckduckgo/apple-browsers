@@ -1132,6 +1132,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DataBrokerProtectionVi
                                                   userEventsDelegate: self,
                                                   privacyConfigManager: self.privacyConfigManager,
                                                   contentScopeProperties: contentScopeProperties,
+                                                  emailOptOutFeatureFlagger: featureFlagger,
                                                   webUISettings: DataBrokerProtectionWebUIURLSettings(.dbp),
                                                   openURLHandler: quickLinkOpenURLHandler,
                                                   feedbackViewCreator: feedbackViewCreator,

@@ -25,6 +25,7 @@ public typealias DBPFeatureFlagging = ForegroundRunningFeatureFlagging
     & ExtractedProfileRefreshFeatureFlagging
     & ChallengeSolverFeatureFlagging
     & UserAssistanceFeatureFlagging
+    & EmailOptOutFeatureFlagging
 
 public protocol ForegroundRunningFeatureFlagging {
     var isForegroundRunningOnAppActiveFeatureOn: Bool { get }
@@ -63,4 +64,8 @@ public struct DisabledOptOutRetryErrorFeatureFlagger: OptOutRetryErrorFeatureFla
 
 public protocol FreemiumPIRFeatureFlagging {
     var isFreemiumPIREnabled: Bool { get }
+}
+
+public protocol EmailOptOutFeatureFlagging {
+    var isEmailOptOutEnabled: Bool { get }
 }

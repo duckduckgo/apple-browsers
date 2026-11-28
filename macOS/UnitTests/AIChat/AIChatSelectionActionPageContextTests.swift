@@ -223,9 +223,10 @@ final class AIChatSelectionActionPageContextTests: XCTestCase {
         XCTAssertEqual(coordinator.revealChatWithPromptCallCount, 0)
     }
 
-    func testPageTranslationQueryNamesLanguageWithoutRegion() {
+    func testPageTranslationQueryNamesLanguageWithoutRegionAndKeepsScript() {
         let cases: [(code: String, name: String)] = [
-            ("en-UY", "English"), ("es-ES", "Spanish"), ("pt-BR", "Portuguese"), ("es-419", "Spanish"), ("en", "English")
+            ("en-UY", "English"), ("es-ES", "Spanish"), ("pt-BR", "Portuguese"), ("es-419", "Spanish"), ("en", "English"),
+            ("zh-Hant-TW", "Chinese, Traditional"), ("zh-Hans-CN", "Chinese, Simplified"), ("sr-Latn-RS", "Serbian (Latin)")
         ]
         for (code, name) in cases {
             XCTAssertEqual(AIChatTranslator.pageTranslationQuery(targetLanguage: code),
@@ -236,16 +237,6 @@ final class AIChatSelectionActionPageContextTests: XCTestCase {
     func testPageTranslationQueryFallsBackToRawIdentifierForUnknownCode() {
         XCTAssertEqual(AIChatTranslator.pageTranslationQuery(targetLanguage: "zz-ZZ"),
                        "Translate this page into zz-ZZ and summarize it.")
-    }
-
-    func testPageTranslationQueryKeepsScriptWithoutRegion() {
-        let cases: [(code: String, name: String)] = [
-            ("zh-Hant-TW", "Chinese, Traditional"), ("zh-Hans-CN", "Chinese, Simplified"), ("sr-Latn-RS", "Serbian (Latin)")
-        ]
-        for (code, name) in cases {
-            XCTAssertEqual(AIChatTranslator.pageTranslationQuery(targetLanguage: code),
-                           "Translate this page into \(name) and summarize it.", code)
-        }
     }
 
     func testAttachSelectionDoesNothingWhenMenuItemDisabled() {

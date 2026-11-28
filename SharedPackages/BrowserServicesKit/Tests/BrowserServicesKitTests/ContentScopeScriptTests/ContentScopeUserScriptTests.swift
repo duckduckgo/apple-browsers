@@ -275,6 +275,32 @@ final class ContentScopeUserScriptTests: XCTestCase {
         XCTAssertEqual(context.fileName, "contentScopeIsolated")
     }
 
+    func testWhenBlankFrameOptimizedThenOnlyIsolatedFileNameChanges() {
+        // GIVEN
+        let isolated = ContentScopeScriptContext.contentScopeIsolated
+        let page = ContentScopeScriptContext.contentScope()
+
+        // THEN
+        XCTAssertEqual(isolated.fileName(isBlankFrameOptimized: true), "contentScopeIsolated.ios")
+        XCTAssertEqual(isolated.fileName(isBlankFrameOptimized: false), "contentScopeIsolated")
+        XCTAssertEqual(page.fileName(isBlankFrameOptimized: true), "contentScope")
+    }
+
+    func testWhenBlankFrameOptimizedThenIsolatedScriptLoadsOptimizedBuild() throws {
+        // WHEN
+        let standard = try ContentScopeUserScript(mockPrivacyConfigurationManager, properties: properties,
+                                                  scriptContext: .contentScopeIsolated,
+                                                  privacyConfigurationJSONGenerator: configGenerator)
+        let optimized = try ContentScopeUserScript(mockPrivacyConfigurationManager, properties: properties,
+                                                   scriptContext: .contentScopeIsolated,
+                                                   privacyConfigurationJSONGenerator: configGenerator,
+                                                   isBlankFrameOptimized: true)
+
+        // THEN
+        XCTAssertFalse(optimized.source.isEmpty)
+        XCTAssertNotEqual(optimized.source, standard.source)
+    }
+
     func testWhenContentScopeIsolatedContextThenMessagingContextNameIsContentScopeScriptsIsolated() {
         // GIVEN
         let context = ContentScopeScriptContext.contentScopeIsolated

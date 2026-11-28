@@ -200,7 +200,8 @@ struct Launching: LaunchingHandling {
                                                             fireModeStorageController: fireModeStorageController,
                                                             adBlockingAvailability: adBlockingAvailability,
                                                             aiChatBonusOffer: aiChatBonusOffer,
-                                                            aiChatLocalModel: aiChatLocalModel)
+                                                            aiChatLocalModel: aiChatLocalModel,
+                                                            isBlankFrameOptimizationEnabled: featureFlagger.isFeatureOn(.blankFrameOptimizations))
         launchBreadcrumb.mark(.contentBlocking)
 
         // Constructed before MainCoordinator: its `eventHub` is threaded down to every tab.

@@ -100,6 +100,7 @@ final class MainCoordinator {
     private var youTubeAdBlockingCancellable: AnyCancellable?
     private let nativeMessagingSupport = NativeMessagingSupport()
     private let webExtensionAvailability: WebExtensionAvailabilityProviding?
+    private let isBlankFrameOptimizationEnabled: Bool
     private var webExtensionLoadTask: Task<Void, Never>?
     private var isWebExtensionLoadPending = false
     private var protectedDataCancellable: AnyCancellable?
@@ -159,6 +160,7 @@ final class MainCoordinator {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
         self.webExtensionAvailability = contentBlockingService.userScriptsDependencies.webExtensionAvailability
+        self.isBlankFrameOptimizationEnabled = contentBlockingService.userScriptsDependencies.isBlankFrameOptimizationEnabled
         self.daxDialogs = daxDialogs
         self.isFloatingUIFeatureEnabledForCurrentLaunch = featureFlagger.isFloatingUIFeatureEnabled()
         self.keyValueStore = keyValueStore
@@ -483,7 +485,8 @@ final class MainCoordinator {
             eventHub: eventHub,
             isAppleSurrogateRedirectionEnabled: { [webExtensionAvailability] in
                 webExtensionAvailability?.isAppleSurrogateRedirectionEnabled == true
-            }
+            },
+            isBlankFrameOptimizationEnabled: isBlankFrameOptimizationEnabled
         )
         self.webExtensionManager = webExtensionManager
         webExtensionManager.installUserAllowlistNotifier(privacyConfigurationManager: privacyConfigurationManager)

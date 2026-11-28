@@ -75,6 +75,14 @@ final class AutoconsentMessageProtocolTests: XCTestCase {
         return String(data: jsonData!, encoding: .ascii)!
     }
 
+    func testWhenBlankFrameOptimizationIsOnThenBundleSkippingAboutFramesIsLoaded() {
+        let standard = AutoconsentUserScript(config: MockPrivacyConfiguration(), preferences: MockAutoconsentPreferences())
+        let optimized = AutoconsentUserScript(config: MockPrivacyConfiguration(), preferences: MockAutoconsentPreferences(), isBlankFrameOptimized: true)
+
+        XCTAssertFalse(standard.source.contains("\"about:\"!==window.location.protocol"))
+        XCTAssertTrue(optimized.source.contains("\"about:\"!==window.location.protocol"))
+    }
+
     @MainActor
     func testInitIgnoresNonHttp() {
         let expect = expectation(description: "tt")

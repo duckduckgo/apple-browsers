@@ -239,6 +239,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     public let cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring
     /// Captured at manager creation so one startup cannot mix the enabled and disabled upgrade paths.
     public let isCPMUpgradeBeforeLoadEnabled: Bool
+    /// Read once at creation, so a change applies after an app restart.
+    public let isBlankFrameOptimizationEnabled: Bool
     /// Independent kill switch for restarting the context when a failed background view is still retained.
     private let isCPMBackgroundLoadRestartEnabled: @MainActor () -> Bool
     /// Whether the app is suspended; background-load recovery waits for the foreground.
@@ -304,6 +306,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 isApplicationInBackground: @escaping @MainActor () -> Bool = { false },
                 isCPMStableBaseURLEnabled: @escaping @MainActor () -> Bool = { false },
                 isCPMUpgradeBeforeLoadEnabled: Bool = false,
+                isBlankFrameOptimizationEnabled: Bool = false,
                 messageRouter: WebExtensionMessageRouting? = nil,
                 handlerProvider: WebExtensionHandlerProviding? = nil,
                 nativeMessagingHandler: WebExtensionNativeMessagingHandling? = nil,
@@ -373,6 +376,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         self.now = now
         self.cpmMessagingHealthMonitor = cpmMessagingHealthMonitor ?? CPMMessagingHealthMonitor(pixelFiring: pixelFiring, isUnmeasuredPage: { _ in false })
         self.isCPMUpgradeBeforeLoadEnabled = isCPMUpgradeBeforeLoadEnabled
+        self.isBlankFrameOptimizationEnabled = isBlankFrameOptimizationEnabled
         self.cpmNetworkProcessRecovery = CPMNetworkProcessRecovery(
             isEnabled: isCPMNetworkProcessRecoveryEnabled,
             featureFlagUpdates: cpmNetworkProcessRecoveryFeatureFlagUpdates
@@ -602,7 +606,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
         if embeddedType != nil {
             // A manifest's DDG identifier is not proof that it came from the app bundle. Verify its source URL, too.
-            let isBundled = EmbeddedWebExtensionRegistry.all.contains {
+            let isBundled = EmbeddedWebExtensionRegistry.allPackages.contains {
                 bundledExtensionURL($0)?.standardizedFileURL == sourceURL.standardizedFileURL
             }
             if isBundled {

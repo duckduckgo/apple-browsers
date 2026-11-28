@@ -134,7 +134,8 @@ final class UserScripts: UserScriptsProvider {
             contentScopeUserScriptIsolated = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager,
                                                                         properties: sourceProvider.contentScopeProperties,
                                                                         scriptContext: .contentScopeIsolated,
-                                                                        privacyConfigurationJSONGenerator: isolatedConfigGenerator)
+                                                                        privacyConfigurationJSONGenerator: isolatedConfigGenerator,
+                                                                        isBlankFrameOptimized: sourceProvider.isBlankFrameOptimizationEnabled)
         } catch {
             if let error = error as? UserScriptError {
                 error.fireLoadJSFailedPixelIfNeeded()
@@ -144,7 +145,8 @@ final class UserScripts: UserScriptsProvider {
         autoconsentUserScript = AutoconsentUserScript(
             config: sourceProvider.privacyConfigurationManager.privacyConfig,
             webExtensionAvailability: sourceProvider.webExtensionAvailability,
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            isBlankFrameOptimized: sourceProvider.isBlankFrameOptimizationEnabled
         )
 
         // `setupSucceeded == nil` (setup still in flight) is treated as "available"

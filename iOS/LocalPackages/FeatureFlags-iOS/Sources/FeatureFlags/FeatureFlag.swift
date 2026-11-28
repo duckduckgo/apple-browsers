@@ -742,6 +742,10 @@ public enum FeatureFlag: String {
     /// Internal-only for the first version.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220647281509936
     case aiChatLocalModels
+
+    /// Runs lighter AutoConsent, Autofill and Content Scope Scripts builds in blank frames to reduce memory use.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220953480589673
+    case blankFrameOptimizations
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -1256,6 +1260,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .disabled, source: .remoteReleasable(PageTranslationSubfeature.featureEnabled))
         case .aiChatLocalModels:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.localModels))
+        case .blankFrameOptimizations:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.blankFrameOptimizations))
         }
     }
 

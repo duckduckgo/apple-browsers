@@ -101,6 +101,16 @@ public enum ContentScopeScriptContext: Equatable {
         }
     }
 
+    /// Only the isolated script has a blank-frame-optimized build; page-world protections still run in blank frames.
+    func fileName(isBlankFrameOptimized: Bool) -> String {
+        switch self {
+        case .contentScopeIsolated:
+            return isBlankFrameOptimized ? "\(fileName).ios" : fileName
+        case .contentScope, .brokerProtection, .aiChatDataClearing, .aiChatHistory, .pageTranslation:
+            return fileName
+        }
+    }
+
     var messagingContextName: String {
         switch self {
         case .contentScope:
@@ -282,7 +292,8 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
                 properties: ContentScopeProperties,
                 scriptContext: ContentScopeScriptContext = .contentScope(),
                 allowedNonisolatedFeatures: [String] = [],
-                privacyConfigurationJSONGenerator: CustomisedPrivacyConfigurationJSONGenerating?
+                privacyConfigurationJSONGenerator: CustomisedPrivacyConfigurationJSONGenerating?,
+                isBlankFrameOptimized: Bool = false
     ) throws {
         self.scriptContext = scriptContext
         self.allowedNonisolatedFeatures = allowedNonisolatedFeatures
@@ -296,7 +307,8 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
             properties: properties,
             scriptContext: scriptContext,
             config: broker.messagingConfig(),
-            privacyConfigurationJSONGenerator: privacyConfigurationJSONGenerator
+            privacyConfigurationJSONGenerator: privacyConfigurationJSONGenerator,
+            isBlankFrameOptimized: isBlankFrameOptimized
         )
     }
 
@@ -309,7 +321,8 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
                                       properties: ContentScopeProperties,
                                       scriptContext: ContentScopeScriptContext,
                                       config: WebkitMessagingConfig,
-                                      privacyConfigurationJSONGenerator: CustomisedPrivacyConfigurationJSONGenerating?
+                                      privacyConfigurationJSONGenerator: CustomisedPrivacyConfigurationJSONGenerating?,
+                                      isBlankFrameOptimized: Bool = false
     ) throws -> String {
         let privacyConfigJsonData = privacyConfigurationJSONGenerator?.privacyConfiguration ?? privacyConfigurationManager.currentConfig
         guard let privacyConfigJson = String(data: privacyConfigJsonData, encoding: .utf8),
@@ -327,7 +340,7 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
             "$USER_PREFERENCES$": jsonPropertiesString,
             "$WEBKIT_MESSAGING_CONFIG$": jsonConfigString
         ]) { current, _ in current }
-        return try loadJS(scriptContext.fileName, from: ContentScopeScripts.Bundle, withReplacements: replacements)
+        return try loadJS(scriptContext.fileName(isBlankFrameOptimized: isBlankFrameOptimized), from: ContentScopeScripts.Bundle, withReplacements: replacements)
     }
 
     /// The privacy config as script source, for both the current and the older placeholder.

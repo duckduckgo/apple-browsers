@@ -62,7 +62,8 @@ public enum WebExtensionManagerFactory {
         darkReaderExcludedDomainsProvider: DarkReaderExcludedDomainsProviding? = nil,
         scriptletConfiguration: ScriptletConfiguration? = nil,
         eventHub: EventHubManaging,
-        isAppleSurrogateRedirectionEnabled: @escaping @MainActor () -> Bool = { false }
+        isAppleSurrogateRedirectionEnabled: @escaping @MainActor () -> Bool = { false },
+        isBlankFrameOptimizationEnabled: Bool
     ) -> WebExtensionManager {
         let preferencesAdapter = AutoconsentPreferencesAdapter(preferences: autoconsentPreferences)
         let pixelFiring = iOSWebExtensionPixelFiring()
@@ -88,6 +89,7 @@ public enum WebExtensionManagerFactory {
                 featureFlagger.isFeatureOn(.cpmStableBaseURL)
             },
             isCPMUpgradeBeforeLoadEnabled: featureFlagger.isFeatureOn(.cpmUpgradeBeforeLoad),
+            isBlankFrameOptimizationEnabled: isBlankFrameOptimizationEnabled,
             handlerProvider: WebExtensionHandlerProvider(
                 privacyConfigurationManager: privacyConfigurationManager,
                 autoconsentPreferences: preferencesAdapter,

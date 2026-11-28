@@ -28,6 +28,9 @@ public struct EmbeddedWebExtensionDescriptor {
     /// Resource filename (e.g., "duckduckgo-embedded-web-extension.zip").
     public let resourceFilename: String
 
+    /// Package installed instead of `resourceFilename` while blank-frame optimizations are on.
+    public let blankFrameOptimizedResourceFilename: String?
+
     /// Returns the URL to the bundled extension, or nil if not found.
     public var bundledURL: URL? {
         let name = (resourceFilename as NSString).deletingPathExtension
@@ -35,9 +38,15 @@ public struct EmbeddedWebExtensionDescriptor {
         return Bundle.module.url(forResource: name, withExtension: ext, subdirectory: "BundledWebExtensions")
     }
 
-    public init(type: DuckDuckGoWebExtensionType, resourceFilename: String) {
+    public init(type: DuckDuckGoWebExtensionType, resourceFilename: String, blankFrameOptimizedResourceFilename: String? = nil) {
         self.type = type
         self.resourceFilename = resourceFilename
+        self.blankFrameOptimizedResourceFilename = blankFrameOptimizedResourceFilename
+    }
+
+    public func selecting(blankFrameOptimized: Bool) -> EmbeddedWebExtensionDescriptor {
+        guard blankFrameOptimized, let blankFrameOptimizedResourceFilename else { return self }
+        return EmbeddedWebExtensionDescriptor(type: type, resourceFilename: blankFrameOptimizedResourceFilename)
     }
 }
 
@@ -48,7 +57,9 @@ public enum EmbeddedWebExtensionRegistry {
 
     /// All embedded extensions that should be installed/updated on app launch.
     public static let all: [EmbeddedWebExtensionDescriptor] = [
-        EmbeddedWebExtensionDescriptor(type: .embedded, resourceFilename: "duckduckgo-embedded-web-extension.zip"),
+        EmbeddedWebExtensionDescriptor(type: .embedded,
+                                       resourceFilename: "duckduckgo-embedded-web-extension.zip",
+                                       blankFrameOptimizedResourceFilename: "duckduckgo-embedded-web-extension-cpm-skip-blank-frames.zip"),
         EmbeddedWebExtensionDescriptor(type: .darkReader, resourceFilename: "darkreader.zip"),
         EmbeddedWebExtensionDescriptor(type: .adBlockingExtension, resourceFilename: "content-blocker-extension-apple.zip"),
         // Retired: never enabled, listed so sync uninstalls existing copies. The zip is no longer bundled.
@@ -58,5 +69,14 @@ public enum EmbeddedWebExtensionRegistry {
     /// Find descriptor for a given extension type.
     public static func descriptor(for type: DuckDuckGoWebExtensionType) -> EmbeddedWebExtensionDescriptor? {
         all.first { $0.type == type }
+    }
+
+    /// `all`, plus the blank-frame-optimized packages.
+    public static var allPackages: [EmbeddedWebExtensionDescriptor] {
+        all.flatMap { descriptor in
+            descriptor.blankFrameOptimizedResourceFilename == nil
+                ? [descriptor]
+                : [descriptor, descriptor.selecting(blankFrameOptimized: true)]
+        }
     }
 }

@@ -100,10 +100,11 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
          preferences: AutoconsentPreferences = AppUserDefaults(),
          ignoreNonHTTPURLs: Bool = true,
          webExtensionAvailability: WebExtensionAvailabilityProviding? = nil,
-         featureFlagger: FeatureFlagger? = nil) {
+         featureFlagger: FeatureFlagger? = nil,
+         isBlankFrameOptimized: Bool = false) {
         Logger.autoconsent.debug("Initialising autoconsent userscript")
         do {
-            source = try Self.loadJS("autoconsent-bundle", from: .main, withReplacements: [:])
+            source = try Self.loadJS(Self.scriptName(isBlankFrameOptimized: isBlankFrameOptimized), from: .main, withReplacements: [:])
         } catch {
             if let error = error as? UserScriptError {
                 error.fireLoadJSFailedPixelIfNeeded()
@@ -116,6 +117,10 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
         self.webExtensionAvailability = webExtensionAvailability
         self.featureFlagger = featureFlagger
         super.init()
+    }
+
+    private static func scriptName(isBlankFrameOptimized: Bool) -> String {
+        isBlankFrameOptimized ? "autoconsent-bundle-skip-blank-frames" : "autoconsent-bundle"
     }
 
     @MainActor

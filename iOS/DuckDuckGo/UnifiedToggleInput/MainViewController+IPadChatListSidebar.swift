@@ -133,12 +133,20 @@ extension MainViewController {
         IPadChatListSidebarContainerView.isOverlay(forTabWidth: tabWidth) ? .overlay : .column
     }
 
-    func setIPadChatListSidebarOpen(_ isOpen: Bool) {
+    func setIPadChatListSidebarOpen(_ isOpen: Bool, endsEditing: Bool = true) {
         iPadChatListSidebarState.isOpen = isOpen
         guard let tab = iPadChatListSidebarState.sidebar?.navigationController.parent as? TabViewController else { return }
         // Opening the list means switching or starting a chat, so the keyboard goes down either way.
-        tab.view.endEditing(true)
+        if endsEditing {
+            tab.view.endEditing(true)
+        }
         tab.setChatListSidebarOpen(isOpen, animated: true)
+    }
+
+    /// Typing into the chat input means the user is back on the chat, so the list gets out of its way.
+    func closeIPadChatListSidebarForFocusedInput() {
+        guard iPadChatListSidebarState.isOpen else { return }
+        setIPadChatListSidebarOpen(false, endsEditing: false)
     }
 
     private func iPadChatListSidebar(isFireMode: Bool) -> IPadChatListSidebar {

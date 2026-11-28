@@ -157,7 +157,12 @@ final class AIChatTranslator: AIChatTranslating {
 
     /// Sent to the model rather than shown in the UI, so it stays in English.
     static func pageTranslationQuery(targetLanguage: String) -> String {
-        let languageName = Locale(identifier: "en").localizedString(forIdentifier: targetLanguage) ?? targetLanguage
+        // Unlike Locale.Language, this exists before macOS 13 and keeps only the parts the identifier spells out, so no script is inferred.
+        let components = Locale.components(fromIdentifier: targetLanguage.replacingOccurrences(of: "-", with: "_"))
+        let withoutRegion = [components[NSLocale.Key.languageCode.rawValue], components[NSLocale.Key.scriptCode.rawValue]]
+            .compactMap { $0 }
+            .joined(separator: "-")
+        let languageName = Locale(identifier: "en").localizedString(forIdentifier: withoutRegion) ?? targetLanguage
         return "Translate this page into \(languageName) and summarize it."
     }
 

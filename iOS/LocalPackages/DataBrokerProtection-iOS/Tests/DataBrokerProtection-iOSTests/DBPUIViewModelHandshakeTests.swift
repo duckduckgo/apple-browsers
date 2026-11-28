@@ -168,7 +168,6 @@ private final class MockOptOutEmailComposer: DBPOptOutEmailComposing {
 
     @MainActor
     func compose(_ email: DBPUIOpenOptOutEmailRequest) async -> MFMailComposeResult {
-        // Like the real composer, nothing is shown when Mail can't send.
         guard canSendMail else { return .failed }
         composedEmails.append(email)
         return composeResult

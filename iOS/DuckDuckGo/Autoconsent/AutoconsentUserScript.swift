@@ -366,7 +366,9 @@ extension AutoconsentUserScript {
         replyHandler([
             "type": "initResp",
             "rules": [
-                "compact": remoteConfig["compactRuleList"] ?? nil
+                "compact": AutoconsentCompactRuleFilter.ruleList(remoteConfig["compactRuleList"],
+                                                                 frameURL: messageData.url,
+                                                                 isMainFrame: message.frameInfo.isMainFrame)
             ],
             "config": [
                 "enabled": true,

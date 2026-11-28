@@ -107,16 +107,18 @@ resolve_derived_data() {
     echo "$worktree/$dd	new (first build is a full build)"
 }
 
-build_ax() {
-    if [[ ! -x "$AX_BIN" || "$SCRIPTS_DIR/ax.swift" -nt "$AX_BIN" ]]; then
-        mkdir -p "$(dirname "$AX_BIN")"
-        swiftc -O "$SCRIPTS_DIR/ax.swift" -o "$AX_BIN"
+# build_tool <name>: compile scripts/<name>.swift to .bin/<name> when the source is newer.
+build_tool() {
+    local bin="$SKILL_DIR/.bin/$1"
+    if [[ ! -x "$bin" || "$SCRIPTS_DIR/$1.swift" -nt "$bin" ]]; then
+        mkdir -p "$SKILL_DIR/.bin"
+        swiftc -O -suppress-warnings "$SCRIPTS_DIR/$1.swift" -o "$bin"
     fi
 }
 
 # Copy ax into the VM when it differs from this Mac's build.
 sync_ax() {
-    build_ax
+    build_tool ax
     local want have
     want=$(shasum -a 256 "$AX_BIN" | cut -d' ' -f1)
     have=$(on_target 'mkdir -p ~/verify; shasum -a 256 ~/verify/ax 2>/dev/null | cut -d" " -f1')
@@ -124,11 +126,11 @@ sync_ax() {
 }
 
 ax() {
-    build_ax
+    build_tool ax
     on_target 'cd ~/verify 2>/dev/null || true; t=$1; shift; VERIFY_APP="verify-$t" "${AX:-./ax}" "$@"' "$topic" "$@"
 }
 [[ -z "$VM" ]] && ax() {
-    build_ax
+    build_tool ax
     VERIFY_APP="verify-$topic" "$AX_BIN" "$@"
 }
 
@@ -520,12 +522,13 @@ record)
             read -r cut why < "$RUN_DIR/recording.cut"
             # The cut keeps only whole seconds before it, minus the margin: nothing left means no movie, not a broken one.
             (( cut > 0 )) || { rm -f "$mov"; echo "CUT: $why before a whole second could be kept; no movie"; exit 1; }
-            trim=(--duration "$cut")
+            trim=("$cut")
         fi
-        # screencapture writes QuickTime whatever the extension; remuxing to mp4 also proves AVFoundation reads it.
-        if ! avconvert -p PresetPassthrough -s "$mov" -o "$RUN_DIR/recording.mp4" --replace ${trim[@]+"${trim[@]}"} > /dev/null 2>&1; then
+        # Small enough to upload (see shrink.swift), and read through AVFoundation, which proves it plays.
+        build_tool shrink
+        if ! err=$("$SKILL_DIR/.bin/shrink" "$mov" "$RUN_DIR/recording.mp4" ${trim[@]+"${trim[@]}"} 2>&1); then
             rm -f "$RUN_DIR/recording.mp4"
-            echo "UNPLAYABLE: AVFoundation can't read the movie: $(avmediainfo "$mov" --brief 2>&1 | head -2 | tr '\n' ' ')"
+            echo "UNPLAYABLE: AVFoundation can't re-encode the movie: $(tail -c 300 <<< "$err")"
             exit 2
         fi
         rm -f "$mov"

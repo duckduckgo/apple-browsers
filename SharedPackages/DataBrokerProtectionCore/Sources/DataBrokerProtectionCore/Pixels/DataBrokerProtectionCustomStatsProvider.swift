@@ -79,7 +79,7 @@ public struct DefaultDataBrokerProtectionCustomOptOutStatsProvider: DataBrokerPr
             totalGlobalOptOuts += optOutJobsCount
 
             // Get opt-out request count since start date
-            let requestsCountSinceStartDate = optOutSuccessfulRequestCountSince(startDate: startDate, for: optOutJobs)
+            let requestsCountSinceStartDate = automatedOptOutRequestCountSince(startDate: startDate, for: optOutJobs)
 
             totalGlobalRequests += requestsCountSinceStartDate
 
@@ -116,8 +116,8 @@ private extension DefaultDataBrokerProtectionCustomOptOutStatsProvider {
         }
     }
 
-    func optOutSuccessfulRequestCountSince(startDate: Date?,
-                                           for optOutJobData: [OptOutJobData]) -> Int {
+    func automatedOptOutRequestCountSince(startDate: Date?,
+                                          for optOutJobData: [OptOutJobData]) -> Int {
 
         return optOutJobData.reduce(0) { result, optOutJobData in
             let optOutRequested = optOutJobData.historyEvents.contains { historyEvent in

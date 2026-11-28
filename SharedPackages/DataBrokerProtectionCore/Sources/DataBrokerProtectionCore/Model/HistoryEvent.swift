@@ -28,11 +28,16 @@ public struct HistoryEvent: Identifiable, Sendable {
         /// and again when an assisted attempt ends without submitting.
         case optOutAwaitingUserAssistance
         case optOutRequested
+        case optOutByUserEmail
         case optOutSubmittedAndAwaitingEmailConfirmation
         case optOutConfirmed
         case scanStarted
         case reAppearence
         case matchRemovedByUser
+
+        var canEndEmailConfirmationWait: Bool {
+            self != .optOutByUserEmail
+        }
     }
 
     public let extractedProfileId: Int64?
@@ -84,12 +89,20 @@ public struct HistoryEvent: Identifiable, Sendable {
         }
     }
 
-    /// Whether this event signals that our form submission to the broker successfully completed.
     /// For legacy email-confirming records that only carry `.optOutRequested` (broker acknowledgement,
     /// not form submission), this is the best signal available.
-    func isFormSubmittedEvent() -> Bool {
+    func isRemovalRequestSentEvent() -> Bool {
         switch type {
-        case .optOutRequested, .optOutSubmittedAndAwaitingEmailConfirmation:
+        case .optOutRequested, .optOutByUserEmail, .optOutSubmittedAndAwaitingEmailConfirmation:
+            return true
+        default:
+            return false
+        }
+    }
+
+    func isOptOutRequestEvent() -> Bool {
+        switch type {
+        case .optOutRequested, .optOutByUserEmail:
             return true
         default:
             return false

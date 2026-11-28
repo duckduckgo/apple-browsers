@@ -323,7 +323,7 @@ extension DBPUIDataBrokerProfileMatch {
                 assertionFailure("No matching MatchFound event for an extract profile found")
             }
 
-            let optOutSubmittedEvents = optOutJobData.historyEvents.filter { $0.type == .optOutRequested }
+            let optOutSubmittedEvents = optOutJobData.historyEvents.filter { $0.isOptOutRequestEvent() }
             let firstOptOutEvent = optOutSubmittedEvents.min(by: { $0.date < $1.date })
             optOutSubmittedDate = firstOptOutEvent?.date
         }
@@ -364,7 +364,7 @@ extension DBPUIDataBrokerProfileMatch {
 
     private static func formSubmittedDate(from optOutJobData: OptOutJobData) -> Date? {
         optOutJobData.historyEvents
-            .filter { $0.isFormSubmittedEvent() }
+            .filter { $0.isRemovalRequestSentEvent() }
             .min(by: { $0.date < $1.date })?
             .date
     }

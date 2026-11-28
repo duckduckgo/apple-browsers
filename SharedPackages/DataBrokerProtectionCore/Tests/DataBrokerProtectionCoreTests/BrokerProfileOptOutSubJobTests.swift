@@ -330,7 +330,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
 
         XCTAssertTrue(database.optOutEvents.contains { $0.type == .optOutRequested })
         XCTAssertEqual(database.attemptCount, 1)
-        if case let .optOutSubmitSuccess(_, _, _, _, tries, _, _, _, _) = mockPixelHandler.lastFiredEvent {
+        if case let .optOutSubmitSuccess(_, _, _, _, tries, _, _, _, _, _) = mockPixelHandler.lastFiredEvent {
             XCTAssertEqual(tries, 1)
         } else {
             XCTFail("Expected opt-out submit success pixel")
@@ -568,7 +568,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
 
         if let lastPixelFired = mockPixelHandler.lastFiredEvent {
             switch lastPixelFired {
-            case .optOutSubmitSuccess(_, _, _, _, let tries, _, _, _, _):
+            case .optOutSubmitSuccess(_, _, _, _, let tries, _, _, _, _, _):
                 XCTAssertEqual(tries, 3)
             default: XCTFail("We should be firing the opt-out submit-success pixel last")
             }
@@ -707,5 +707,71 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
 
         // Then
         XCTAssertFalse(result)
+    }
+
+    func testOptOutSubJob_whenUserSentEmailAfterJobWasQueued_skipsAutomatedAttempt() async throws {
+        let broker = DataBroker(id: 1,
+                                name: "broker",
+                                url: "broker.com",
+                                steps: [],
+                                version: "1",
+                                schedulingConfig: .default,
+                                optOutUrl: "",
+                                eTag: "",
+                                removedAt: nil)
+        let queuedJob = BrokerProfileQueryData(
+            dataBroker: broker,
+            profileQuery: .mock,
+            scanJobData: .mock,
+            optOutJobData: [OptOutJobData.mock(with: .mockWithoutRemovedDate)]
+        )
+        try mockDatabase.add(HistoryEvent(extractedProfileId: 1,
+                                          brokerId: 1,
+                                          profileQueryId: 1,
+                                          type: .optOutByUserEmail))
+
+        let result = try await sut.runOptOut(
+            for: .mockWithoutRemovedDate,
+            brokerProfileQueryData: queuedJob,
+            showWebView: false,
+            shouldRunNextStep: { true }
+        )
+
+        XCTAssertFalse(result)
+        XCTAssertFalse(mockOptOutRunner.wasOptOutCalled)
+        XCTAssertFalse(mockDatabase.optOutEvents.contains { $0.type == .optOutStarted })
+    }
+
+    func testOptOutSubJob_whenUserSentEmailBeforeTheWaitBetweenAttempts_runsAutomatedAttempt() async throws {
+        let broker = DataBroker(id: 1,
+                                name: "broker",
+                                url: "broker.com",
+                                steps: [],
+                                version: "1",
+                                schedulingConfig: .default,
+                                optOutUrl: "",
+                                eTag: "",
+                                removedAt: nil)
+        let queuedJob = BrokerProfileQueryData(
+            dataBroker: broker,
+            profileQuery: .mock,
+            scanJobData: .mock,
+            optOutJobData: [OptOutJobData.mock(with: .mockWithoutRemovedDate)]
+        )
+        let waitBetweenAttempts = broker.schedulingConfig.hoursUntilNextOptOutAttempt.hoursToSeconds
+        try mockDatabase.add(HistoryEvent(extractedProfileId: 1,
+                                          brokerId: 1,
+                                          profileQueryId: 1,
+                                          type: .optOutByUserEmail,
+                                          date: Date().addingTimeInterval(-waitBetweenAttempts - 60)))
+
+        _ = try await sut.runOptOut(
+            for: .mockWithoutRemovedDate,
+            brokerProfileQueryData: queuedJob,
+            showWebView: false,
+            shouldRunNextStep: { true }
+        )
+
+        XCTAssertTrue(mockDatabase.optOutEvents.contains { $0.type == .optOutStarted })
     }
 }

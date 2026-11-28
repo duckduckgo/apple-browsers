@@ -117,6 +117,9 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Address-bar render-performance instrumentation kill switch.
     case addressBarPerformanceInstrumentation
 
+    /// https://app.asana.com/1/137249556945/project/1203108348835387/task/1220868242347249?focus=true
+    case startupFailureMetrics
+
     /// Hang reporting feature flag
     case hangReporting
 

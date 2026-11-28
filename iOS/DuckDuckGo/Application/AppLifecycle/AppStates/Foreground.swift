@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import BrowserServicesKit
 import Core
 import HangMetrics
 import Persistence
@@ -129,6 +130,7 @@ struct Foreground: ForegroundHandling {
     /// This ensures that each service manages its own async execution without unnecessary indirection.
     func onTransition() {
         Logger.lifecycle.info("\(type(of: self)): \(#function)")
+        appDependencies.startupFailureInstrumentation.recordUserReturnedToApp()
 
         // Close the previous session before foreground work can report another prompt.
         appDependencies.mainCoordinator.promptExposureReporter.appDidEnterForeground()
@@ -152,6 +154,7 @@ struct Foreground: ForegroundHandling {
                 // Mark that the app has successfully launched at least once
                 // This helps distinguish database corruption from fresh installs/restores
                 BoolFileMarker(name: .hasSuccessfullyLaunchedBefore)?.mark()
+                appDependencies.startupFailureInstrumentation.recordSuccessfulStartup()
 
                 // A launch action may replace a restored NTP, so prepare only after that action has settled.
                 appDependencies.mainCoordinator.prepareHomePageMessagesForForegroundIfNeeded()

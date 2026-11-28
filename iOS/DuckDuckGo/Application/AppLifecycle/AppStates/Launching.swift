@@ -60,6 +60,7 @@ struct Launching: LaunchingHandling {
     private let isAppLaunchedInBackground = UIApplication.shared.applicationState == .background
 
     private let configuration: AppConfiguration
+    private let startupFailureInstrumentation: any StartupFailureInstrumentation
     private let services: AppServices
     private let mainCoordinator: MainCoordinator
     private let launchTaskManager = LaunchTaskManager()
@@ -69,7 +70,9 @@ struct Launching: LaunchingHandling {
 
     // MARK: - Handle application(_:didFinishLaunchingWithOptions:) logic here
 
-    init() throws {
+    init(startupFailureInstrumentation: any StartupFailureInstrumentation) throws {
+        self.startupFailureInstrumentation = startupFailureInstrumentation
+        startupFailureInstrumentation.configure(featureFlagger: featureFlagger, feature: FeatureFlag.startupFailureMetrics)
         let launchBackgroundTask = LaunchBackgroundTask(featureFlagger: featureFlagger)
         defer { launchBackgroundTask.end() }
 
@@ -657,6 +660,7 @@ struct Launching: LaunchingHandling {
 
     private var appDependencies: AppDependencies {
         .init(
+            startupFailureInstrumentation: startupFailureInstrumentation,
             mainCoordinator: mainCoordinator,
             services: services,
             launchTaskManager: launchTaskManager,

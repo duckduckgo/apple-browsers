@@ -128,6 +128,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let hangMetricsService: HangMetricsService
 
     let keyValueStore: ThrowingKeyValueStoring
+    private let startupFailureInstrumentation: any StartupFailureInstrumentation
 
     let faviconManager: FaviconManager
     /// The only favicon rasterizer: one web view and web content process for the whole app, shared by the favicon
@@ -720,6 +721,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             Self.configurePixelKit(isInternalUser: internalUserDecider.isInternalUser)
         }
 
+        let startupFailureInstrumentation = StartupFailureMetrics()
+        self.startupFailureInstrumentation = startupFailureInstrumentation
+        if AppVersion.runType.requiresEnvironment {
+            startupFailureInstrumentation.recordUserReturnedToApp()
+        }
+
 #if DEBUG
         Self.prepareIntegrationTestsKeyValueStoresLocation()
 #endif
@@ -729,6 +736,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             _ = try keyValueStore.object(forKey: AppearancePreferencesUserDefaultsPersistor.Key.newTabPageIsProtectionsReportVisible.rawValue)
         } catch {
             PixelKit.fire(DebugEvent(GeneralPixel.keyValueFileStoreInitError, error: error))
+            startupFailureInstrumentation.recordFailure()
             Thread.sleep(forTimeInterval: 1)
             fatalError("Could not prepare key value store: \(error.localizedDescription)")
         }
@@ -736,7 +744,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         bookmarkDatabase = BookmarkDatabase()
 
         if AppVersion.runType.requiresEnvironment {
-            let commonDatabase = Database()
+            let commonDatabase = Database(onStartupFailure: startupFailureInstrumentation.recordFailure)
             database = commonDatabase
 
             database.db.loadStore { _, error in
@@ -749,6 +757,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     PixelKit.fire(DebugEvent(GeneralPixel.dbInitializationError(error: error)))
                 }
 
+                startupFailureInstrumentation.recordFailure()
                 // Give Pixel a chance to be sent, but not too long
                 Thread.sleep(forTimeInterval: 1)
                 fatalError("Could not load DB: \(error.localizedDescription)")
@@ -761,6 +770,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 bookmarkDatabase.preFormFactorSpecificFavoritesFolderOrder = favoritesOrder
             } catch {
                 PixelKit.fire(DebugEvent(GeneralPixel.bookmarksCouldNotLoadDatabase(error: error)))
+                startupFailureInstrumentation.recordFailure()
                 Thread.sleep(forTimeInterval: 1)
                 fatalError("Could not create Bookmarks database stack: \(error.localizedDescription)")
             }
@@ -768,6 +778,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             bookmarkDatabase.db.loadStore { context, error in
                 guard let context = context else {
                     PixelKit.fire(DebugEvent(GeneralPixel.bookmarksCouldNotLoadDatabase(error: error)))
+                    startupFailureInstrumentation.recordFailure()
                     Thread.sleep(forTimeInterval: 1)
                     fatalError("Could not create Bookmarks database stack: \(error?.localizedDescription ?? "err")")
                 }
@@ -849,6 +860,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             featureFlagOverrides.applyUITestsFeatureFlagsIfNeeded()
         }
         self.featureFlagger = featureFlagger
+        startupFailureInstrumentation.configure(featureFlagger: featureFlagger, feature: FeatureFlag.startupFailureMetrics)
+        if AppVersion.runType.requiresEnvironment {
+            startupFailureInstrumentation.recordUserReturnedToApp()
+        }
         self.dockCustomization = DockCustomizer(featureFlagger: featureFlagger)
         self.addToDockVideoPresenter = AddToDockVideoPresenter()
         webExtensionAutofillTakeover = WebExtensionAutofillTakeover()
@@ -1677,6 +1692,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard AppVersion.runType.requiresEnvironment else { return }
         defer {
             didFinishLaunching = true
+            startupFailureInstrumentation.recordSuccessfulStartup()
         }
 
         let profilerToken = startupProfiler.measureSequence(initialStep: .appDidFinishLaunchingBeforeRestoration)

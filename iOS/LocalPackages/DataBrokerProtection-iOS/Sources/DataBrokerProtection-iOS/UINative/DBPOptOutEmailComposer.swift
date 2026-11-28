@@ -44,9 +44,7 @@ final class DBPOptOutEmailComposer: NSObject, DBPOptOutEmailComposing {
     /// Closing the dashboard also closes Mail without a delegate callback, so the request resolves as not sent here.
     @MainActor
     func presenterDidDisappear() {
-        guard let continuation = pendingCompose else { return }
-        pendingCompose = nil
-        continuation.resume(returning: .cancelled)
+        resolvePendingCompose(with: .cancelled)
     }
 
     @MainActor
@@ -71,21 +69,30 @@ final class DBPOptOutEmailComposer: NSObject, DBPOptOutEmailComposing {
 #if DEBUG
     @MainActor
     func simulateSend(_ email: DBPUIOpenOptOutEmailRequest) async -> Bool {
-        guard let presentingViewController = readyPresentingViewController else { return false }
+        guard pendingCompose == nil, let presentingViewController = readyPresentingViewController else { return false }
 
-        return await withCheckedContinuation { continuation in
+        let result = await withCheckedContinuation { continuation in
+            pendingCompose = continuation
             let alert = UIAlertController(title: "Simulate email send (debug)",
                                           message: "Mail isn't set up on this device.\n\nTo: \(email.to)\nSubject: \(email.subject)",
                                           preferredStyle: .alert)
-            alert.addAction(UIAlertAction(title: "Simulate Send", style: .default) { _ in continuation.resume(returning: true) })
-            alert.addAction(UIAlertAction(title: "Cancel", style: .cancel) { _ in continuation.resume(returning: false) })
+            alert.addAction(UIAlertAction(title: "Simulate Send", style: .default) { [weak self] _ in self?.resolvePendingCompose(with: .sent) })
+            alert.addAction(UIAlertAction(title: "Cancel", style: .cancel) { [weak self] _ in self?.resolvePendingCompose(with: .cancelled) })
             presentingViewController.present(alert, animated: true)
         }
+        return result == .sent
     }
 #endif
 }
 
 private extension DBPOptOutEmailComposer {
+    @MainActor
+    func resolvePendingCompose(with result: MFMailComposeResult) {
+        guard let continuation = pendingCompose else { return }
+        pendingCompose = nil
+        continuation.resume(returning: result)
+    }
+
     @MainActor
     var readyPresentingViewController: UIViewController? {
         guard let presentingViewController,

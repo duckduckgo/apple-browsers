@@ -95,7 +95,7 @@ struct Foreground: ForegroundHandling {
         )
         let keyboardPresenter = KeyboardPresenter(mainViewController: appDependencies.mainCoordinator.controller,
                                                   foregroundScreen: appDependencies.mainCoordinator.captureIdleReturnForegroundScreen(),
-                                                  runOnceModalPromptCloses: { appDependencies.mainCoordinator.runOnceModalPromptCloses(while: $0, $1) })
+                                                  runOnceModalPromptCloses: { appDependencies.mainCoordinator.runOnceLaunchPromptCloses(while: $0, $1) })
         self.keyboardPresenter = keyboardPresenter
         launchActionHandler = LaunchActionHandler(
             urlHandler: appDependencies.mainCoordinator,
@@ -156,8 +156,8 @@ struct Foreground: ForegroundHandling {
                 // A launch action may replace a restored NTP, so prepare only after that action has settled.
                 appDependencies.mainCoordinator.prepareHomePageMessagesForForegroundIfNeeded()
 
-                // Present any eligible modal prompt
-                appDependencies.mainCoordinator.presentModalPromptIfNeeded()
+                // Present the age request, or failing that any eligible modal prompt
+                appDependencies.mainCoordinator.presentLaunchPromptsIfNeeded()
             }
         )
 

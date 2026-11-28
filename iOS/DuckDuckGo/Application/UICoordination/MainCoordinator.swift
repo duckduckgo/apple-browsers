@@ -72,6 +72,7 @@ final class MainCoordinator {
     private let subscriptionManager: any SubscriptionManager
     private let featureFlagger: FeatureFlagger
     private let promoCoordinationService: PromoCoordinationService
+    private let declaredAgePrompt: DeclaredAgePrompt
     let promptExposureReporter: PromptExposureReporting
     private let homePageConfiguration: HomePageConfiguration
     private let launchSourceManager: LaunchSourceManaging
@@ -110,6 +111,7 @@ final class MainCoordinator {
     let isFloatingUIFeatureEnabledForCurrentLaunch: Bool
 
     private var hasPresentedOnboarding = false
+    private var isReadyForLaunchPrompts = false
     private var idleReturnForegroundScreen = IdleReturnForegroundScreen(presented: nil, wasOnNewTabPage: false, isProtectionEnabled: false)
 
     init(privacyConfigurationManager: PrivacyConfigurationManaging,
@@ -165,6 +167,10 @@ final class MainCoordinator {
         self.darkReaderFeatureSettings = AppDarkReaderFeatureSettings(featureFlagger: featureFlagger,
                                                                       privacyConfigurationManager: privacyConfigurationManager)
         self.promoCoordinationService = promoCoordinationService
+        self.declaredAgePrompt = DeclaredAgePrompt(
+            requester: DeclaredAgeRequester(service: DefaultDeclaredAgeService(), storage: keyValueStore.throwingKeyedStoring()),
+            featureFlagger: featureFlagger
+        )
         self.promptExposureReporter = promptExposureReporter
         self.wideEvent = wideEvent
         self.eventHub = eventHub
@@ -381,6 +387,9 @@ final class MainCoordinator {
             tabManager.applyTrackerAnimationSuppressionBasedOnLaunchSource()
         }
 
+        declaredAgePrompt.anchorProvider = { [weak self] in
+            self?.declaredAgeAnchor()
+        }
     }
 
     func start(drawsIdleReturnNewTabPage: Bool) {
@@ -717,16 +726,53 @@ final class MainCoordinator {
         controller.presentDataBrokerProtectionDashboard(freeScanEntryPoint: freeScanEntryPoint)
     }
 
-    func presentModalPromptIfNeeded() {
-        promoCoordinationService.presentModalPromptIfNeeded(from: controller)
-        _ = runOnceModalPromptCloses(while: { true }, {})
+    func presentLaunchPromptsIfNeeded() {
+        isReadyForLaunchPrompts = true
+
+        // The age request takes the whole foreground, so a modal prompt never shares the screen with it.
+        if declaredAgePrompt.presentIfNeeded() {
+            return
+        }
+
+        presentModalPromptIfNeeded()
     }
 
-    func runOnceModalPromptCloses(while shouldWait: @escaping @MainActor () -> Bool, _ handler: @escaping @MainActor () -> Void) -> Bool {
+    private func declaredAgeAnchor() -> UIViewController? {
+        // Widget, shortcut and link launches are skipped, and a pending modal prompt goes first: the next foreground retries.
+        guard isReadyForLaunchPrompts,
+              launchSourceManager.source == .standard,
+              !promoCoordinationService.isModalPromptPending else { return nil }
+
+        // Apple never shows its sheet, nor returns, when asked from the background or from a view controller being dismissed.
+        let anchor = controller.topPresentedViewController
+        let isInBackground = controller.view.window?.windowScene?.activationState == .background
+
+        guard !isInBackground, !anchor.isBeingDismissed else { return nil }
+
+        return anchor
+    }
+
+    private func presentModalPromptIfNeeded() {
+        promoCoordinationService.presentModalPromptIfNeeded(from: controller)
+        _ = runOnceModalPromptCloses {}
+    }
+
+    /// Runs `handler` once the launch prompt on screen, or on its way, has closed. Returns `false` when there is none.
+    func runOnceLaunchPromptCloses(while shouldWait: @escaping @MainActor () -> Bool, _ handler: @escaping @MainActor () -> Void) -> Bool {
+        let runHandler: @MainActor () -> Void = { if shouldWait() { handler() } }
+
+        if runOnceModalPromptCloses(runHandler) {
+            return true
+        }
+
+        return declaredAgePrompt.runOnceRequestFinishes(runHandler)
+    }
+
+    private func runOnceModalPromptCloses(_ handler: @escaping @MainActor () -> Void) -> Bool {
         // Presentation analytics still need the dismissal when the keyboard is disabled or cancelled.
         promoCoordinationService.runOnceModalPromptCloses(while: { true }) { [weak self] in
             self?.controller.recordPendingNewTabPagePresentationIfVisible()
-            if shouldWait() { handler() }
+            handler()
         }
     }
 
@@ -748,6 +794,7 @@ final class MainCoordinator {
         daxGreetingActivity.recordForegroundOpen()
         daxDialogs.recordForegroundOpen()
         homePageConfiguration.handleAppForegrounded()
+        declaredAgePrompt.handleAppForegrounded()
 
         // Apply tracker animation suppression based on launch source
         // Must be called after launchSourceManager.handleAppAction sets the source
@@ -770,6 +817,7 @@ final class MainCoordinator {
     }
 
     func onBackground() {
+        isReadyForLaunchPrompts = false
         homePageConfiguration.handleAppBackgrounded()
         promoCoordinationService.handleAppBackgrounded()
         resetAppStartTime()

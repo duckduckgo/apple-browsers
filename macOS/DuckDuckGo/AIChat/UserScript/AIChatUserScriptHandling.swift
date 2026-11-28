@@ -96,6 +96,7 @@ protocol AIChatUserScriptHandling: AnyObject {
     @MainActor func openAIChatSettings(params: Any, message: UserScriptMessage) async -> Encodable?
     @MainActor func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) async -> Encodable?
     @MainActor func attachmentPrivacyShouldDisplay(params: Any, message: UserScriptMessage) async -> Encodable?
+    @MainActor func captureScreenshot(params: Any, message: UserScriptMessage) async -> Encodable?
     func closeAIChat(params: Any, message: UserScriptMessage) async -> Encodable?
     @MainActor func getAIChatNativePrompt(params: Any, message: UserScriptMessage) async -> Encodable?
     @MainActor func openAIChat(params: Any, message: UserScriptMessage) async -> Encodable?
@@ -232,6 +233,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let bonusHandler: AIChatBonusHandling
     private let bonusMessageLog: AIChatBonusMessageLogging?
     private let isSparkleBuild: Bool
+    /// Resolved on first use, on the main actor; see `resolvedScreenshotProvider()`.
+    private var screenshotProvider: AIChatScreenshotProviding?
 
     var isFireWindowProvider: (() -> Bool)?
     var isSidebarProvider: (() -> Bool)?
@@ -289,9 +292,11 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         localModelService: AIChatLocalModelServing? = nil,
         bonusHandler: AIChatBonusHandling = Application.appDelegate.aiChatBonusOffer.handler,
         bonusMessageLog: AIChatBonusMessageLogging? = nil,
-        isSparkleBuild: Bool = StandardApplicationBuildType().isSparkleBuild
+        isSparkleBuild: Bool = StandardApplicationBuildType().isSparkleBuild,
+        screenshotProvider: AIChatScreenshotProviding? = nil
     ) {
         self.storage = storage
+        self.screenshotProvider = screenshotProvider
         self.localModelService = localModelService
         self.termsOfServiceStore = termsOfServiceStore
         self.bonusHandler = bonusHandler
@@ -363,12 +368,34 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         let isFireWindow = isFireWindowProvider?() ?? false
         var config = messageHandling.getNativeConfigValues(isFireWindow: isFireWindow)
         config.localModel = localModelService?.config()
+        config.screenshotModes = resolvedScreenshotProvider().screenshotModes
         return config
     }
 
     @MainActor
     public func attachmentPrivacyShouldDisplay(params: Any, message: UserScriptMessage) async -> Encodable? {
         AttachmentPrivacyShouldDisplayResponse(show: attachmentPrivacyDisclosureProvider?().claim() ?? false)
+    }
+
+    // MARK: - Screenshot
+
+    @MainActor
+    public func captureScreenshot(params: Any, message: UserScriptMessage) async -> Encodable? {
+        guard let request: AIChatCaptureScreenshotRequest = DecodableHelper.decode(from: params) else {
+            return AIChatCaptureScreenshotResponse.cancelled
+        }
+        return await resolvedScreenshotProvider().captureScreenshot(mode: request.mode,
+                                                                    requestingWebView: message.messageWebView,
+                                                                    source: isSidebarProvider?() == true ? .sidebar : .duckai)
+    }
+
+    /// Created here rather than as a default argument, which would be evaluated off the main actor.
+    @MainActor
+    private func resolvedScreenshotProvider() -> AIChatScreenshotProviding {
+        if let screenshotProvider { return screenshotProvider }
+        let provider = AIChatScreenshotProvider(featureFlagger: featureFlagger)
+        screenshotProvider = provider
+        return provider
     }
 
     // MARK: - Homepage chat suggestions

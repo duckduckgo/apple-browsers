@@ -651,5 +651,51 @@
         "owners": ["jotaemepereira"],
         "triggers": ["user_interaction"],
         "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_duckai_screenshot_taken": {
+        "description": "Fired when Duck.ai's captureScreenshot bridge request returns a screenshot",
+        "owners": ["moon0326"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "kind",
+                "type": "string",
+                "description": "What was captured: a dragged region, a whole display, or a window",
+                "enum": ["selection", "screen", "window"]
+            },
+            {
+                "key": "source",
+                "type": "string",
+                "description": "Where the Duck.ai page that asked is shown: the sidebar, or Duck.ai in a tab",
+                "enum": ["sidebar", "duckai"]
+            }
+        ]
+    },
+    "m_mac_aichat_duckai_screenshot_failed": {
+        "description": "Fired when Duck.ai's captureScreenshot bridge request fails. Not fired when the user cancels or Screen Recording is off, which aichat_screenshot_permission_needed_macos_u reports",
+        "owners": ["moon0326"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "reason",
+                "type": "string",
+                "description": "unavailable: capture could not start; failed: the capture or its processing failed",
+                "enum": ["unavailable", "failed"]
+            },
+            {
+                "key": "source",
+                "type": "string",
+                "description": "Where the Duck.ai page that asked is shown: the sidebar, or Duck.ai in a tab",
+                "enum": ["sidebar", "duckai"]
+            }
+        ]
     }
 }

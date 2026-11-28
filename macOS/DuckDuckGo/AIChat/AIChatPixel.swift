@@ -445,6 +445,12 @@ enum AIChatPixel: PixelKit.Event {
     /// Event Trigger: An Add Screenshot capture for the New Tab Page omnibar failed, natively or when the page couldn't process the image. Never on cancel or a missing Screen Recording permission
     case aiChatNtpScreenshotFailed(reason: AIChatScreenshotFailureReason)
 
+    /// Event Trigger: Duck.ai's `captureScreenshot` request returned a screenshot
+    case aiChatDuckAiScreenshotTaken(kind: AIChatScreenshotKind, source: AIChatScreenshotRequestSource)
+
+    /// Event Trigger: Duck.ai's `captureScreenshot` request failed. Never on cancel or a missing Screen Recording permission
+    case aiChatDuckAiScreenshotFailed(reason: AIChatScreenshotFailureReason, source: AIChatScreenshotRequestSource)
+
     /// Event Trigger: An image chip is added to the New Tab Page omnibar (reported by the page)
     case aiChatNtpImageAttached(source: AIChatImageAttachmentSource)
 
@@ -919,6 +925,10 @@ enum AIChatPixel: PixelKit.Event {
             return "aichat_ntp_screenshot_removed"
         case .aiChatNtpScreenshotFailed:
             return "aichat_ntp_screenshot_failed"
+        case .aiChatDuckAiScreenshotTaken:
+            return "aichat_duckai_screenshot_taken"
+        case .aiChatDuckAiScreenshotFailed:
+            return "aichat_duckai_screenshot_failed"
         case .aiChatNtpImageAttached:
             return "aichat_ntp_image_attached"
         case .aiChatScreenshotPermissionNeeded:
@@ -1234,6 +1244,10 @@ enum AIChatPixel: PixelKit.Event {
         case .aiChatAddressBarScreenshotFailed(let reason),
              .aiChatNtpScreenshotFailed(let reason):
             return ["reason": reason.rawValue]
+        case .aiChatDuckAiScreenshotTaken(let kind, let source):
+            return ["kind": kind.rawValue, "source": source.rawValue]
+        case .aiChatDuckAiScreenshotFailed(let reason, let source):
+            return ["reason": reason.rawValue, "source": source.rawValue]
         case .aiChatAddressBarSubmitWithImage(let imageCount),
              .aiChatNtpSubmitWithImage(let imageCount):
             return ["imageCount": String(imageCount)]
@@ -1427,6 +1441,8 @@ enum AIChatPixel: PixelKit.Event {
                 .aiChatScreenshotPermissionGranted,
                 .aiChatScreenshotPermissionConverted,
                 .aiChatNtpScreenshotFailed,
+                .aiChatDuckAiScreenshotTaken,
+                .aiChatDuckAiScreenshotFailed,
                 .aiChatNtpImageAttached,
                 .aiChatNtpImageRemoved,
                 .aiChatNtpPastedTextAttached,

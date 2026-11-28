@@ -239,6 +239,8 @@ final class AIChatUserScript: NSObject, Subfeature {
             }
         case .attachmentPrivacyShouldDisplay:
             return handler.attachmentPrivacyShouldDisplay
+        case .captureScreenshot:
+            return handler.captureScreenshot
         case .closeAIChat:
             return handler.closeAIChat
         case .getAIChatNativePrompt:

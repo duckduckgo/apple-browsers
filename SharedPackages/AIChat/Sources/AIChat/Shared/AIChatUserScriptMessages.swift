@@ -41,6 +41,9 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
     /// Native spends a display if any remain and answers whether to show it.
     case attachmentPrivacyShouldDisplay
 
+    /// FE→native: capture a screenshot for the prompt. Replies once the user finishes, so it has no timeout.
+    case captureScreenshot
+
     case getAIChatPageContext
     case submitAIChatPageContext
     /// Pushed (native→FE) to append one user text selection to the duck.ai selection-context list.

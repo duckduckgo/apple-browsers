@@ -84,6 +84,13 @@ final class AIChatUserScriptTests: XCTestCase {
         XCTAssertNil(result, "Expected result to be nil")
     }
 
+    @MainActor func testCaptureScreenshotMessageRoutesToHandler() async throws {
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.captureScreenshot.rawValue))
+        _ = try await handler(["mode": "dragToSelect"], WKScriptMessage.mock())
+
+        XCTAssertTrue(mockHandler.didCaptureScreenshot, "captureScreenshot should be called")
+    }
+
     @MainActor func testNativeConfigDispatcherAddsEnabledClientToolsAndPreservesOtherValues() async throws {
         let service = makeBrowserToolsService()
         let pixels = PixelKitMock()
@@ -835,6 +842,14 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
     @MainActor
     func attachmentPrivacyShouldDisplay(params: Any, message: UserScriptMessage) async -> (any Encodable)? {
         nil
+    }
+
+    var didCaptureScreenshot = false
+
+    @MainActor
+    func captureScreenshot(params: Any, message: UserScriptMessage) async -> (any Encodable)? {
+        didCaptureScreenshot = true
+        return nil
     }
 
     func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> (any Encodable)? {

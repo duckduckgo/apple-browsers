@@ -520,6 +520,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/task/1215994572643392
     case ntpScreenshot
 
+    /// Enables "Add Screenshot" in the Duck.ai web app (`screenshotModes` and `captureScreenshot`).
+    case duckAiScreenshot
+
     /// Enables pasting images and copied image or PDF files into the Duck.ai omnibar prompt (address bar and prompt bar).
     /// https://app.asana.com/1/137249556945/task/1215994572643392
     case pasteImages

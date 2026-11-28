@@ -475,6 +475,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1215994572643392
     case aiChatNtpScreenshot
 
+    /// Duck.ai "Add Screenshot" in the Duck.ai web app's attach menu (sidebar and full tab).
+    case aiChatDuckAiScreenshot
+
     /// Duck.ai: pasting images and copied files into the address bar and prompt bar prompt.
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1215994572643392
     case aiChatPasteImages
@@ -1029,6 +1032,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.omnibarScreenshot), category: .duckAI)
         case .aiChatNtpScreenshot:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.ntpScreenshot), category: .duckAI)
+        case .aiChatDuckAiScreenshot:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.duckAiScreenshot), category: .duckAI)
         case .aiChatPasteImages:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.pasteImages), category: .duckAI)
         case .aiChatNtpPasteImages:

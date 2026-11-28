@@ -185,6 +185,9 @@ public struct AIChatNativeConfigValues: Codable {
     /// Browser tools Duck.ai may call through `executeClientTool`. Omitted outside a Duck.ai chat,
     /// in Fire, and when no tool is enabled.
     public var clientTools: ClientToolsConfiguration?
+    /// Modes Duck.ai offers under "Add Screenshot" and passes to `captureScreenshot`, in menu order.
+    /// Omitted when the platform can't capture, which hides the menu item.
+    public var screenshotModes: [String]?
 
     public static var defaultValues: AIChatNativeConfigValues {
 #if os(iOS)

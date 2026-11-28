@@ -62,36 +62,26 @@ public struct DataBrokerProtectionDebugEmailOptOutSeeder {
         let foundDate = Calendar.current.date(byAdding: .day, value: -Self.foundDaysAgo, to: now) ?? now
         let deferredScanDate = Calendar.current.date(byAdding: .day, value: Self.scanDeferralDays, to: now)
 
-        // Check every broker first, so a missing one fails the run before anything is written.
-        if let missingBrokerURL = brokerURLs.first(where: { brokerURL in !queryData.contains { $0.dataBroker.url == brokerURL } }) {
-            throw DebugEmailOptOutSeedError.noProfileQuery(brokerURL: missingBrokerURL)
-        }
+        let targets = try brokerURLs.map { try seedTarget(for: $0, in: queryData) }
 
-        return try brokerURLs.compactMap { brokerURL in
-            let brokerQueryData = queryData.filter { $0.dataBroker.url == brokerURL }
-            guard let firstQueryData = brokerQueryData.first,
-                  let brokerId = firstQueryData.dataBroker.id,
-                  let profileQueryId = firstQueryData.profileQuery.id else {
-                throw DebugEmailOptOutSeedError.noProfileQuery(brokerURL: brokerURL)
-            }
-
-            guard !brokerQueryData.contains(where: { $0.optOutJobData.contains { $0.extractedProfile.identifier == Self.identifier } }) else {
+        return try targets.compactMap { target in
+            guard !target.queryData.contains(where: { $0.optOutJobData.contains { $0.extractedProfile.identifier == Self.identifier } }) else {
                 return nil
             }
 
-            for profileQueryId in brokerQueryData.compactMap(\.profileQuery.id) {
-                try database.updateLastRunDate(foundDate, brokerId: brokerId, profileQueryId: profileQueryId)
-                try database.updatePreferredRunDate(deferredScanDate, brokerId: brokerId, profileQueryId: profileQueryId)
+            for queryId in target.queryData.compactMap(\.profileQuery.id) {
+                try database.updateLastRunDate(foundDate, brokerId: target.brokerId, profileQueryId: queryId)
+                try database.updatePreferredRunDate(deferredScanDate, brokerId: target.brokerId, profileQueryId: queryId)
             }
 
-            let profileQuery = firstQueryData.profileQuery
+            let profileQuery = target.profileQuery
             let extractedProfile = ExtractedProfile(name: profileQuery.fullName,
                                                     addresses: [AddressCityState(city: profileQuery.city, state: profileQuery.state)],
-                                                    profileUrl: "https://\(brokerURL)/profile/\(Self.identifier)",
+                                                    profileUrl: "https://\(target.brokerURL)/profile/\(Self.identifier)",
                                                     age: String(profileQuery.age),
                                                     identifier: Self.identifier)
-            let optOutJobData = OptOutJobData(brokerId: brokerId,
-                                              profileQueryId: profileQueryId,
+            let optOutJobData = OptOutJobData(brokerId: target.brokerId,
+                                              profileQueryId: target.profileQueryId,
                                               createdDate: foundDate,
                                               preferredRunDate: nil,
                                               historyEvents: [],
@@ -99,9 +89,31 @@ public struct DataBrokerProtectionDebugEmailOptOutSeeder {
                                               extractedProfile: extractedProfile)
 
             try database.saveOptOutJob(optOut: optOutJobData, extractedProfile: extractedProfile)
-            try database.add(HistoryEvent(brokerId: brokerId, profileQueryId: profileQueryId, type: .matchesFound(count: 1), date: foundDate))
-            return brokerURL
+            try database.add(HistoryEvent(brokerId: target.brokerId, profileQueryId: target.profileQueryId, type: .matchesFound(count: 1), date: foundDate))
+            return target.brokerURL
         }
+    }
+
+    private struct SeedTarget {
+        let brokerURL: String
+        let brokerId: Int64
+        let profileQueryId: Int64
+        let profileQuery: ProfileQuery
+        let queryData: [BrokerProfileQueryData]
+    }
+
+    private func seedTarget(for brokerURL: String, in queryData: [BrokerProfileQueryData]) throws -> SeedTarget {
+        let brokerQueryData = queryData.filter { $0.dataBroker.url == brokerURL }
+        guard let first = brokerQueryData.first,
+              let brokerId = first.dataBroker.id,
+              let profileQueryId = first.profileQuery.id else {
+            throw DebugEmailOptOutSeedError.noProfileQuery(brokerURL: brokerURL)
+        }
+        return SeedTarget(brokerURL: brokerURL,
+                          brokerId: brokerId,
+                          profileQueryId: profileQueryId,
+                          profileQuery: first.profileQuery,
+                          queryData: brokerQueryData)
     }
 }
 #endif
